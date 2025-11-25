@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AM, PREC-IDF, NG-IDF Results</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Leaflet CSS for map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f7f9fb;
+    color: #333;
+    font-size: 11px;
+    margin: 8px;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header Banner */
+  header {
+    background: linear-gradient(90deg, #f68b1f, #c46000);
+    color: white;
+    padding: 10px 20px;
+  }
+  .header-container {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    max-width: 1500px;
+    margin: 0 auto;
+    column-gap: 40px;
+  }
+  .header-logos {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-logos img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    background: transparent;
+  }
+  header h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 700px) {
+    .header-container {
+      grid-template-columns: 1fr;
+      row-gap: 8px;
+      text-align: center;
+    }
+    .header-logos {
+      justify-content: center;
+    }
+    .header-logos img {
+      height: 28px;
+    }
+  }
+
+  h2 {
+    color: #b34b00;
+    font-size: 12px;
+    border-bottom: 2px solid #e3eaf5;
+    padding-bottom: 2px;
+    margin: 6px 0;
+  }
+
+  .section {
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10.5px;
+  }
+  th, td {
+    border: 1px solid #dfe3ea;
+    text-align: center;
+    padding: 2px 3px;
+    white-space: nowrap;
+  }
+  th {
+    background-color: #f68b1f;
+    color: white;
+  }
+  tr:nth-child(even) { background-color: #f8fafc; }
+  tr:hover { background-color: #fff1e0; }
+
+  .plots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 6px 0;
+  }
+.plot-card {
+    width: 21%;
+    max-width: 600px;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+  .plot-img {
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  .am-tables {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .am-table { width: 42%; max-width: 600px; }
+
+.swe-container { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+}
+
+.swe-table {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;          /* centers the table */
+}
+
+.swe-table tr:nth-child(even) {
+    background-color: #f8fafc !important;
+}
+
+  .idf-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+  .idf-table { width: 42%; max-width: 600px; }
+
+  @media(max-width:900px){
+    .plot-card{width:100%;}
+    .am-table{width:100%;}
+    .swe-table{width:100%;}
+    .idf-table{width:100%;}
+  }
+
+  .note { text-align:center; font-size:10px; color:#666; margin-top:8px; }
+
+</style>
+</head>
+<body>
+
+<!-- Top Banner -->
+<header>
+  <div class="header-container">
+    <div class="header-logos left-logos">
+      <img src="./static/PNNL_Logo.png" alt="PNNL Logo">
+      <img src="./static/DOE_Logo.png" alt="DOE Logo">
+    </div>
+    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool Outputs</h1>
+    <div class="header-logos right-logos">
+      <img src="./static/ESTCP_Logo.png" alt="ESTCP Logo">
+      <img src="./static/DoD_Logo.png" alt="DoD Logo">
+    </div>
+  </div>
+</header>
+
+<!-- ⭐⭐ NEW MAP SECTION (Option A) ⭐⭐ -->
+<div class="am-tables">
+  <div class="section am-table">
+    <h2>Site Location Map</h2>
+    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
+  </div>
+</div>
+
+<!-- AM P & AM W Tables -->
+<div class="am-tables">
+  <div class="section am-table">
+    <h2>Annual Maximum Precipitation (AM P) Time Series Table</h2>
+    <table>
+      <tr><th>24 h Date</th><th>24 h Magnitude (mm)</th><th>48 h Date</th><th>48 h Magnitude (mm)</th><th>72 h Date</th><th>72 h Magnitude (mm)</th></tr>
+      {% for i in range(am_24h_P|length) %}
+      <tr>
+        <td>{{ "%04d-%02d-%02d"|format(am_24h_P_date[i,0],am_24h_P_date[i,1],am_24h_P_date[i,2]) }}</td>
+        <td>{{ am_24h_P[i,3] }}</td>
+        <td>{{ "%04d-%02d-%02d"|format(am_48h_P_date[i,0],am_48h_P_date[i,1],am_48h_P_date[i,2]) }}</td>
+        <td>{{ am_48h_P[i,3] }}</td>
+        <td>{{ "%04d-%02d-%02d"|format(am_72h_P_date[i,0],am_72h_P_date[i,1],am_72h_P_date[i,2]) }}</td>
+        <td>{{ am_72h_P[i,3] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="section am-table">
+    <h2>Annual Maximum Water Available for Runoff (AM W) Time Series Table</h2>
+    <table>
+      <tr><th>24 h Date</th><th>24 h Magnitude (mm)</th><th>48 h Date</th><th>48 h Magnitude (mm)</th><th>72 h Date</th><th>72 h Magnitude (mm)</th></tr>
+      {% for i in range(am_24h_W|length) %}
+      <tr>
+        <td>{{ "%04d-%02d-%02d"|format(am_24h_W_date[i,0],am_24h_W_date[i,1],am_24h_W_date[i,2]) }}</td>
+        <td>{{ am_24h_W[i,3] }}</td>
+        <td>{{ "%04d-%02d-%02d"|format(am_48h_W_date[i,0],am_48h_W_date[i,1],am_48h_W_date[i,2]) }}</td>
+        <td>{{ am_48h_W[i,3] }}</td>
+        <td>{{ "%04d-%02d-%02d"|format(am_72h_W_date[i,0],am_72h_W_date[i,1],am_72h_W_date[i,2]) }}</td>
+        <td>{{ am_72h_W[i,3] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<!-- Figures -->
+<div class="plots">
+  <div class="plot-card">
+    <h2>24-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig24_code }}" alt="24-Hour IDF Curves">
+  </div>
+
+  <div class="plot-card">
+    <h2>48-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig48_code }}" alt="48-Hour IDF Curves">
+  </div>
+
+  <div class="plot-card">
+    <h2>72-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig72_code }}" alt="72-Hour IDF Curves">
+  </div>
+</div>
+
+<!-- PREC-IDF and NG-IDF Tables -->
+<div class="idf-tables">
+<div class="section idf-table">
+  <h2>PREC-IDF Curves Table</h2>
+  <p><strong>ARI = Average Recurrence Interval</strong></p>
+
+  {% set ARI        = [2,5,10,25,50,100,500] %}
+  {% set IDX        = [0,30,40,46,48,49,50] %}
+
+  <table>
+    <tr>
+  <th>ARI (yrs)</th>
+  <th>Magnitude (mm)</th>
+  <th>Lower 90% CI (mm)</th>
+  <th>Upper 90% CI (mm)</th>
+</tr>
+
+    <!-- 24-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ P_24h[0, IDX[j]] }}</td>
+      <td>{{ P_24h[1, IDX[j]] }}</td>
+      <td>{{ P_24h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+
+    <!-- 48-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ P_48h[0, IDX[j]] }}</td>
+      <td>{{ P_48h[1, IDX[j]] }}</td>
+      <td>{{ P_48h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+
+    <!-- 72-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ P_72h[0, IDX[j]] }}</td>
+      <td>{{ P_72h[1, IDX[j]] }}</td>
+      <td>{{ P_72h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+
+
+<div class="section idf-table">
+  <h2>NG-IDF Curves Table</h2>
+  <p><strong>ARI = Average Recurrence Interval</strong></p>
+
+  {% set ARI        = [2,5,10,25,50,100,500] %}
+  {% set IDX        = [0,30,40,46,48,49,50] %}
+
+  <table>
+    <tr>
+      <th>ARI (yrs)</th>
+      <th>Magnitude (mm)</th>
+      <th>Lower 90% CI (mm)</th>
+      <th>Upper 90% CI (mm)</th>
+    </tr>
+
+    <!-- 24-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ NG_24h[0, IDX[j]] }}</td>
+      <td>{{ NG_24h[1, IDX[j]] }}</td>
+      <td>{{ NG_24h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+
+    <!-- 48-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ NG_48h[0, IDX[j]] }}</td>
+      <td>{{ NG_48h[1, IDX[j]] }}</td>
+      <td>{{ NG_48h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+
+    <!-- 72-HOUR -->
+    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
+    {% for j in range(7) %}
+    <tr>
+      <td>{{ ARI[j] }}</td>
+      <td>{{ NG_72h[0, IDX[j]] }}</td>
+      <td>{{ NG_72h[1, IDX[j]] }}</td>
+      <td>{{ NG_72h[2, IDX[j]] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+</div>
+
+<!-- SWE Table -->
+<div class="am-tables">
+  <div class="section am-table">
+    <h2>Annual Maximum Snow Water Equivalent (AM SWE) Time Series Table</h2>
+    <table class="swe-table">
+      <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+      {% for i in range(am_swe|length) %}
+      <tr>
+        <td>{{ "%04d-%02d-%02d"|format(am_swe_date[i,0], am_swe_date[i,1], am_swe_date[i,2]) }}</td>
+        <td>{{ am_swe[i,3] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+
+<p class="note">Generated by NG-IDF Tool</p>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Alaska boundary -->
+<script>
+  const alaskaBoundaryUrl =
+    "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/alaska.geojson";
+
+  // Lat/Lon from backend
+  const siteLat = {{ lat }};
+  const siteLon = {{ lon }};
+
+  // Initialize map
+  var map = L.map('map').setView([siteLat, siteLon], 8);
+
+  // Base map
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Alaska boundary
+  fetch(alaskaBoundaryUrl)
+    .then(r => r.json())
+    .then(geo => {
+      L.geoJSON(geo, {
+        style: {
+          color: "#c46000",
+          weight: 2,
+          fillOpacity: 0
+        }
+      }).addTo(map);
+    });
+
+  // Marker
+  L.marker([siteLat, siteLon])
+    .addTo(map)
+    .bindPopup(`Site Location:<br>${siteLat.toFixed(3)}, ${siteLon.toFixed(3)}`);
+</script>
+
+</body>
+</html>

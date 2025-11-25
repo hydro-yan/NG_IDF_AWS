@@ -1,0 +1,468 @@
+<html> 
+
+
+<style>
+table {
+  font-size: 12px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table, th, td {
+  border:1px solid black;
+}
+
+th, td {
+  padding: 5px;
+  text-align: center;
+}
+</style>
+
+
+
+<p>Annual Maximum (AM) Data. P: Precipitation. W: Water Available for Runoff. SWE: Snow Water Equivalent</p> 
+
+<table style="font-size:12px">
+  <tr>
+    <th>Year</th>
+    <th>AM 24-h P (mm)</th>
+    <th>AM 24-h W (mm)</th>
+    <th>AM 48-h P (mm)</th>
+    <th>AM 48-h W (mm)</th> 
+    <th>AM 72-h P (mm)</th>
+    <th>AM 72-h W (mm)</th>    
+    <th>AM SWE (mm)</th>
+  </tr>
+
+
+  <tr>
+    <td>{{year_seq[0,0]}}</td>
+    <td>{{am_24h_P[0,3]}}</td>
+    <td>{{am_48h_P[0,3]}}</td>
+    <td>{{am_72h_P[0,3]}}</td>
+    <td>{{am_24h_W[0,3]}}</td>
+    <td>{{am_48h_W[0,3]}}</td>
+    <td>{{am_72h_W[0,3]}}</td>
+    <td>{{am_swe[0,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>{{year_seq[1,0]}}</td>
+    <td>{{am_24h_P[1,3]}}</td>
+    <td>{{am_48h_P[1,3]}}</td>
+    <td>{{am_72h_P[1,3]}}</td>
+    <td>{{am_24h_W[1,3]}}</td>
+    <td>{{am_48h_W[1,3]}}</td>
+    <td>{{am_72h_W[1,3]}}</td>
+    <td>{{am_swe[1,3]}}</td>
+  </tr>
+
+
+
+
+
+
+
+  <tr>
+    <td>{{year_seq[63,0]}}</td>
+    <td>{{am_24h_P[63,3]}}</td>
+    <td>{{am_48h_P[63,3]}}</td>
+    <td>{{am_72h_P[63,3]}}</td>
+    <td>{{am_24h_W[63,3]}}</td>
+    <td>{{am_48h_W[63,3]}}</td>
+    <td>{{am_72h_W[63,3]}}</td>
+    <td>{{am_swe[63,3]}}</td>
+  </tr>
+</table>
+
+
+<br/><br/><br/>
+
+
+
+
+
+
+
+<p>PREC-IDF Curves</p> 
+
+<table style="font-size:12px">
+  <tr>
+    <th>Duration (hours)</th>
+    <th>Average Recurrence Interval (years)</th>
+    <th>Magnitude (mm)</th>
+    <th>Magnitude (mm): 5% Quantile</th>
+    <th>Magnitude (mm): 95% Quantile</th>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>2</td>
+    <td>{{P_24h[0,0]}}</td>
+    <td>{{P_24h[1,0]}}</td>
+    <td>{{P_24h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>5</td>
+    <td>{{P_24h[0,1]}}</td>
+    <td>{{P_24h[1,1]}}</td>
+    <td>{{P_24h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>10</td>
+    <td>{{P_24h[0,2]}}</td>
+    <td>{{P_24h[1,2]}}</td>
+    <td>{{P_24h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>25</td>
+    <td>{{P_24h[0,3]}}</td>
+    <td>{{P_24h[1,3]}}</td>
+    <td>{{P_24h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>50</td>
+    <td>{{P_24h[0,4]}}</td>
+    <td>{{P_24h[1,4]}}</td>
+    <td>{{P_24h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>100</td>
+    <td>{{P_24h[0,5]}}</td>
+    <td>{{P_24h[1,5]}}</td>
+    <td>{{P_24h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>500</td>
+    <td>{{P_24h[0,6]}}</td>
+    <td>{{P_24h[1,6]}}</td>
+    <td>{{P_24h[2,6]}}</td>
+  </tr>
+
+
+  <tr>
+    <td>48</td>
+    <td>2</td>
+    <td>{{P_48h[0,0]}}</td>
+    <td>{{P_48h[1,0]}}</td>
+    <td>{{P_48h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>5</td>
+    <td>{{P_48h[0,1]}}</td>
+    <td>{{P_48h[1,1]}}</td>
+    <td>{{P_48h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>10</td>
+    <td>{{P_48h[0,2]}}</td>
+    <td>{{P_48h[1,2]}}</td>
+    <td>{{P_48h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>25</td>
+    <td>{{P_48h[0,3]}}</td>
+    <td>{{P_48h[1,3]}}</td>
+    <td>{{P_48h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>50</td>
+    <td>{{P_48h[0,4]}}</td>
+    <td>{{P_48h[1,4]}}</td>
+    <td>{{P_48h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>100</td>
+    <td>{{P_48h[0,5]}}</td>
+    <td>{{P_48h[1,5]}}</td>
+    <td>{{P_48h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>500</td>
+    <td>{{P_48h[0,6]}}</td>
+    <td>{{P_48h[1,6]}}</td>
+    <td>{{P_48h[2,6]}}</td>
+  </tr>
+
+
+
+  <tr>
+    <td>72</td>
+    <td>2</td>
+    <td>{{P_72h[0,0]}}</td>
+    <td>{{P_72h[1,0]}}</td>
+    <td>{{P_72h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>5</td>
+    <td>{{P_72h[0,1]}}</td>
+    <td>{{P_72h[1,1]}}</td>
+    <td>{{P_72h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>10</td>
+    <td>{{P_72h[0,2]}}</td>
+    <td>{{P_72h[1,2]}}</td>
+    <td>{{P_72h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>25</td>
+    <td>{{P_72h[0,3]}}</td>
+    <td>{{P_72h[1,3]}}</td>
+    <td>{{P_72h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>50</td>
+    <td>{{P_72h[0,4]}}</td>
+    <td>{{P_72h[1,4]}}</td>
+    <td>{{P_72h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>100</td>
+    <td>{{P_72h[0,5]}}</td>
+    <td>{{P_72h[1,5]}}</td>
+    <td>{{P_72h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>500</td>
+    <td>{{P_72h[0,6]}}</td>
+    <td>{{P_72h[1,6]}}</td>
+    <td>{{P_72h[2,6]}}</td>
+  </tr>
+
+
+</table>
+
+
+<br/><br/><br/>
+
+
+<p>NG-IDF Curves</p> 
+
+<table style="font-size:12px">
+  <tr>
+    <th>Duration (hours)</th>
+    <th>Average Recurrence Interval (years)</th>
+    <th>Magnitude (mm)</th>
+    <th>Magnitude (mm): 5% Quantile</th>
+    <th>Magnitude (mm): 95% Quantile</th>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>2</td>
+    <td>{{NG_24h[0,0]}}</td>
+    <td>{{NG_24h[1,0]}}</td>
+    <td>{{NG_24h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>5</td>
+    <td>{{NG_24h[0,1]}}</td>
+    <td>{{NG_24h[1,1]}}</td>
+    <td>{{NG_24h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>10</td>
+    <td>{{NG_24h[0,2]}}</td>
+    <td>{{NG_24h[1,2]}}</td>
+    <td>{{NG_24h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>25</td>
+    <td>{{NG_24h[0,3]}}</td>
+    <td>{{NG_24h[1,3]}}</td>
+    <td>{{NG_24h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>50</td>
+    <td>{{NG_24h[0,4]}}</td>
+    <td>{{NG_24h[1,4]}}</td>
+    <td>{{NG_24h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>100</td>
+    <td>{{NG_24h[0,5]}}</td>
+    <td>{{NG_24h[1,5]}}</td>
+    <td>{{NG_24h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>24</td>
+    <td>500</td>
+    <td>{{NG_24h[0,6]}}</td>
+    <td>{{NG_24h[1,6]}}</td>
+    <td>{{NG_24h[2,6]}}</td>
+  </tr>
+
+
+  <tr>
+    <td>48</td>
+    <td>2</td>
+    <td>{{NG_48h[0,0]}}</td>
+    <td>{{NG_48h[1,0]}}</td>
+    <td>{{NG_48h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>5</td>
+    <td>{{NG_48h[0,1]}}</td>
+    <td>{{NG_48h[1,1]}}</td>
+    <td>{{NG_48h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>10</td>
+    <td>{{NG_48h[0,2]}}</td>
+    <td>{{NG_48h[1,2]}}</td>
+    <td>{{NG_48h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>25</td>
+    <td>{{NG_48h[0,3]}}</td>
+    <td>{{NG_48h[1,3]}}</td>
+    <td>{{NG_48h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>50</td>
+    <td>{{NG_48h[0,4]}}</td>
+    <td>{{NG_48h[1,4]}}</td>
+    <td>{{NG_48h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>100</td>
+    <td>{{NG_48h[0,5]}}</td>
+    <td>{{NG_48h[1,5]}}</td>
+    <td>{{NG_48h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>48</td>
+    <td>500</td>
+    <td>{{NG_48h[0,6]}}</td>
+    <td>{{NG_48h[1,6]}}</td>
+    <td>{{NG_48h[2,6]}}</td>
+  </tr>
+
+
+
+  <tr>
+    <td>72</td>
+    <td>2</td>
+    <td>{{NG_72h[0,0]}}</td>
+    <td>{{NG_72h[1,0]}}</td>
+    <td>{{NG_72h[2,0]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>5</td>
+    <td>{{NG_72h[0,1]}}</td>
+    <td>{{NG_72h[1,1]}}</td>
+    <td>{{NG_72h[2,1]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>10</td>
+    <td>{{NG_72h[0,2]}}</td>
+    <td>{{NG_72h[1,2]}}</td>
+    <td>{{NG_72h[2,2]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>25</td>
+    <td>{{NG_72h[0,3]}}</td>
+    <td>{{NG_72h[1,3]}}</td>
+    <td>{{NG_72h[2,3]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>50</td>
+    <td>{{NG_72h[0,4]}}</td>
+    <td>{{NG_72h[1,4]}}</td>
+    <td>{{NG_72h[2,4]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>100</td>
+    <td>{{NG_72h[0,5]}}</td>
+    <td>{{NG_72h[1,5]}}</td>
+    <td>{{NG_72h[2,5]}}</td>
+  </tr>
+
+  <tr>
+    <td>72</td>
+    <td>500</td>
+    <td>{{NG_72h[0,6]}}</td>
+    <td>{{NG_72h[1,6]}}</td>
+    <td>{{NG_72h[2,6]}}</td>
+  </tr>
+
+
+</table>
+
+
+<!-- <img src="{{url_for('static', filename='NG_IDF.jpg')}}" />
+<img src="{{url_for('static', filename='PREC_IDF.jpg')}}" /> -->
+
+<img src= "{{P_code}}" />
+<img src= "{{NG_code}}" />
+
+</html> 
