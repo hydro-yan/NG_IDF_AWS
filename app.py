@@ -14,12 +14,15 @@ import shutil
 from gen_figures import generate_fig
 
 
+# ----------------------------------------------------------------------------------------------------------------------------
+# Helper: Create np.nan array
 def npnan(x,y):
     #this function creates the np.nan 2d-array (np.nan should be float)
     array_2d = np.zeros((x,y), float) 
     array_2d[:] = np.nan
     return array_2d
 
+# Helper: Read IDF file
 def read_idf(file, data):
     # file is the IDF path
     # data is a np array (3x7)
@@ -31,6 +34,44 @@ def read_idf(file, data):
             data[count, k] = float(item[k])  
         count += 1  
     return data
+
+# Helper: Pack tuple results into a dictionary for easier template rendering
+def structure_results(results, year_offset=0):
+    (
+        P_IDF_24h, P_IDF_48h, P_IDF_72h,
+        NG_IDF_24h, NG_IDF_48h, NG_IDF_72h,
+        fig24_code, fig48_code, fig72_code,
+        am_24h_P, am_48h_P, am_72h_P,
+        am_24h_W, am_48h_W, am_72h_W,
+        am_swe
+    ) = results
+
+    # Helper to process date arrays: round, convert to int, and add offset
+    def process_dates(arr_in, offset):
+        # Slice first 3 cols (Year, Month, Day)
+        dates = np.round(arr_in[:, :3]).astype(int)
+        # Add offset to Year column (index 0)
+        dates[:, 0] += offset
+        return dates
+
+    return {
+        "P_24h": P_IDF_24h, "P_48h": P_IDF_48h, "P_72h": P_IDF_72h,
+        "NG_24h": NG_IDF_24h, "NG_48h": NG_IDF_48h, "NG_72h": NG_IDF_72h,
+        "fig24": fig24_code, "fig48": fig48_code, "fig72": fig72_code,
+        "am_24h_P": am_24h_P, "am_48h_P": am_48h_P, "am_72h_P": am_72h_P,
+        "am_24h_W": am_24h_W, "am_48h_W": am_48h_W, "am_72h_W": am_72h_W,
+        "am_swe": am_swe,
+        
+        # Apply the year offset here
+        "am_24h_P_date": process_dates(am_24h_P, year_offset),
+        "am_48h_P_date": process_dates(am_48h_P, year_offset),
+        "am_72h_P_date": process_dates(am_72h_P, year_offset),
+        "am_24h_W_date": process_dates(am_24h_W, year_offset),
+        "am_48h_W_date": process_dates(am_48h_W, year_offset),
+        "am_72h_W_date": process_dates(am_72h_W, year_offset),
+        "am_swe_date":   process_dates(am_swe,   year_offset)
+    }
+
 
 
 
@@ -45,97 +86,96 @@ def NG_IDF():
     if request.method == "POST":
 
         input_data = dict()
-        value1 = float(request.form["Value1"]); 
-        value2 = float(request.form["Value2"]); 
-        value3 = float(request.form["Value3"]); 
-        value4 = float(request.form["Value4"]); 
-        value5 = float(request.form["Value5"]); 
-        value6 = float(request.form["Value6"]); 
-        value7 = float(request.form["Value7"]); 
-        value8 = float(request.form["Value8"]); 
-        value9 = float(request.form["Value9"]); 
-        value10 = float(request.form["Value10"]);        
 
-        input_data['value1'] = value1
-        input_data['value2'] = value2
-        input_data['value3'] = value3
-        input_data['value4'] = value4
-        input_data['value5'] = value5
-        input_data['value6'] = value6
-        input_data['value7'] = value7
-        input_data['value8'] = value8
-        input_data['value9'] = value9
-        input_data['value10'] = value10
+        # user input
+        for i in range(1, 11):
+            key = f"Value{i}"
+            input_data[f"value{i}"] = float(request.form[key])
 
+        lat = input_data['value1']
+        lon = input_data['value2']
         scenario = request.form.get("scenario", "historical")
 
-        # print(input_data)
-
-        # P_IDF_24h, P_IDF_48h, P_IDF_72h, NG_IDF_24h, NG_IDF_48h, NG_IDF_72h, P_code, NG_code, am_24h_P, am_48h_P, am_72h_P, am_24h_W, am_48h_W, am_72h_W, am_swe = get_NG_IDF(input_data)
-
-        # am_24h_P_date = np.round(am_24h_P[:, :3]).astype(int); am_48h_P_date = np.round(am_48h_P[:, :3]).astype(int); am_72h_P_date = np.round(am_72h_P[:, :3]).astype(int)
-        # am_24h_W_date = np.round(am_24h_W[:, :3]).astype(int); am_48h_W_date = np.round(am_48h_W[:, :3]).astype(int); am_72h_W_date = np.round(am_72h_W[:, :3]).astype(int)
-        # am_swe_date = np.round(am_swe[:, :3]).astype(int);
-
-        # return render_template("out.html", lat=value1, lon=value2, P_24h=P_IDF_24h, P_48h=P_IDF_48h, P_72h=P_IDF_72h, NG_24h=NG_IDF_24h, NG_48h=NG_IDF_48h, NG_72h=NG_IDF_72h, P_code=P_code, NG_code=NG_code, 
-        #                                  am_24h_P=am_24h_P, am_48h_P=am_48h_P, am_72h_P=am_72h_P, am_24h_W=am_24h_W, am_48h_W=am_48h_W, am_72h_W=am_72h_W, am_swe=am_swe,
-        #                                  am_24h_P_date=am_24h_P_date, am_48h_P_date=am_48h_P_date, am_72h_P_date=am_72h_P_date,
-        #                                  am_24h_W_date=am_24h_W_date, am_48h_W_date=am_48h_W_date, am_72h_W_date=am_72h_W_date, am_swe_date=am_swe_date)
-
-
         # ---------------------------------------------
-        # NEW: Branch behavior based on scenario choice
+        # BRANCH: HISTORICAL OR FUTURE
         # ---------------------------------------------
 
         if scenario == "historical":
 
             # Run historical Daymet workflow (same as before)
-            (
-                P_IDF_24h, P_IDF_48h, P_IDF_72h,
-                NG_IDF_24h, NG_IDF_48h, NG_IDF_72h,
-                fig24_code, fig48_code, fig72_code,
-                am_24h_P, am_48h_P, am_72h_P,
-                am_24h_W, am_48h_W, am_72h_W,
-                am_swe
-            ) = get_NG_IDF(input_data, forcing_type="Daymet")
+            results = get_NG_IDF(input_data, forcing_type="Daymet")
 
+            data = structure_results(results)
 
             # Render historical results using existing out.html
             return render_template("out.html",
-                                   lat=value1, lon=value2,
-                                   P_24h=P_IDF_24h, P_48h=P_IDF_48h, P_72h=P_IDF_72h,
-                                   NG_24h=NG_IDF_24h, NG_48h=NG_IDF_48h, NG_72h=NG_IDF_72h,
-                                   fig24_code=fig24_code, fig48_code=fig48_code, fig72_code=fig72_code,
-                                   am_24h_P=am_24h_P, am_48h_P=am_48h_P, am_72h_P=am_72h_P,
-                                   am_24h_W=am_24h_W, am_48h_W=am_48h_W, am_72h_W=am_72h_W,
-                                   am_swe=am_swe,
-                                   am_24h_P_date=np.round(am_24h_P[:, :3]).astype(int),
-                                   am_48h_P_date=np.round(am_48h_P[:, :3]).astype(int),
-                                   am_72h_P_date=np.round(am_72h_P[:, :3]).astype(int),
-                                   am_24h_W_date=np.round(am_24h_W[:, :3]).astype(int),
-                                   am_48h_W_date=np.round(am_48h_W[:, :3]).astype(int),
-                                   am_72h_W_date=np.round(am_72h_W[:, :3]).astype(int),
-                                   am_swe_date=np.round(am_swe[:, :3]).astype(int))
+                                   lat=lat, lon=lon,
+                                   **data) # Unpack all keys in data to template variables
 
         else:
 
-            # Run future scenario workflow
-            hist = get_NG_IDF(input_data, forcing_type="WRF_historical")
-            fut_med = get_NG_IDF(input_data, forcing_type="WRF_medium")
-            fut_high = get_NG_IDF(input_data, forcing_type="WRF_high")
+            # Run Multi-Scenario Workflow
+            # 1. Historical Baseline (WRF Historical)
+            res_hist = get_NG_IDF(input_data, forcing_type="WRF_historical")
+            hist_data = structure_results(res_hist, year_offset=0)
 
-            # Compute deltas
-            delta_med = fut_med[3] - hist[3]   # NG 24h medium - NG 24h hist
-            delta_high = fut_high[3] - hist[3]
+            # 2. Future Medium (WRF Medium)
+            res_med = get_NG_IDF(input_data, forcing_type="WRF_medium")
+            med_data = structure_results(res_med, year_offset=44)
+
+            # 3. Future High (WRF High)
+            res_high = get_NG_IDF(input_data, forcing_type="WRF_high")
+            high_data = structure_results(res_high, year_offset=44)
+
+
+            # 4. Build Comprehensive Summary Table
+            # Indices: 2yr=0, 5yr=30, 10yr=40, 25yr=46, 50yr=48, 100yr=49, 500yr=50
+            aris = [2, 5, 10, 25, 50, 100, 500]
+            indices = [0, 30, 40, 46, 48, 49, 50]
+            durations = ["24h", "48h", "72h"]
+            
+            summary_rows = []
+
+            for dur in durations:
+                key = f"NG_{dur}" # e.g. "NG_24h"
+                
+                # Get base arrays for this duration
+                base_arr = hist_data[key]
+                med_arr = med_data[key]
+                high_arr = high_data[key]
+
+                for ari, idx in zip(aris, indices):
+                    # Values (Row 0 is magnitude)
+                    val_hist = base_arr[0, idx]
+                    val_med = med_arr[0, idx]
+                    val_high = high_arr[0, idx]
+
+                    # Diffs
+                    diff_med = val_med - val_hist
+                    diff_high = val_high - val_hist
+                    
+                    # Percents
+                    pct_med = (diff_med / val_hist * 100) if val_hist != 0 else 0.0
+                    pct_high = (diff_high / val_hist * 100) if val_hist != 0 else 0.0
+
+                    summary_rows.append({
+                        "duration": dur,
+                        "ari": ari,
+                        "hist": val_hist,
+                        "med": val_med,
+                        "med_diff": diff_med,
+                        "med_pct": pct_med,
+                        "high": val_high,
+                        "high_diff": diff_high,
+                        "high_pct": pct_high
+                    })
 
             return render_template("out_future.html",
-                                   lat=value1, lon=value2,
-                                   hist=hist,
-                                   fut_med=fut_med,
-                                   fut_high=fut_high,
-                                   delta_med=delta_med,
-                                   delta_high=delta_high)
-
+                                   lat=lat, lon=lon,
+                                   hist=hist_data,
+                                   med=med_data,
+                                   high=high_data,
+                                   summary_rows=summary_rows)
 
     return render_template("NG_IDF.html")
 
@@ -148,17 +188,9 @@ def NG_IDF():
 def get_NG_IDF(input_data, forcing_type="Daymet"):
 
     # 0-lat, 1-lon, 2-LAI, 3-Height (m), 4-land cover fraction, 5-Land cover type, 6-Rain LAI Multiplier, 7-Snow LAI Multiplier, 8-Max Snow Intercp (m), 9-Snow Intercp Effi
-    value =[]  
-    value.append(input_data['value1'])
-    value.append(input_data['value2'])
-    value.append(input_data['value3'])
-    value.append(input_data['value4'])
-    value.append(input_data['value5'])
-    value.append(input_data['value6'])
-    value.append(input_data['value7'])
-    value.append(input_data['value8'])
-    value.append(input_data['value9'])
-    value.append(input_data['value10'])
+    value = []  
+    for i in range(1, 11):
+        value.append(input_data[f"value{i}"])
 
     # print(value)  # this line doesnot work in docker container 
 
@@ -182,6 +214,20 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
     # run DHSVM, output the Pixel.Center file here
     bas_par = np.array([value[0], value[1], value[2], value[3], value[4], value[5]])
     adv_par = np.array([value[6], value[7], value[8], value[9]])    
+
+    # ----------------------------------------------
+    # location for the forcing file, need update when moving to AWS
+    # Define Met Paths
+    folder_map = {
+        "Daymet": "./met/Daymet/",
+        "WRF_historical": "./met/WRF_historical/",
+        "WRF_medium": "./met/WRF_medium/",
+        "WRF_high": "./met/WRF_high/"
+    }
+    met_path = folder_map.get(forcing_type, "./met/Daymet/")
+
+
+
 
     with tempfile.TemporaryDirectory() as td:
         # --------------------------------------------------------------------------------------------------
@@ -216,27 +262,13 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
         fig_72h_file  = os.path.join(td, 'fig_72h.png')
         
 
-        # ----------------------------------------------
-        # location for the forcing file, need update when moving to AWS
-        # met_path = './met/'
-        # bas_par = np.array([45, -121, 8, 10, 0.8, 5])
-        # adv_par = np.array(['0.001', '0.005', '0.02', '0.6'])
-
-        folder_map = {
-            "Daymet": "./met/Daymet/",
-            "WRF_historical": "./met/WRF_historical/",
-            "WRF_medium": "./met/WRF_medium/",
-            "WRF_high": "./met/WRF_high/"
-        }
-
-        met_path = folder_map[forcing_type]
-
         config_file = generate_ng_idf(bas_par, adv_par, td, met_path, forcing_type)
         # print(config_file)
     
         os.system('dos2unix ' + config_file)
-        os.system('./dhsvm/no_sat_dump/DHSVM3.2 ' + config_file)
-        os.system('ls -l ' + td)
+        #os.system('./dhsvm/no_sat_dump/DHSVM3.2 ' + config_file)
+        os.system('./dhsvm/no_sat_dump/DHSVM3.2 ' + config_file + ' > /dev/null 2>&1')
+        #os.system('ls -l ' + td)
 
         # create r file in the temp folder and copy the lines into the new temp r file
         r_file = os.path.join(td, 'get_IDF.R')

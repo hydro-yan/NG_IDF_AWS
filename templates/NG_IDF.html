@@ -239,10 +239,6 @@
     margin: 30px 0;
   }
 
-
-
-  /* ------------------------------------------------------------ */
-  /* ADDED FOR LOADING OVERLAY */
   #overlay {
     position: fixed;
     top: 0;
@@ -270,13 +266,6 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  /* ------------------------------------------------------------ */
-
-
-
-
-
-
 </style>
 </head>
 <body>
@@ -319,89 +308,63 @@
   <div class="card">
     <h2>User Instructions</h2>
     <p class="note">
-      1. Input values for your local site within the Interior Alaska.<br/>
-      2. Click <b>Submit</b> to generate:
-      <ul>
-        <li>AM time series of SWE, P, and W</li>
-        <li>Standard PREC-IDF curves with 90% CIs</li>
-        <li>NG-IDF curves accounting for snow processes with 90% CIs</li>
-      </ul>
+      1. Input values for your local site within Interior Alaska.<br/>
+      2. Click <b>Submit</b> to generate time series and IDF curves.
     </p>
   </div>
 
-
-<!-- ===================== -->
-<!-- INTERACTIVE MAP PICKER -->
-<!-- ===================== -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<div class="card">
-  <h2>Select Location on Map</h2>
-  <p class="note">Click on the map to automatically fill Latitude & Longitude.</p>
-
-  <div id="selectMap" style="height: 350px; width:100%; border-radius:8px; border:1px solid #ddd;"></div>
-</div>
-
-<script>
-  // Default map center (Interior Alaska)
-  var map = L.map('selectMap').setView([64.8378, -147.7164], 8);
-
-  // Base tile layer
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 12,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  // Click event → update form boxes
-  var marker = null;
-
-  map.on("click", function(e) {
-    const lat = e.latlng.lat.toFixed(5);
-    const lon = e.latlng.lng.toFixed(5);
-
-    // Fill the input boxes
-    document.querySelector('input[name="Value1"]').value = lat;
-    document.querySelector('input[name="Value2"]').value = lon;
-
-    // Add marker or move existing marker
-    if (marker === null) {
-      marker = L.marker([lat, lon]).addTo(map);
-    } else {
-      marker.setLatLng([lat, lon]);
-    }
-  });
-</script>
-
-
-
-<!-- =============================== -->
-<!-- NEW: Scenario Selection Section -->
-<!-- =============================== -->
-<div class="card">
-  <h2>Scenario Selection</h2>
-  <p class="note">
-    Choose whether to run the NG-IDF tool using historical weather data (Daymet)
-    or future scenarios (WRF scenarios).
-  </p>
-
-  <label style="font-size:0.95rem;">
-    <input type="radio" name="scenario" value="historical" checked>
-    Historical Weather (Daymet)
-  </label><br/><br/>
-
-  <label style="font-size:0.95rem;">
-    <input type="radio" name="scenario" value="future">
-    Future Scenarios (WRF: historical baseline + medium + high)
-  </label>
-</div>
-
-
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <div class="card">
-    <h2>Site Input Parameters</h2>
-    <form id="idfForm" method="post">
+    <h2>Select Location on Map</h2>
+    <p class="note">Click on the map to automatically fill Latitude & Longitude.</p>
+    <div id="selectMap" style="height: 350px; width:100%; border-radius:8px; border:1px solid #ddd;"></div>
+  </div>
+
+  <script>
+    var map = L.map('selectMap').setView([64.8378, -147.7164], 8);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker = null;
+    map.on("click", function(e) {
+      const lat = e.latlng.lat.toFixed(5);
+      const lon = e.latlng.lng.toFixed(5);
+      document.querySelector('input[name="Value1"]').value = lat;
+      document.querySelector('input[name="Value2"]').value = lon;
+      if (marker === null) {
+        marker = L.marker([lat, lon]).addTo(map);
+      } else {
+        marker.setLatLng([lat, lon]);
+      }
+    });
+  </script>
+
+  <form id="idfForm" method="post">
+
+    <div class="card">
+      <h2>Scenario Selection</h2>
+      <p class="note">
+        Choose whether to run the NG-IDF tool using historical weather data (Daymet)
+        or future scenarios (WRF scenarios).
+      </p>
+
+      <label style="font-size:0.95rem;">
+        <input type="radio" name="scenario" value="historical" checked>
+        Historical Weather (Daymet)
+      </label><br/><br/>
+
+      <label style="font-size:0.95rem;">
+        <input type="radio" name="scenario" value="future">
+        Future Scenarios (WRF: historical baseline + medium + high)
+      </label>
+    </div>
+
+    <div class="card">
+      <h2>Site Input Parameters</h2>
       <table>
         <tr><td>Latitude (°):</td><td><input type="text" name="Value1" placeholder="e.g. 64.76"></td></tr>
         <tr><td>Longitude (°):</td><td><input type="text" name="Value2" placeholder="e.g. -147.22"></td></tr>
@@ -432,17 +395,15 @@
           <tr><td>Snow Interception Efficiency:</td><td><input type="text" name="Value10" value="0.6"></td></tr>
         </table>
       </div>
-    </form>
-  </div>
+    </div>
 
+  </form> 
   <div class="submit-section">
     <button type="submit" form="idfForm">Submit</button>
   </div>
 
   <div class="card references">
-
     <h2>Methods and References</h2>
-
   <!-- Section 1 -->
   <div style="margin-bottom: 25px;">
     <b>Methods used in the NG-IDF Tool:</b>
@@ -500,7 +461,7 @@
       <li><a href="https://doi.org/10.1002/2017WR021290" target="_blank">Yan et al. (2018)</a>. Next-generation intensity-duration-frequency curves for hydrologic design in snow-dominated environments. <i>Water Resources Research</i>, 54(2), 1093–1108.</li>
     </ol>
   </div>
-</div>
+  </div>
 
 </main>
 
@@ -515,8 +476,6 @@ function myfunction(){
 }
 </script>
 
-<!-- ------------------------------------------------------------ -->
-<!-- ADDED LOADING OVERLAY HTML -->
 <div id="overlay">
   <div class="spinner"></div>
   <div style="margin-top:10px; color:#b34b00; font-size:1rem;">
@@ -524,16 +483,11 @@ function myfunction(){
   </div>
 </div>
 
-<!-- ADDED JS TO SHOW OVERLAY ON SUBMIT -->
 <script>
 document.getElementById("idfForm").addEventListener("submit", function() {
     document.getElementById("overlay").style.display = "flex";
 });
 </script>
-<!-- ------------------------------------------------------------ -->
-
-
-
 
 </body>
 </html>
