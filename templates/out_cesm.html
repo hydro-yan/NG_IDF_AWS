@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CESM-LE Climate Scenario Analysis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  /* Base */
+  body { font-family: Arial, sans-serif; background: #f7f9fb; color: #333; font-size: 11px; margin: 8px; }
+  html, body { margin: 0; padding: 0; }
+
+  header { background: linear-gradient(90deg, #f68b1f, #c46000); color: white; padding: 10px 20px; }
+  .header-container { display: grid; grid-template-columns: auto 1fr auto; align-items: center; max-width: 1500px; margin: 0 auto; column-gap: 40px; }
+  .header-logos { display: flex; align-items: center; gap: 20px; }
+  .header-logos img { height: 38px; width: auto; }
+  header h1 { font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0; }
+  
+  h2 { color: #b34b00; font-size: 13px; border-bottom: 2px solid #e3eaf5; padding-bottom: 2px; margin: 10px 0; }
+  h3 { color: #333; font-size: 12px; margin: 5px 0; text-align: center; }
+  .section { background: #fff; border: 1px solid #e2e6ea; border-radius: 6px; padding: 10px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+  
+  /* Summary Table */
+  .summary-table-container { overflow-x: auto; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .summary-table th, .summary-table td { border: 1px solid #dfe3ea; padding: 5px; text-align: center; }
+  .summary-table th { background: #f68b1f; color: white; }
+  .summary-table tr:nth-child(even) { background-color: #f8fafc; }
+  
+  .pos { color: #d32f2f; font-weight: bold; } /* Red for Increase */
+  .neg { color: #1976d2; font-weight: bold; } /* Blue for Decrease */
+
+  /* Heavy separation line for summary table */
+  .duration-start {
+      border-top: 3px solid #333 !important;
+  }
+  
+  /* Tabs */
+  .tab-container { margin-top: 20px; }
+  .tabs { display: flex; border-bottom: 2px solid #ddd; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 16px; cursor: pointer; background: #f1f1f1; border: none; font-weight: bold; font-size: 11px; color: #555; border-radius: 6px 6px 0 0; margin-right: 5px; margin-bottom: 5px; }
+  .tab-btn.active { background: #b34b00; color: white; }
+  .tab-content { display: none; padding: 15px; background: white; border: 1px solid #ddd; border-top: none; }
+  .tab-content.active { display: block; }
+
+  /* Reused Table/Plot Styles */
+  table { border-collapse: collapse; width: 100%; font-size: 10.5px; margin-top: 5px; }
+  th, td { border: 1px solid #dfe3ea; text-align: center; padding: 4px; }
+  th { background-color: #f68b1f; color: white; }
+  tr:nth-child(even) { background-color: #f8fafc; }
+
+  .am-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+  .am-table { width: 48%; max-width: 600px; }
+
+  .plots { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .plot-card { width: 30%; max-width: 400px; border: 1px solid #e1e5ea; padding: 5px; background: #fff; }
+  .plot-img { width: 100%; }
+
+  .idf-tables-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+  .idf-half { width: 48%; }
+  
+  .swe-container { display: flex; justify-content: center; }
+  .swe-table { width: 100%; max-width: 600px; }
+  
+  /* Map Container Style matching out.html */
+  .map-section { display: flex; justify-content: center; margin-bottom: 12px; }
+  .map-card { width: 100%; max-width: 800px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-container">
+    <div class="header-logos left-logos">
+      <img src="./static/PNNL_Logo.png" alt="PNNL Logo">
+      <img src="./static/DOE_Logo.png" alt="DOE Logo">
+    </div>
+    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool Outputs - CESM2-LE</h1>
+    <div class="header-logos right-logos">
+      <img src="./static/ESTCP_Logo.png" alt="ESTCP Logo">
+      <img src="./static/DoD_Logo.png" alt="DoD Logo">
+    </div>
+  </div>
+</header>
+
+<div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
+
+  <div class="map-section">
+    <div class="section map-card">
+      <h2>Site Location Map</h2>
+      <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Impact Summary Table (NG-IDF Comparison) - CESM2-LE Ensemble Members</h2>
+    <p style="font-size:10px; margin:5px 0; color:#555;">
+      Comparing 4 future ensemble members (LE2, LE4, LE7, LE9) against their respective historical references.
+      Future period: 2033-2065 (SSP3-70 scenario).
+    </p>
+    <div class="summary-table-container">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Duration</th>
+            <th rowspan="2">ARI (yrs)</th>
+            <th colspan="2">Historical LE2</th>
+            <th colspan="2">Future LE2</th>
+            <th colspan="2">Historical LE4</th>
+            <th colspan="2">Future LE4</th>
+            <th colspan="2">Historical LE7</th>
+            <th colspan="2">Future LE7</th>
+            <th colspan="2">Historical LE9</th>
+            <th colspan="2">Future LE9</th>
+          </tr>
+          <tr>
+            <th>Value (mm)</th>
+            <th>% Change</th>
+            <th>Value (mm)</th>
+            <th>Diff (mm)</th>
+            <th>Value (mm)</th>
+            <th>% Change</th>
+            <th>Value (mm)</th>
+            <th>Diff (mm)</th>
+            <th>Value (mm)</th>
+            <th>% Change</th>
+            <th>Value (mm)</th>
+            <th>Diff (mm)</th>
+            <th>Value (mm)</th>
+            <th>% Change</th>
+            <th>Value (mm)</th>
+            <th>Diff (mm)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in summary_rows %}
+          <tr class="{{ 'duration-start' if loop.index0 % 7 == 0 else '' }}">
+            <td>{{ row.duration }}</td>
+            <td>{{ row.ari }}</td>
+            
+            <!-- LE2 -->
+            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le2 }}</td>
+            <td>-</td>
+            <td>{{ row.futu_le2 }}</td>
+            <td class="{{ 'pos' if row.diff_le2 > 0 else 'neg' }}">
+              {{ "+" if row.diff_le2 > 0 }}{{ "%.2f"|format(row.diff_le2) }}
+              <br/>({{ "+" if row.pct_le2 > 0 }}{{ "%.1f"|format(row.pct_le2) }}%)
+            </td>
+            
+            <!-- LE4 -->
+            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le4 }}</td>
+            <td>-</td>
+            <td>{{ row.futu_le4 }}</td>
+            <td class="{{ 'pos' if row.diff_le4 > 0 else 'neg' }}">
+              {{ "+" if row.diff_le4 > 0 }}{{ "%.2f"|format(row.diff_le4) }}
+              <br/>({{ "+" if row.pct_le4 > 0 }}{{ "%.1f"|format(row.pct_le4) }}%)
+            </td>
+            
+            <!-- LE7 -->
+            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le7 }}</td>
+            <td>-</td>
+            <td>{{ row.futu_le7 }}</td>
+            <td class="{{ 'pos' if row.diff_le7 > 0 else 'neg' }}">
+              {{ "+" if row.diff_le7 > 0 }}{{ "%.2f"|format(row.diff_le7) }}
+              <br/>({{ "+" if row.pct_le7 > 0 }}{{ "%.1f"|format(row.pct_le7) }}%)
+            </td>
+            
+            <!-- LE9 -->
+            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le9 }}</td>
+            <td>-</td>
+            <td>{{ row.futu_le9 }}</td>
+            <td class="{{ 'pos' if row.diff_le9 > 0 else 'neg' }}">
+              {{ "+" if row.diff_le9 > 0 }}{{ "%.2f"|format(row.diff_le9) }}
+              <br/>({{ "+" if row.pct_le9 > 0 }}{{ "%.1f"|format(row.pct_le9) }}%)
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="openTab(event, 'HistLE2')">Historical LE2</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE2')">Future LE2</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE4')">Historical LE4</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE4')">Future LE4</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE7')">Historical LE7</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE7')">Future LE7</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE9')">Historical LE9</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE9')">Future LE9</button>
+    </div>
+
+    {% macro render_tab(data, title_prefix) %}
+    
+    <div class="plots">
+        <div class="plot-card">
+            <h3>24-Hour Curves</h3>
+            <img class="plot-img" src="{{ data.fig24 }}" alt="24h Plot">
+        </div>
+        <div class="plot-card">
+            <h3>48-Hour Curves</h3>
+            <img class="plot-img" src="{{ data.fig48 }}" alt="48h Plot">
+        </div>
+        <div class="plot-card">
+            <h3>72-Hour Curves</h3>
+            <img class="plot-img" src="{{ data.fig72 }}" alt="72h Plot">
+        </div>
+    </div>
+
+    <div class="am-tables">
+      <div class="section am-table">
+        <h3>Annual Maximum Precipitation (AM P)</h3>
+        <table>
+          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
+          {% for i in range(data.am_24h_P|length) %}
+          <tr>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_P_date[i,0],data.am_24h_P_date[i,1],data.am_24h_P_date[i,2]) }}</td>
+            <td>{{ data.am_24h_P[i,3] }}</td>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_P_date[i,0],data.am_48h_P_date[i,1],data.am_48h_P_date[i,2]) }}</td>
+            <td>{{ data.am_48h_P[i,3] }}</td>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_P_date[i,0],data.am_72h_P_date[i,1],data.am_72h_P_date[i,2]) }}</td>
+            <td>{{ data.am_72h_P[i,3] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section am-table">
+        <h3>Annual Maximum Water Available (AM W)</h3>
+        <table>
+          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
+          {% for i in range(data.am_24h_W|length) %}
+          <tr>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_W_date[i,0],data.am_24h_W_date[i,1],data.am_24h_W_date[i,2]) }}</td>
+            <td>{{ data.am_24h_W[i,3] }}</td>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_W_date[i,0],data.am_48h_W_date[i,1],data.am_48h_W_date[i,2]) }}</td>
+            <td>{{ data.am_48h_W[i,3] }}</td>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_W_date[i,0],data.am_72h_W_date[i,1],data.am_72h_W_date[i,2]) }}</td>
+            <td>{{ data.am_72h_W[i,3] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <div class="idf-tables-container">
+        <div class="idf-half">
+            <h3>PREC-IDF ({{ title_prefix }})</h3>
+            <table>
+                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
+                {% set ARI = [2,5,10,25,50,100,500] %}
+                {% set IDX = [0,30,40,46,48,49,50] %}
+                
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_24h[0, IDX[j]] }}</td><td>{{ data.P_24h[1, IDX[j]] }}</td><td>{{ data.P_24h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_48h[0, IDX[j]] }}</td><td>{{ data.P_48h[1, IDX[j]] }}</td><td>{{ data.P_48h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_72h[0, IDX[j]] }}</td><td>{{ data.P_72h[1, IDX[j]] }}</td><td>{{ data.P_72h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="idf-half">
+            <h3>NG-IDF ({{ title_prefix }})</h3>
+            <table>
+                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
+                
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_24h[0, IDX[j]] }}</td><td>{{ data.NG_24h[1, IDX[j]] }}</td><td>{{ data.NG_24h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_48h[0, IDX[j]] }}</td><td>{{ data.NG_48h[1, IDX[j]] }}</td><td>{{ data.NG_48h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
+                {% for j in range(7) %}
+                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_72h[0, IDX[j]] }}</td><td>{{ data.NG_72h[1, IDX[j]] }}</td><td>{{ data.NG_72h[2, IDX[j]] }}</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="swe-container">
+      <div class="section swe-table">
+        <h3>Annual Maximum Snow Water Equivalent (AM SWE)</h3>
+        <table>
+          <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+          {% for i in range(data.am_swe|length) %}
+          <tr>
+            <td>{{ "%04d-%02d-%02d"|format(data.am_swe_date[i,0], data.am_swe_date[i,1], data.am_swe_date[i,2]) }}</td>
+            <td>{{ data.am_swe[i,3] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    {% endmacro %}
+    
+    <div id="HistLE2" class="tab-content active">
+        {{ render_tab(hist_le2, "Historical LE2") }}
+    </div>
+
+    <div id="FutuLE2" class="tab-content">
+        {{ render_tab(futu_le2, "Future LE2") }}
+    </div>
+
+    <div id="HistLE4" class="tab-content">
+        {{ render_tab(hist_le4, "Historical LE4") }}
+    </div>
+
+    <div id="FutuLE4" class="tab-content">
+        {{ render_tab(futu_le4, "Future LE4") }}
+    </div>
+
+    <div id="HistLE7" class="tab-content">
+        {{ render_tab(hist_le7, "Historical LE7") }}
+    </div>
+
+    <div id="FutuLE7" class="tab-content">
+        {{ render_tab(futu_le7, "Future LE7") }}
+    </div>
+
+    <div id="HistLE9" class="tab-content">
+        {{ render_tab(hist_le9, "Historical LE9") }}
+    </div>
+
+    <div id="FutuLE9" class="tab-content">
+        {{ render_tab(futu_le9, "Future LE9") }}
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // TABS LOGIC
+  function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+  }
+
+  // MAP LOGIC
+  const alaskaBoundaryUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/alaska.geojson";
+
+  // Lat/Lon from backend
+  const siteLat = {{ lat }};
+  const siteLon = {{ lon }};
+
+  // Initialize map
+  var map = L.map('map').setView([siteLat, siteLon], 8);
+
+  // Base map
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 12,
+      attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Alaska boundary
+  fetch(alaskaBoundaryUrl)
+    .then(r => r.json())
+    .then(geo => {
+      L.geoJSON(geo, {
+        style: {
+          color: "#c46000",
+          weight: 2,
+          fillOpacity: 0
+        }
+      }).addTo(map);
+    });
+
+  // Marker
+  L.marker([siteLat, siteLon])
+    .addTo(map)
+    .bindPopup(`Site Location:<br>${siteLat.toFixed(3)}, ${siteLon.toFixed(3)}`);
+</script>
+
+</body>
+</html>

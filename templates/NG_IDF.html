@@ -349,7 +349,7 @@
       <h2>Scenario Selection</h2>
       <p class="note">
         Choose whether to run the NG-IDF tool using historical weather data (Daymet)
-        or future scenarios (WRF scenarios).
+        or future scenarios (WRF or CESM-LE scenarios).
       </p>
 
       <label style="font-size:0.95rem;">
@@ -358,9 +358,15 @@
       </label><br/><br/>
 
       <label style="font-size:0.95rem;">
-        <input type="radio" name="scenario" value="future">
-        Future Scenarios (WRF: historical baseline + medium + high)
+        <input type="radio" name="scenario" value="future_cesm">
+        Future Scenarios #1 (CESM2-LE: 4 historical references + 4 future ensemble members, SSP3-70)
+      </label><br/><br/>
+
+      <label style="font-size:0.95rem;">
+        <input type="radio" name="scenario" value="future_wrf">
+        Future Scenarios #2 (WRF: historical baseline + medium scenario + high scenario, SSP2-45)
       </label>
+
     </div>
 
     <div class="card">
@@ -408,15 +414,19 @@
   <div style="margin-bottom: 25px;">
     <b>Methods used in the NG-IDF Tool:</b>
     <ul style="margin-top:10px; margin-bottom:0; padding-left:20px;">
-      <li>Historical weather: Daymet gridded meteorological data (1989/06/01–2021/09/30, 1-km grid) (<a href="https://www.nature.com/articles/s41597-021-00973-0" target="_blank">Thornton et al., 2021</a>).</li>
+      <li>Historical weather: Daymet gridded meteorological data (1989/06/01–2021/09/30, 1-km grid, 24-hour resolution) (<a href="https://www.nature.com/articles/s41597-021-00973-0" target="_blank">Thornton et al., 2021</a>).</li>
 
-      <li>Future scenarios: WRF baseline forced with ERA5 (1989/06/01–2021/09/30, 4-km grid) and two pseudo-global warming (PGW) scenarios (medium and high, 2033/06/01–2065/09/30, 4 km grid). Perturbations follow ensemble mean changes from two sets of CMIP6 GCM ensembles focused on SSP2-45 (<a href="https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2024JD041185" target="_blank">Cheng et al., 2025</a>).</li>
+      <li>Future scenarios #1: Direct downscaling of four CESM2-Large Ensemble (CESM2-LE) members (30-year reference [1989/06/01–2021/09/30] and 30-year future periods [2033/06/01–2065/09/30], 4-km grid, 1-hour resolution). These simulations utilize the SSP3-70 scenario. While PGW intensifies known historical events, these direct downscaling runs capture the full range of natural weather variability, providing a robust look at how entirely new, unrecorded weather patterns might emerge in a changing future.</li>
 
-      <li>Snow model: Calibrated DHSVM snow model (<a href="https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018JD030140" target="_blank">Sun et al., 2019</a>, <a href="https://www.nature.com/articles/s41597-022-01221-9" target="_blank">Sun et al., 2022</a>).</li>
+      <li>Future scenarios #2: WRF baseline forced with ERA5 (1989/06/01–2021/09/30, 4-km grid,1-hour resolution) and two pseudo-global warming (PGW) scenarios (medium and high, 2033/06/01–2065/09/30, 4 km grid, 1-hour resolution). Perturbations follow ensemble mean changes from two sets of CMIP6 GCM ensembles focused on SSP2-45 (<a href="https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2024JD041185" target="_blank">Cheng et al., 2025</a>). WRF simulations act as a high-definition lens that first reconstructs the 'ground truth' of historical weather with local precision and then projects how those exact events would intensify in a future, warmer weather.</li>
 
-      <li>Monthly LAI: MODIS LAI products (<a href="https://www.mdpi.com/2072-4292/8/5/359" target="_blank">Yan et al., 2016</a>).</li>
+      <li>Snow model: Calibrated DHSVM snow model (<a href="https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018JD030140" target="_blank">Sun et al., 2019</a>, <a href="https://www.nature.com/articles/s41597-022-01221-9" target="_blank">Sun et al., 2022</a>).Snow parameters have been further tuned specifically for the Alask to enhance predictive accuracy, particularly in Southern Alaska where winter temperatures frequently fluctuate near the freezing point.</li>
 
-      <li>IDF frequency analysis: Generalized extreme value (GEV) distribution using L-moments (<a href="https://doi.org/10.1002/2017WR021290" target="_blank">Yan et al., 2018</a>).</li>
+      <li>Monthly LAI data: Global Land Surface Satellite (GLASS) leaf area index (LAI) products (<a href="https://doi.org/10.1080/01431161.2020.1797222" target="_blank">Li and Xiao, 2020</a>).</li>
+
+      <li>Vegetation height data: Landfire Existing Vegetation Height products (<a href="https://www.landfire.gov/vegetation/evh" target="_blank">EVH</a>).</li>
+
+      <li>IDF frequency analysis: Type I Generalized Extreme Value distribution using L-moments (<a href="https://doi.org/10.1088/2515-7620/ae53ae" target="_blank">Yan et al., 2026</a>).</li>
 
       <li>IDF uncertainty: Monte Carlo ensemble (<a href="https://doi.org/10.1002/hyp.13673" target="_blank">Yan et al., 2020</a>).</li>
     </ul>
