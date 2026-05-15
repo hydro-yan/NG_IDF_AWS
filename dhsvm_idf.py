@@ -5,6 +5,14 @@ import numpy as np
 import re
 import pandas as pd
 
+
+def _float_param(x):
+    """Coerce to float; one-element Series uses .iloc[0] (pandas FutureWarning-safe)."""
+    if isinstance(x, pd.Series):
+        return float(x.iloc[0])
+    return float(x)
+
+
 ## Part I - Update Config File
 
 def load_forcing_coords(file_path):
@@ -36,13 +44,13 @@ def find_nearest_coord(input_lat, input_lon, coord_list):
     
 def find_lat_lon(input_lat, input_lon, forcing_type):
     """
-    forcing_type = 'Daymet' or 'WRF_historical' or 'WRF_medium' or 'WRF_high'
+    forcing_type = 'Daymet' or 'WRF_historical' or 'WRF_medium' or 'WRF_high' or 'CESM'
     """
 
     if forcing_type == "Daymet":
         coord_file = "./static/daymet_coordinates.txt"
     else:
-        coord_file = "./static/wrf_coordinates.txt"
+        coord_file = "./static/wrf_cesm_coordinates.txt"
 
     coord_list = load_forcing_coords(coord_file)
 
@@ -83,7 +91,7 @@ def find_cover(cover_idx):
 
    
 def update_config_file_basic(cover_type = [], lat_lon=[], fc = -9999, lai = -9999, o_height = -9999, 
-                             snow_item=[], veg_item=[], td = [], met_path = []):
+                             snow_item=[], veg_item=[], td = [], met_path = [], forcing_type="Daymet"):
     
     config_file_tmp = os.path.join(td, 'Input.Snotel.T4_tmp')
     # Input Templates 
@@ -93,32 +101,65 @@ def update_config_file_basic(cover_type = [], lat_lon=[], fc = -9999, lai = -999
 
     # Output Config 
     outF = open(config_file_tmp,"w")
+    
+    # Determine time step and dates based on forcing type
+    if forcing_type == "Daymet":
+        time_step = 3
+        model_start = "06/01/1989-00"
+        model_end = "09/30/2021-21"
+    else:  # WRF or CESM
+        time_step = 1
+        if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
+            model_start = "05/31/2033-16"
+            model_end = "09/30/2065-15"
+        else:
+            model_start = "05/31/1989-16"
+            model_end = "09/30/2021-15"
             
     ################################
     # Snow Parameters
     ################################
 
-    rthresh = float(snow_item['Train'])
-    sthresh = float(snow_item['TSnow'])
+    rthresh = _float_param(snow_item['Train'])
+    sthresh = _float_param(snow_item['TSnow'])
 
-    amax = float(snow_item['amax'])
-    acclamb = float(snow_item['acc_lmbda'])
-    mellamb = float(snow_item['melt_lmbda']) 
+    amax = _float_param(snow_item['amax'])
+    acclamb = _float_param(snow_item['acc_lmbda'])
+    mellamb = _float_param(snow_item['melt_lmbda']) 
     
-    sw_cap = float(veg_item['SW_cap'])
+    sw_cap = _float_param(veg_item['SW_cap'])
 
-    dft_over_lai = float(veg_item['LAI_Over'])
-    dft_under_lai = float(veg_item['LAI_Under'])
-    dft_over_height = float(veg_item['H_Over'])
-    dft_under_height = float(veg_item['H_Under']) 
+    dft_over_lai = _float_param(veg_item['LAI_Over'])
+    dft_under_lai = _float_param(veg_item['LAI_Under'])
+    dft_over_height = _float_param(veg_item['H_Over'])
+    dft_under_height = _float_param(veg_item['H_Under']) 
     lai_multi = np.array(veg_item.iloc[: , -12:])[0]
     
     ################################
     # Update Parameters
     ################################
     for line in data:
+        ###########   Time Step ##############
+        if 'Time Step' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = str(time_step)
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model Start' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_start
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model End' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_end
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
         ###########   Met ##############
-        if 'Station File 1' in line:
+        elif 'Station File 1' in line:
             tmp = re.split(r'\s+',line)
             tmp[4] = met_path + 'data_' +lat_lon
             tmp2 = ' '.join(tmp[:])
@@ -257,7 +298,7 @@ def update_config_file_basic(cover_type = [], lat_lon=[], fc = -9999, lai = -999
      
   
 def update_config_file_under_only(cover_type = [], lat_lon=[], fc = -9999, lai = -9999, u_height = -9999, 
-                                  snow_item=[], veg_item=[], td =[], met_path = []):
+                                  snow_item=[], veg_item=[], td =[], met_path = [], forcing_type="Daymet"):
     # Input Templates 
     config_file_tmp = os.path.join(td, 'Input.Snotel.T4_tmp')
     with open("./example_config/Input.Snotel.T4", 'r') as file:
@@ -266,33 +307,65 @@ def update_config_file_under_only(cover_type = [], lat_lon=[], fc = -9999, lai =
 
     # Output Config 
     outF = open( config_file_tmp ,"w")
+    
+    # Determine time step and dates based on forcing type
+    if forcing_type == "Daymet":
+        time_step = 3
+        model_start = "06/01/1989-00"
+        model_end = "09/30/2021-21"
+    else:  # WRF or CESM
+        time_step = 1
+        if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
+            model_start = "05/31/2033-16"
+            model_end = "09/30/2065-15"
+        else:
+            model_start = "05/31/1989-16"
+            model_end = "09/30/2021-15"
             
     ################################
     # Snow Parameters
     ################################
 
-    rthresh = float(snow_item['Train'])
-    sthresh = float(snow_item['TSnow'])
+    rthresh = _float_param(snow_item['Train'])
+    sthresh = _float_param(snow_item['TSnow'])
 
-    amax = float(snow_item['amax'])
-    acclamb = float(snow_item['acc_lmbda'])
-    mellamb = float(snow_item['melt_lmbda']) 
+    amax = _float_param(snow_item['amax'])
+    acclamb = _float_param(snow_item['acc_lmbda'])
+    mellamb = _float_param(snow_item['melt_lmbda']) 
     
-    sw_cap = float(veg_item['SW_cap'])
+    sw_cap = _float_param(veg_item['SW_cap'])
 
     #dft_over_lai = veg_item['LAI_Over']
-    dft_under_lai = float(veg_item['LAI_Under'])
+    dft_under_lai = _float_param(veg_item['LAI_Under'])
     #dft_over_height = veg_item['H_Over']
-    dft_under_height = float(veg_item['H_Under']) 
+    dft_under_height = _float_param(veg_item['H_Under']) 
     lai_multi = np.array(veg_item.iloc[: , -12:])[0]
     
     ################################
     # Update Parameters
     ################################
     for line in data:
+        ###########   Time Step ##############
+        if 'Time Step' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = str(time_step)
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model Start' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_start
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model End' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_end
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
         ###########   Met ##############
-
-        if 'Station File 1' in line:
+        elif 'Station File 1' in line:
             tmp = re.split(r'\s+',line)
             tmp[4] = met_path + 'data_' +lat_lon
             tmp2 = ' '.join(tmp[:])
@@ -470,7 +543,7 @@ def update_config_file_under_only(cover_type = [], lat_lon=[], fc = -9999, lai =
     return config_file_tmp
 
   
-def update_config_file_open(cover_type = [], lat_lon=[], snow_item=[], veg_item=[], td = [], met_path = []):
+def update_config_file_open(cover_type = [], lat_lon=[], snow_item=[], veg_item=[], td = [], met_path = [], forcing_type="Daymet"):
     
     config_file_tmp = os.path.join(td, 'Input.Snotel.T4_tmp')
     # Input Templates 
@@ -480,27 +553,59 @@ def update_config_file_open(cover_type = [], lat_lon=[], snow_item=[], veg_item=
 
     # Output Config 
     outF = open(config_file_tmp,"w")
+    
+    # Determine time step and dates based on forcing type
+    if forcing_type == "Daymet":
+        time_step = 3
+        model_start = "06/01/1989-00"
+        model_end = "09/30/2021-21"
+    else:  # WRF or CESM
+        time_step = 1
+        if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
+            model_start = "05/31/2033-16"
+            model_end = "09/30/2065-15"
+        else:
+            model_start = "05/31/1989-16"
+            model_end = "09/30/2021-15"
             
     ################################
     # Snow Parameters
     ################################
 
-    rthresh = float(snow_item['Train'])
-    sthresh = float(snow_item['TSnow'])
+    rthresh = _float_param(snow_item['Train'])
+    sthresh = _float_param(snow_item['TSnow'])
 
-    amax = float(snow_item['amax'])
-    acclamb = float(snow_item['acc_lmbda'])
-    mellamb = float(snow_item['melt_lmbda']) 
+    amax = _float_param(snow_item['amax'])
+    acclamb = _float_param(snow_item['acc_lmbda'])
+    mellamb = _float_param(snow_item['melt_lmbda']) 
     
-    sw_cap = float(veg_item['SW_cap'])
+    sw_cap = _float_param(veg_item['SW_cap'])
     
     ################################
     # Update Parameters
     ################################
     for line in data:
+        ###########   Time Step ##############
+        if 'Time Step' in line and 'Model' not in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = str(time_step)
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model Start' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_start
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
+        elif 'Model End' in line:
+            tmp = re.split(r'\s+',line)
+            tmp[3] = model_end
+            tmp2 = ' '.join(tmp[:])
+            outF.write(tmp2)
+            outF.write("\n")
         ###########   Met ##############
-
-        if 'Station File 1' in line:
+        elif 'Station File 1' in line:
             tmp = re.split(r'\s+',line)
             tmp[4] = met_path + 'data_' +lat_lon
             tmp2 = ' '.join(tmp[:])
@@ -624,19 +729,19 @@ def update_config_file_advanced (adv_par = [-9999, -9999, -9999, -9999], veg_ite
     # Output Config 
     outF = open(config_file,"w")
     
-    rain_lai = float(adv_par[0])
-    snow_lai = float(adv_par[1])
-    max_int = float(adv_par[2])
-    snow_eff = float(adv_par[3])
+    rain_lai = _float_param(adv_par[0])
+    snow_lai = _float_param(adv_par[1])
+    max_int = _float_param(adv_par[2])
+    snow_eff = _float_param(adv_par[3])
     
     if rain_lai == -9999: 
-        rain_lai = float(veg_item['RA_multi'])
+        rain_lai = _float_param(veg_item['RA_multi'])
     if snow_lai == -9999: 
-        snow_lai = float(veg_item['SN_multi'])
+        snow_lai = _float_param(veg_item['SN_multi'])
     if max_int == -9999: 
-        max_int = float(veg_item['MaxSnowInt'])
+        max_int = _float_param(veg_item['MaxSnowInt'])
     if snow_eff == -9999: 
-        snow_eff = float(veg_item['IntEffi'])
+        snow_eff = _float_param(veg_item['IntEffi'])
     
     # Update parameters  10 
     for line in data:
@@ -726,18 +831,18 @@ def generate_ng_idf(base_par, adv_par, td, met_path, forcing_type="Daymet"):
     
     # Initialize vegetation characteristic 
     
-    veg_item = find_default_advan(cover_type, int(cluster))
+    veg_item = find_default_advan(cover_type, int(cluster.iloc[0]))
     
     #print veg_item
     
     # Advanced Parameter initialization
     if cover_type in ['Evergreen', 'Deciduous', 'Mixed','Wetland']:
-        new_config_tmp = update_config_file_basic (cover_type, lat_lon, fc, lai, o_height, snow_item, veg_item, td, met_path)
+        new_config_tmp = update_config_file_basic (cover_type, lat_lon, fc, lai, o_height, snow_item, veg_item, td, met_path, forcing_type)
     elif cover_type in ['Crop','Grass','Shrub','Pasture']:
-        new_config_tmp = update_config_file_under_only(cover_type, lat_lon, fc, lai, o_height, snow_item, veg_item, td, met_path)
+        new_config_tmp = update_config_file_under_only(cover_type, lat_lon, fc, lai, o_height, snow_item, veg_item, td, met_path, forcing_type)
     elif cover_type == 'Open':
-        new_config_tmp = update_config_file_open(cover_type, lat_lon, snow_item, veg_item, td, met_path)
+        new_config_tmp = update_config_file_open(cover_type, lat_lon, snow_item, veg_item, td, met_path, forcing_type)
     
     new_config = update_config_file_advanced (adv_par, veg_item, td)
     
-    return new_config    
+    return new_config

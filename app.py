@@ -11,7 +11,7 @@ from dhsvm_idf import generate_ng_idf
 from extract_AM import extract_AM_data
 import tempfile
 import shutil
-from gen_figures import generate_fig
+from gen_figures import generate_fig, generate_figs_multiple
 
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -36,41 +36,121 @@ def read_idf(file, data):
     return data
 
 # Helper: Pack tuple results into a dictionary for easier template rendering
-def structure_results(results, year_offset=0):
-    (
-        P_IDF_24h, P_IDF_48h, P_IDF_72h,
-        NG_IDF_24h, NG_IDF_48h, NG_IDF_72h,
-        fig24_code, fig48_code, fig72_code,
-        am_24h_P, am_48h_P, am_72h_P,
-        am_24h_W, am_48h_W, am_72h_W,
-        am_swe
-    ) = results
-
-    # Helper to process date arrays: round, convert to int, and add offset
-    def process_dates(arr_in, offset):
-        # Slice first 3 cols (Year, Month, Day)
-        dates = np.round(arr_in[:, :3]).astype(int)
-        # Add offset to Year column (index 0)
-        dates[:, 0] += offset
-        return dates
-
-    return {
-        "P_24h": P_IDF_24h, "P_48h": P_IDF_48h, "P_72h": P_IDF_72h,
-        "NG_24h": NG_IDF_24h, "NG_48h": NG_IDF_48h, "NG_72h": NG_IDF_72h,
-        "fig24": fig24_code, "fig48": fig48_code, "fig72": fig72_code,
-        "am_24h_P": am_24h_P, "am_48h_P": am_48h_P, "am_72h_P": am_72h_P,
-        "am_24h_W": am_24h_W, "am_48h_W": am_48h_W, "am_72h_W": am_72h_W,
-        "am_swe": am_swe,
+def structure_results(results):
+    """
+    Structure results dictionary with all available durations.
+    
+    This function takes the raw results from get_NG_IDF() and organizes them
+    into a structured dictionary that's easy to use in HTML templates.
+    
+    Parameters:
+    -----------
+    results : dict
+        Dictionary containing:
+        - 'durations': list of duration strings, e.g., ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+        - 'idf_data': dict with keys like 'P_1h', 'NG_1h', etc. containing IDF curves (3x51 arrays)
+        - 'fig_codes': dict with keys like 'fig_1h' containing base64-encoded figure strings
+        - 'am_results': dict with keys like '1h', '24h' containing annual maximum data
+    
+    Returns:
+    --------
+    structured : dict
+        Organized dictionary with:
+        - All duration-specific data accessible via keys like 'P_1h', 'NG_3h', 'fig_12h'
+        - Annual maximum data with REAL YEARS (no offsets)
+        - Backward compatibility names for templates (e.g., 'fig24' points to 'fig_24h')
+    
+    Example structure for WRF/CESM (7 durations):
+        {
+            'durations': ['1h', '3h', '6h', '12h', '24h', '48h', '72h'],
+            'P_1h': array(3x51),     # Precipitation IDF curve for 1-hour duration
+            'NG_1h': array(3x51),    # Net Groundwater IDF curve for 1-hour duration
+            'fig_1h': "data:image/png;base64,...",  # Base64 encoded figure
+            'am_1h_P': array(Nx4),   # Annual max precip: [year, month, day, value]
+            'am_1h_W': array(Nx4),   # Annual max net groundwater
+            'am_1h_P_date': array(Nx3),  # Just the dates: [[2033, 10, 15], [2034, 11, 3], ...]
+            ... (same for 3h, 6h, 12h, 24h, 48h, 72h)
+        }
+    """
+    # Extract components from results dictionary
+    idf_data = results['idf_data']        # IDF curves for all durations
+    fig_codes = results['fig_codes']      # Base64-encoded figures
+    am_results = results['am_results']    # Annual maximum data
+    durations = results['durations']      # List of durations: ['1h', '3h', ...] or ['24h', '48h', '72h']
+    
+    # Helper function to extract just the date columns (Year, Month, Day) from AM data
+    def process_dates(arr_in):
+        """
+        Extract and format date columns from annual maximum data.
         
-        # Apply the year offset here
-        "am_24h_P_date": process_dates(am_24h_P, year_offset),
-        "am_48h_P_date": process_dates(am_48h_P, year_offset),
-        "am_72h_P_date": process_dates(am_72h_P, year_offset),
-        "am_24h_W_date": process_dates(am_24h_W, year_offset),
-        "am_48h_W_date": process_dates(am_48h_W, year_offset),
-        "am_72h_W_date": process_dates(am_72h_W, year_offset),
-        "am_swe_date":   process_dates(am_swe,   year_offset)
+        Input: array with shape (N, 4) where columns are [Year, Month, Day, Value]
+        Output: array with shape (N, 3) where columns are [Year, Month, Day]
+        
+        Example:
+            Input:  [[2033.5, 10.2, 15.8, 45.3], [2034.1, 11.0, 3.2, 52.1]]
+            Output: [[2033, 10, 15], [2034, 11, 3]]
+        
+        NOTE: Uses REAL years from the data - no artificial offsets!
+        """
+        dates = np.round(arr_in[:, :3]).astype(int)  # Round and convert to integers
+        return dates
+    
+    # Initialize structured dictionary with core data
+    structured = {
+        'durations': durations,      # List of all available durations
+        'idf_data': idf_data,        # Raw IDF data dictionary
+        'fig_codes': fig_codes       # Raw figure codes dictionary
     }
+    
+    # Loop through all durations and add data for each one
+    # This makes data accessible via keys like 'P_1h', 'NG_3h', 'fig_12h', etc.
+    for dur in durations:
+        # IDF curve data (3 rows x 51 columns)
+        # Row 0: Point estimates for 51 probabilities (0.50 to 0.99 plus 0.998)
+        # Row 1: 5% confidence interval
+        # Row 2: 95% confidence interval
+        structured[f'P_{dur}'] = idf_data[f'P_{dur}']      # Precipitation IDF
+        structured[f'NG_{dur}'] = idf_data[f'NG_{dur}']    # Net Groundwater IDF
+        
+        # Base64-encoded figure string (can be used directly in HTML <img src="...">)
+        structured[f'fig_{dur}'] = fig_codes[f'fig_{dur}']
+        
+        # Annual maximum data (N years x 4 columns: Year, Month, Day, Value)
+        # Example: [[2033, 10, 15, 45.3], [2034, 11, 3, 52.1], ...]
+        structured[f'am_{dur}_P'] = np.round(am_results[dur]['P'], 2)        # Precipitation AM
+        structured[f'am_{dur}_W'] = np.round(am_results[dur]['W_veg'], 2)    # Net Groundwater AM
+        
+        # Date-only arrays (N years x 3 columns: Year, Month, Day)
+        # Example: [[2033, 10, 15], [2034, 11, 3], ...]
+        structured[f'am_{dur}_P_date'] = process_dates(am_results[dur]['P'])
+        structured[f'am_{dur}_W_date'] = process_dates(am_results[dur]['W_veg'])
+    
+    # Add Snow Water Equivalent (SWE) data (only computed for 24h duration)
+    structured['am_swe'] = np.round(am_results['swe'], 2)
+    structured['am_swe_date'] = process_dates(am_results['swe'])
+    
+    # ========================================================================
+    # BACKWARD COMPATIBILITY: Add alternative key names for existing templates
+    # ========================================================================
+    # Old templates use 'fig24', 'fig48', 'fig72' instead of 'fig_24h', etc.
+    # We add both naming conventions so old and new templates both work
+    
+    # For ALL durations (including 1h, 3h, 6h, 12h for WRF/CESM)
+    for dur in durations:
+        # Extract the numeric part (e.g., '24' from '24h')
+        dur_num = dur.replace('h', '')
+        
+        # Add alternative key names without underscore
+        # e.g., 'fig24' points to same data as 'fig_24h'
+        structured[f'fig{dur_num}'] = structured[f'fig_{dur}']
+        structured[f'P_{dur_num}h'] = structured[f'P_{dur}']
+        structured[f'NG_{dur_num}h'] = structured[f'NG_{dur}']
+        structured[f'am_{dur_num}h_P'] = structured[f'am_{dur}_P']
+        structured[f'am_{dur_num}h_W'] = structured[f'am_{dur}_W']
+        structured[f'am_{dur_num}h_P_date'] = structured[f'am_{dur}_P_date']
+        structured[f'am_{dur_num}h_W_date'] = structured[f'am_{dur}_W_date']
+    
+    return structured
 
 
 
@@ -117,22 +197,23 @@ def NG_IDF():
             # Run WRF Multi-Scenario Workflow
             # 1. Historical Baseline (WRF Historical)
             res_hist = get_NG_IDF(input_data, forcing_type="WRF_historical")
-            hist_data = structure_results(res_hist, year_offset=0)
+            hist_data = structure_results(res_hist)
 
             # 2. Future Medium (WRF Medium)
             res_med = get_NG_IDF(input_data, forcing_type="WRF_medium")
-            med_data = structure_results(res_med, year_offset=44)
+            med_data = structure_results(res_med)
 
             # 3. Future High (WRF High)
             res_high = get_NG_IDF(input_data, forcing_type="WRF_high")
-            high_data = structure_results(res_high, year_offset=44)
+            high_data = structure_results(res_high)
 
 
             # 4. Build Comprehensive Summary Table
             # Indices: 2yr=0, 5yr=30, 10yr=40, 25yr=46, 50yr=48, 100yr=49, 500yr=50
             aris = [2, 5, 10, 25, 50, 100, 500]
             indices = [0, 30, 40, 46, 48, 49, 50]
-            durations = ["24h", "48h", "72h"]
+            # Use ALL durations from WRF data (7 durations)
+            durations = hist_data['durations']
             
             summary_rows = []
 
@@ -182,40 +263,41 @@ def NG_IDF():
             # Run CESM Multi-Scenario Workflow (4 historical + 4 future ensemble members)
             # Historical LE2
             res_hist_le2 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE2")
-            hist_le2_data = structure_results(res_hist_le2, year_offset=0)
+            hist_le2_data = structure_results(res_hist_le2)
 
             # Future LE2
             res_futu_le2 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE2")
-            futu_le2_data = structure_results(res_futu_le2, year_offset=44)
+            futu_le2_data = structure_results(res_futu_le2)
 
             # Historical LE4
             res_hist_le4 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE4")
-            hist_le4_data = structure_results(res_hist_le4, year_offset=0)
+            hist_le4_data = structure_results(res_hist_le4)
 
             # Future LE4
             res_futu_le4 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE4")
-            futu_le4_data = structure_results(res_futu_le4, year_offset=44)
+            futu_le4_data = structure_results(res_futu_le4)
 
             # Historical LE7
             res_hist_le7 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE7")
-            hist_le7_data = structure_results(res_hist_le7, year_offset=0)
+            hist_le7_data = structure_results(res_hist_le7)
 
             # Future LE7
             res_futu_le7 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE7")
-            futu_le7_data = structure_results(res_futu_le7, year_offset=44)
+            futu_le7_data = structure_results(res_futu_le7)
 
             # Historical LE9
             res_hist_le9 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE9")
-            hist_le9_data = structure_results(res_hist_le9, year_offset=0)
+            hist_le9_data = structure_results(res_hist_le9)
 
             # Future LE9
             res_futu_le9 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE9")
-            futu_le9_data = structure_results(res_futu_le9, year_offset=44)
+            futu_le9_data = structure_results(res_futu_le9)
 
             # Build Comprehensive Summary Table for CESM
             aris = [2, 5, 10, 25, 50, 100, 500]
             indices = [0, 30, 40, 46, 48, 49, 50]
-            durations = ["24h", "48h", "72h"]
+            # Use ALL durations from CESM data (7 durations)
+            durations = hist_le2_data['durations']
             
             summary_rows = []
 
@@ -352,37 +434,65 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
 
     with tempfile.TemporaryDirectory() as td:
         # --------------------------------------------------------------------------------------------------
-        # create files inside the temporal file, need to define them before using them
-        pixel_file = os.path.join(td, 'Pixel.CENTER')       # e.g., /tmp/tmp3rnej769/Pixel.CENTE
-        #config_file_tmp = os.path.join(td, 'Input.Snotel.T4_tmp')
-        #config_file = os.path.join(td, 'Input.Snotel.T4')
+        # Create file paths inside the temporary directory
+        # These files will be created by DHSVM, extract_AM.py, and R scripts
+        # --------------------------------------------------------------------------------------------------
+        
+        # DHSVM output file (created by DHSVM run)
+        pixel_file = os.path.join(td, 'Pixel.CENTER')  # Main DHSVM output with timestep data
+        
+        # DHSVM auxiliary output files (created by DHSVM)
         tmp_fil1 = os.path.join(td, 'Mass.Final.Balance')
         tmp_fil2 = os.path.join(td, 'Mass.Balance')
         tmp_fil3 = os.path.join(td, 'Stream.Flow')
         tmp_fil4 = os.path.join(td, 'Streamflow.Only')
-        tmp_fil5 = os.path.join(td, 'Aggregated.Values') 
-
-        am_24h_W_veg_file = os.path.join(td, 'am_24h_W_veg')
-        am_48h_W_veg_file = os.path.join(td, 'am_48h_W_veg')
-        am_72h_W_veg_file = os.path.join(td, 'am_72h_W_veg')
-
-        am_24h_P_file = os.path.join(td, 'am_24h_P')
-        am_48h_P_file = os.path.join(td, 'am_48h_P')
-        am_72h_P_file = os.path.join(td, 'am_72h_P')
-
-        IDF_24h_P_file = os.path.join(td, 'IDF_24h_P')
-        IDF_48h_P_file = os.path.join(td, 'IDF_48h_P')
-        IDF_72h_P_file = os.path.join(td, 'IDF_72h_P')
-
-        IDF_24h_W_veg_file = os.path.join(td, 'IDF_24h_W_veg')
-        IDF_48h_W_veg_file = os.path.join(td, 'IDF_48h_W_veg')
-        IDF_72h_W_veg_file = os.path.join(td, 'IDF_72h_W_veg')
-
-        fig_24h_file  = os.path.join(td, 'fig_24h.png')
-        fig_48h_file  = os.path.join(td, 'fig_48h.png')
-        fig_72h_file  = os.path.join(td, 'fig_72h.png')
+        tmp_fil5 = os.path.join(td, 'Aggregated.Values')
         
-
+        # --------------------------------------------------------------------------------------------------
+        # Determine which durations to process based on forcing type
+        # Daymet: 3 durations (24h, 48h, 72h) - 3-hourly timestep
+        # WRF/CESM: 7 durations (1h, 3h, 6h, 12h, 24h, 48h, 72h) - 1-hourly timestep
+        # --------------------------------------------------------------------------------------------------
+        if forcing_type == "Daymet":
+            durations_to_process = ['24h', '48h', '72h']
+        else:  # WRF or CESM
+            durations_to_process = ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+        
+        # --------------------------------------------------------------------------------------------------
+        # Create file path dictionaries for all durations
+        # These files will be created by extract_AM.py and get_IDF.R
+        # --------------------------------------------------------------------------------------------------
+        
+        # Annual Maximum (AM) files - created by extract_AM.py
+        # Format: am_<duration>_<variable>
+        # Example content: [[2033, 10, 15, 45.3], [2034, 11, 3, 52.1], ...]
+        #                  (Year, Month, Day, Value for each water year)
+        am_files = {}
+        for dur in durations_to_process:
+            am_files[f'am_{dur}_W_veg'] = os.path.join(td, f'am_{dur}_W_veg')  # Net groundwater AM
+            am_files[f'am_{dur}_P'] = os.path.join(td, f'am_{dur}_P')          # Precipitation AM
+        
+        # IDF curve files - created by get_IDF.R
+        # Format: IDF_<duration>_<variable>
+        # Example content: 3 rows x 51 columns
+        #   Row 0: Point estimates for 51 probabilities (0.50 to 0.998)
+        #   Row 1: 5% confidence interval
+        #   Row 2: 95% confidence interval
+        idf_files = {}
+        for dur in durations_to_process:
+            idf_files[f'IDF_{dur}_P'] = os.path.join(td, f'IDF_{dur}_P')              # Precip IDF
+            idf_files[f'IDF_{dur}_W_veg'] = os.path.join(td, f'IDF_{dur}_W_veg')      # Net GW IDF
+        
+        # Figure files - created by gen_figures.py
+        # Format: fig_<duration>.png
+        # These will be converted to base64 strings for HTML display
+        fig_files = {}
+        for dur in durations_to_process:
+            fig_files[f'fig_{dur}'] = os.path.join(td, f'fig_{dur}.png')
+        
+        # --------------------------------------------------------------------------------------------------
+        # Generate DHSVM configuration file and run DHSVM
+        # --------------------------------------------------------------------------------------------------
         config_file = generate_ng_idf(bas_par, adv_par, td, met_path, forcing_type)
         print(f"Config file: {config_file}")
         print(f"Met path: {met_path}")
@@ -395,68 +505,112 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
         
         os.system('dos2unix ' + config_file)
         
-        # Run DHSVM and capture output
+        # Run DHSVM without streaming per-timestep output to the terminal
         print("Running DHSVM...")
-        dhsvm_result = os.system('./dhsvm/no_sat_dump/DHSVM3.2 ' + config_file)
+        dhsvm_proc = subprocess.run(
+            ['./dhsvm/no_sat_dump/DHSVM3.2', config_file],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        dhsvm_result = dhsvm_proc.returncode
         print(f"DHSVM exit code: {dhsvm_result}")
         
-        # List files in temp directory
-        print(f"Files in temp directory after DHSVM:")
-        os.system('ls -lh ' + td)
-
         # create r file in the temp folder and copy the lines into the new temp r file
         r_file = os.path.join(td, 'get_IDF.R')
         shutil.copy2('./get_IDF.R', r_file)
 
         # ----------------------------------------------------
-        # pixel_file = './example_output/Pixel.CENTER'   
+        # pixel_file = './example_output/Pixel.CENTER'
         pixel_file = os.path.join(td, 'Pixel.CENTER')
-        
+
         # Check if Pixel.CENTER was created
         if not os.path.exists(pixel_file):
             print(f"ERROR: Pixel.CENTER not found at {pixel_file}")
-            print("DHSVM may have failed. Check the DHSVM output above.")
+            print("DHSVM may have failed (model stdout/stderr are suppressed during the run).")
             raise FileNotFoundError(f"DHSVM did not create Pixel.CENTER file. Check DHSVM configuration and met data paths.")
 
+        # Preview Pixel.CENTER (first and last 3 lines) for debugging
+        # with open(pixel_file, 'r', errors='replace') as pf:
+        #     pix_lines = pf.readlines()
+        # n_pix = len(pix_lines)
+        # print(f"Pixel.CENTER ({n_pix} lines) — first 20 lines of {pixel_file}:")
+        # for row in pix_lines[:3]:
+        #     print(row.rstrip('\n\r'))
+        # print(f"Pixel.CENTER — last 20 lines of {pixel_file}:")
+        # for row in pix_lines[-3:]:
+        #     print(row.rstrip('\n\r'))
+
+        # Determine durations based on forcing type
+        if forcing_type == "Daymet":
+            durations = ['24h', '48h', '72h']
+        else:  # WRF or CESM
+            durations = ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+        
+        # Create AM file dictionary
+        am_files_dict = {}
+        for dur in durations:
+            am_files_dict[f'am_{dur}_W_veg'] = os.path.join(td, f'am_{dur}_W_veg')
+            am_files_dict[f'am_{dur}_P'] = os.path.join(td, f'am_{dur}_P')
+        
+        # List files in temp directory
+        print(f"Files in temp directory after DHSVM:")
+        os.system('ls -lh ' + td)
+
+        # Extract AM data
+        am_results = extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type)
+
+        # Debug: inspect am_results in docker logs (docker logs -f <container>)
+        # print("am_results keys:", list(am_results.keys()), flush=True)
+        # for dur_key in sorted(k for k in am_results.keys() if k.endswith('h')):
+        #     p = am_results[dur_key]['P']
+        #     w = am_results[dur_key]['W_veg']
+        #     print(f"  {dur_key}: P shape {p.shape}, W_veg shape {w.shape}", flush=True)
+        #     print(f"    P first 2 rows:\n{np.array2string(p[:2], precision=4)}", flush=True)
+        #     print(f"    P last 2 rows:\n{np.array2string(p[-2:], precision=4)}", flush=True)
+        # if 'swe' in am_results:
+        #     s = am_results['swe']
+        #     print(f"  swe: shape {s.shape}, first row {s[0]}, last row {s[-1]}", flush=True)
 
 
 
-        am_24h_P, am_48h_P, am_72h_P, am_24h_W_veg, am_48h_W_veg, am_72h_W_veg, am_swe = extract_AM_data(pixel_file, am_24h_W_veg_file, am_48h_W_veg_file, am_72h_W_veg_file, am_24h_P_file, am_48h_P_file, am_72h_P_file, r_file, td)
+
 
         # load the P-IDF and NG-IDF data from R output
         # 1st row: estimated value; 2nd row: 5% quantile; 3rd row: 95% quantile
         # column: 51 probabilities (0.50 to 0.99 plus 0.998)
-        # 2-yr (0), 5-yr (30), 10-yr (40), 25-yr (46), 50-yr (48), 100-yr (49), 500-yr (50)
-        num_pro = 51;
-        P_IDF_24h = npnan(3, num_pro);  NG_IDF_24h = npnan(3, num_pro);
-        P_IDF_48h = npnan(3, num_pro);  NG_IDF_48h = npnan(3, num_pro);
-        P_IDF_72h = npnan(3, num_pro);  NG_IDF_72h = npnan(3, num_pro);
-
-        # load the data
-        P_IDF_24h = read_idf(IDF_24h_P_file, P_IDF_24h)
-        P_IDF_48h = read_idf(IDF_48h_P_file, P_IDF_48h)
-        P_IDF_72h = read_idf(IDF_72h_P_file, P_IDF_72h)
-
-        NG_IDF_24h = read_idf(IDF_24h_W_veg_file, NG_IDF_24h)
-        NG_IDF_48h = read_idf(IDF_48h_W_veg_file, NG_IDF_48h)
-        NG_IDF_72h = read_idf(IDF_72h_W_veg_file, NG_IDF_72h)
-
-
-        # gen figures
-        fig24_code, fig48_code, fig72_code = generate_fig(P_IDF_24h, P_IDF_48h, P_IDF_72h, NG_IDF_24h, NG_IDF_48h, NG_IDF_72h, fig_24h_file, fig_48h_file, fig_72h_file)
-
-
-    P_IDF_24h = np.round(P_IDF_24h, 2); P_IDF_48h = np.round(P_IDF_48h, 2); P_IDF_72h = np.round(P_IDF_72h, 2)
-    NG_IDF_24h = np.round(NG_IDF_24h, 2); NG_IDF_48h = np.round(NG_IDF_48h, 2); NG_IDF_72h = np.round(NG_IDF_72h, 2)
-
-    am_24h_P = np.round(am_24h_P, 2); am_48h_P = np.round(am_48h_P, 2); am_72h_P = np.round(am_72h_P, 2)
-    am_24h_W_veg = np.round(am_24h_W_veg, 2); am_48h_W_veg = np.round(am_48h_W_veg, 2); am_72h_W_veg = np.round(am_72h_W_veg, 2)
-
-    am_swe = np.round(am_swe, 2)
-
-
-
-    return P_IDF_24h, P_IDF_48h, P_IDF_72h, NG_IDF_24h, NG_IDF_48h, NG_IDF_72h, fig24_code, fig48_code, fig72_code, am_24h_P, am_48h_P, am_72h_P, am_24h_W_veg, am_48h_W_veg, am_72h_W_veg, am_swe
+        num_pro = 51
+        
+        # Load IDF data for all durations
+        idf_data = {}
+        for dur in durations:
+            IDF_P_file = os.path.join(td, f'IDF_{dur}_P')
+            IDF_W_veg_file = os.path.join(td, f'IDF_{dur}_W_veg')
+            
+            P_IDF = npnan(3, num_pro)
+            NG_IDF = npnan(3, num_pro)
+            
+            if os.path.exists(IDF_P_file):
+                P_IDF = read_idf(IDF_P_file, P_IDF)
+            if os.path.exists(IDF_W_veg_file):
+                NG_IDF = read_idf(IDF_W_veg_file, NG_IDF)
+            
+            idf_data[f'P_{dur}'] = np.round(P_IDF, 2)
+            idf_data[f'NG_{dur}'] = np.round(NG_IDF, 2)
+        
+        # Generate figures for all durations
+        fig_files_dict = {}
+        for dur in durations:
+            fig_files_dict[f'fig_{dur}'] = os.path.join(td, f'fig_{dur}.png')
+        
+        fig_codes = generate_figs_multiple(idf_data, fig_files_dict, durations)
+        
+        # Return dictionary with all data
+        return {
+            'durations': durations,
+            'idf_data': idf_data,
+            'fig_codes': fig_codes,
+            'am_results': am_results
+        }
 
 
 

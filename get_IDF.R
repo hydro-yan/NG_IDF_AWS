@@ -4,7 +4,7 @@
 # the GEV distribution is used here
 #-------------------------------------------------------------------------------------------------------
 #install.packages('lmom', dependencies=TRUE, repos='http://cran.rstudio.com/', lib='./Rlibrary')
-library(lmom, lib.loc='./Rlibrary')
+library(lmom, lib.loc='/hongxiang/app/Rlibrary')
 
 
 
@@ -130,8 +130,24 @@ esti_idf <- function(data) {
 
 
 # ------------------------------------------------------------------------------
-duration = c('24h', '48h', '72h')
+# Automatically detect available duration files
+# AM_WORK_DIR is set at the top of this script by extract_AM.py (temp folder with am_* files).
+# If missing (interactive use), default to current directory.
+if (!exists("AM_WORK_DIR")) AM_WORK_DIR <- "."
 variable = c('P', 'W_veg')
+
+# Get list of all am_*_P files to determine available durations
+am_files <- list.files(path = AM_WORK_DIR, pattern = "^am_.*h_P$")
+
+if (length(am_files) == 0) {
+    stop("No annual maximum files found!")
+}
+
+# Extract durations from filenames (e.g., "am_24h_P" -> "24h")
+duration <- unique(gsub("^am_(.*)_P$", "\\1", am_files))
+duration <- sort(duration)
+
+cat("Processing durations:", paste(duration, collapse=", "), "\n")
 
 for (d in 1:length(duration)) {
 
@@ -145,7 +161,14 @@ for (v in 1:length(variable)) {
     IDF = matrix(data = NaN, nrow = 3, ncol = 51)
 
     # read annual max file
-    file_name1 <- sprintf('./output/am_%s_%s', duration[d], variable[v])
+    file_name1 <- sprintf('am_%s_%s', duration[d], variable[v])
+    
+    # Check if file exists
+    if (!file.exists(file_name1)) {
+        cat("Warning: File not found:", file_name1, "\n")
+        next
+    }
+    
     data <- read.table(file_name1, header = FALSE)
 
     # remove first year
@@ -162,8 +185,10 @@ for (v in 1:length(variable)) {
     IDF[3,] <- t(temp2[,2])       # 95 percent
 
     # save output
-    file_name2 <- sprintf('./output/IDF_%s_%s', duration[d], variable[v])
+    file_name2 <- sprintf('IDF_%s_%s', duration[d], variable[v])
     write.table(IDF, file_name2, row.names = FALSE, col.names = FALSE)
+    
+    cat("Processed:", duration[d], variable[v], "\n")
 }
 }
 
