@@ -110,11 +110,11 @@ def update_config_file_basic(cover_type = [], lat_lon=[], fc = -9999, lai = -999
     else:  # WRF or CESM
         time_step = 1
         if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
-            model_start = "05/31/2033-16"
-            model_end = "09/30/2065-15"
+            model_start = "06/01/2033-00"
+            model_end = "09/29/2065-23"
         else:
-            model_start = "05/31/1989-16"
-            model_end = "09/30/2021-15"
+            model_start = "06/01/1989-00"
+            model_end = "09/29/2021-23"
             
     ################################
     # Snow Parameters
@@ -316,11 +316,11 @@ def update_config_file_under_only(cover_type = [], lat_lon=[], fc = -9999, lai =
     else:  # WRF or CESM
         time_step = 1
         if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
-            model_start = "05/31/2033-16"
-            model_end = "09/30/2065-15"
+            model_start = "06/01/2033-00"
+            model_end = "09/29/2065-23"
         else:
-            model_start = "05/31/1989-16"
-            model_end = "09/30/2021-15"
+            model_start = "06/01/1989-00"
+            model_end = "09/29/2021-23"
             
     ################################
     # Snow Parameters
@@ -562,11 +562,11 @@ def update_config_file_open(cover_type = [], lat_lon=[], snow_item=[], veg_item=
     else:  # WRF or CESM
         time_step = 1
         if "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
-            model_start = "05/31/2033-16"
-            model_end = "09/30/2065-15"
+            model_start = "06/01/2033-00"
+            model_end = "09/29/2065-23"
         else:
-            model_start = "05/31/1989-16"
-            model_end = "09/30/2021-15"
+            model_start = "06/01/1989-00"
+            model_end = "09/29/2021-23"
             
     ################################
     # Snow Parameters
@@ -586,7 +586,7 @@ def update_config_file_open(cover_type = [], lat_lon=[], snow_item=[], veg_item=
     ################################
     for line in data:
         ###########   Time Step ##############
-        if 'Time Step' in line and 'Model' not in line:
+        if 'Time Step' in line:
             tmp = re.split(r'\s+',line)
             tmp[3] = str(time_step)
             tmp2 = ' '.join(tmp[:])

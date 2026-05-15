@@ -176,6 +176,7 @@ def NG_IDF():
         lon = input_data['value2']
         scenario = request.form.get("scenario", "historical")
 
+        print("scenario from form:", repr(scenario), flush=True)
         # ---------------------------------------------
         # BRANCH: HISTORICAL, WRF FUTURE, OR CESM FUTURE
         # ---------------------------------------------
@@ -499,6 +500,12 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
         print(f"Forcing type: {forcing_type}")
         print(f"Temp directory: {td}")
     
+        # copy the config file to the local folder for debug
+        debug_config_path = "./debug_config.txt"
+        shutil.copy2(config_file, debug_config_path)
+        print(f"DEBUG: Config file copied to {debug_config_path} for inspection")
+
+
         # Check if config file exists
         if not os.path.exists(config_file):
             raise FileNotFoundError(f"Config file not created: {config_file}")
@@ -512,6 +519,12 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
+        # debug mode to run DHSVM with per-timestep output to the terminal
+        # dhsvm_proc = subprocess.run(
+        #     ['./dhsvm/no_sat_dump/DHSVM3.2', config_file]
+        # )
+
         dhsvm_result = dhsvm_proc.returncode
         print(f"DHSVM exit code: {dhsvm_result}")
         
@@ -530,15 +543,18 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
             raise FileNotFoundError(f"DHSVM did not create Pixel.CENTER file. Check DHSVM configuration and met data paths.")
 
         # Preview Pixel.CENTER (first and last 3 lines) for debugging
-        # with open(pixel_file, 'r', errors='replace') as pf:
-        #     pix_lines = pf.readlines()
-        # n_pix = len(pix_lines)
-        # print(f"Pixel.CENTER ({n_pix} lines) — first 20 lines of {pixel_file}:")
-        # for row in pix_lines[:3]:
-        #     print(row.rstrip('\n\r'))
-        # print(f"Pixel.CENTER — last 20 lines of {pixel_file}:")
-        # for row in pix_lines[-3:]:
-        #     print(row.rstrip('\n\r'))
+        with open(pixel_file, 'r', errors='replace') as pf:
+            pix_lines = pf.readlines()
+        n_pix = len(pix_lines)
+        print(f"Pixel.CENTER ({n_pix} lines) — first 20 lines of {pixel_file}:")
+        for row in pix_lines[:3]:
+            print(row.rstrip('\n\r'))
+        print(f"Pixel.CENTER — last 20 lines of {pixel_file}:")
+        for row in pix_lines[-3:]:
+            print(row.rstrip('\n\r'))
+
+
+
 
         # Determine durations based on forcing type
         if forcing_type == "Daymet":
