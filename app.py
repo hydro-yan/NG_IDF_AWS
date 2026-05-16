@@ -11,7 +11,9 @@ from dhsvm_idf import generate_ng_idf
 from extract_AM import extract_AM_data
 import tempfile
 import shutil
-from gen_figures import generate_fig, generate_figs_multiple, generate_am_timeseries_plots, generate_swe_timeseries_plot
+from gen_figures import (generate_fig, generate_figs_multiple, generate_am_timeseries_plots, 
+                         generate_swe_timeseries_plot, generate_multi_scenario_idf_plots,
+                         generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot)
 
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -235,13 +237,30 @@ def NG_IDF():
             res_high = get_NG_IDF(input_data, forcing_type="WRF_high")
             high_data = structure_results(res_high)
 
+            # 4. Generate multi-scenario comparison plots
+            durations = hist_data['durations']  # ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+            
+            # Generate plots directly without temp files (plots return base64 strings)
+            fig_prec_comp, fig_ng_comp = generate_multi_scenario_idf_plots(
+                hist_data, med_data, high_data, durations, None, None
+            )
+            
+            fig_am_p_comp, fig_am_w_comp = generate_multi_scenario_am_plots(
+                res_hist['am_results'], res_med['am_results'], res_high['am_results'],
+                durations, None, None
+            )
+            
+            fig_swe_comp = generate_multi_scenario_swe_plot(
+                res_hist['am_results']['swe'],
+                res_med['am_results']['swe'],
+                res_high['am_results']['swe'],
+                None
+            )
 
-            # 4. Build Comprehensive Summary Table
+            # 5. Build Comprehensive Summary Table
             # Indices: 2yr=0, 5yr=30, 10yr=40, 25yr=46, 50yr=48, 100yr=49, 500yr=50
             aris = [2, 5, 10, 25, 50, 100, 500]
             indices = [0, 30, 40, 46, 48, 49, 50]
-            # Use ALL durations from WRF data (7 durations)
-            durations = hist_data['durations']
             
             summary_rows = []
 
@@ -284,7 +303,12 @@ def NG_IDF():
                                    hist=hist_data,
                                    med=med_data,
                                    high=high_data,
-                                   summary_rows=summary_rows)
+                                   summary_rows=summary_rows,
+                                   fig_prec_comp=fig_prec_comp,
+                                   fig_ng_comp=fig_ng_comp,
+                                   fig_am_p_comp=fig_am_p_comp,
+                                   fig_am_w_comp=fig_am_w_comp,
+                                   fig_swe_comp=fig_swe_comp)
 
         elif scenario == "future_cesm":
 

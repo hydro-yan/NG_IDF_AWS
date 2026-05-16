@@ -238,3 +238,256 @@ def generate_swe_timeseries_plot(am_swe, fig_file):
     # Return base64 encoded string
     img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
     return "data:image/png;base64," + img
+
+
+def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations, fig_file_prec, fig_file_ng):
+    """
+    Generate multi-scenario IDF comparison plots
+    
+    Parameters:
+    -----------
+    hist_data : dict
+        Historical scenario IDF data
+    med_data : dict
+        Medium emissions scenario IDF data
+    high_data : dict
+        High emissions scenario IDF data
+    durations : list
+        List of duration strings like ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+    fig_file_prec : str
+        Output file path for PREC-IDF comparison
+    fig_file_ng : str
+        Output file path for NG-IDF comparison
+    
+    Returns:
+    --------
+    tuple : (base64_prec, base64_ng) encoded image strings
+    """
+    
+    # Probabilities for IDF curves
+    probs = np.concatenate([np.arange(0.50, 1.00, 0.01), np.array([0.998])])
+    ari_values = 1.0 / (1.0 - probs)
+    
+    # ARI tick positions
+    ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
+    ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
+    
+    # Create PREC-IDF comparison plot
+    n_dur = len(durations)
+    fig_prec, axes_prec = plt.subplots(1, n_dur, figsize=(3.5*n_dur, 4))
+    if n_dur == 1:
+        axes_prec = [axes_prec]
+    
+    for idx, dur in enumerate(durations):
+        hist_curve = hist_data[f'P_{dur}'][0, :]
+        med_curve = med_data[f'P_{dur}'][0, :]
+        high_curve = high_data[f'P_{dur}'][0, :]
+        
+        axes_prec[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_prec[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_prec[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='High')
+        
+        axes_prec[idx].set_xticks(ari_ticks)
+        axes_prec[idx].set_xticklabels(ari_tick_labels)
+        axes_prec[idx].set_xlabel('ARI (years)', fontsize=9)
+        axes_prec[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_prec[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        axes_prec[idx].grid(True, alpha=0.3)
+        axes_prec[idx].legend(loc='best', fontsize=8)
+    
+    plt.suptitle('PREC-IDF Curves: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_prec:
+        plt.savefig(fig_file_prec, dpi=150, bbox_inches='tight')
+        img_prec = base64.b64encode(open(fig_file_prec, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_prec = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    # Create NG-IDF comparison plot
+    fig_ng, axes_ng = plt.subplots(1, n_dur, figsize=(3.5*n_dur, 4))
+    if n_dur == 1:
+        axes_ng = [axes_ng]
+    
+    for idx, dur in enumerate(durations):
+        hist_curve = hist_data[f'NG_{dur}'][0, :]
+        med_curve = med_data[f'NG_{dur}'][0, :]
+        high_curve = high_data[f'NG_{dur}'][0, :]
+        
+        axes_ng[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_ng[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_ng[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='High')
+        
+        axes_ng[idx].set_xticks(ari_ticks)
+        axes_ng[idx].set_xticklabels(ari_tick_labels)
+        axes_ng[idx].set_xlabel('ARI (years)', fontsize=9)
+        axes_ng[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_ng[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        axes_ng[idx].grid(True, alpha=0.3)
+        axes_ng[idx].legend(loc='best', fontsize=8)
+    
+    plt.suptitle('NG-IDF Curves: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_ng:
+        plt.savefig(fig_file_ng, dpi=150, bbox_inches='tight')
+        img_ng = base64.b64encode(open(fig_file_ng, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_ng = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    return "data:image/png;base64," + img_prec, "data:image/png;base64," + img_ng
+
+
+def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w):
+    """
+    Generate multi-scenario AM time series plots
+    
+    Parameters:
+    -----------
+    hist_am : dict
+        Historical AM results
+    med_am : dict
+        Medium emissions AM results
+    high_am : dict
+        High emissions AM results
+    durations : list
+        List of duration strings
+    fig_file_p : str
+        Output file for P comparison
+    fig_file_w : str
+        Output file for W comparison
+    
+    Returns:
+    --------
+    tuple : (base64_p, base64_w) encoded image strings
+    """
+    
+    # Create combined P plot
+    fig_p, axes_p = plt.subplots(1, len(durations), figsize=(15, 4.5))
+    if len(durations) == 1:
+        axes_p = [axes_p]
+    
+    for idx, dur in enumerate(durations):
+        hist_p = hist_am[dur]['P']
+        med_p = med_am[dur]['P']
+        high_p = high_am[dur]['P']
+        
+        axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3], 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
+        
+        axes_p[idx].set_xlabel('Water Year', fontsize=10)
+        axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=10)
+        axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=11, fontweight='bold')
+        axes_p[idx].grid(True, alpha=0.3)
+        axes_p[idx].tick_params(axis='x', rotation=45)
+        axes_p[idx].legend(loc='best', fontsize=8)
+    
+    plt.suptitle('Annual Maximum Precipitation: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_p:
+        plt.savefig(fig_file_p, dpi=150, bbox_inches='tight')
+        img_p = base64.b64encode(open(fig_file_p, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_p = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    # Create combined W plot
+    fig_w, axes_w = plt.subplots(1, len(durations), figsize=(15, 4.5))
+    if len(durations) == 1:
+        axes_w = [axes_w]
+    
+    for idx, dur in enumerate(durations):
+        hist_w = hist_am[dur]['W_veg']
+        med_w = med_am[dur]['W_veg']
+        high_w = high_am[dur]['W_veg']
+        
+        axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3], 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
+        
+        axes_w[idx].set_xlabel('Water Year', fontsize=10)
+        axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=10)
+        axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=11, fontweight='bold')
+        axes_w[idx].grid(True, alpha=0.3)
+        axes_w[idx].tick_params(axis='x', rotation=45)
+        axes_w[idx].legend(loc='best', fontsize=8)
+    
+    plt.suptitle('Annual Maximum Water for Runoff: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_w:
+        plt.savefig(fig_file_w, dpi=150, bbox_inches='tight')
+        img_w = base64.b64encode(open(fig_file_w, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_w = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    return "data:image/png;base64," + img_p, "data:image/png;base64," + img_w
+
+
+def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
+    """
+    Generate multi-scenario SWE time series plot
+    
+    Parameters:
+    -----------
+    hist_swe : np.array
+        Historical SWE data
+    med_swe : np.array
+        Medium emissions SWE data
+    high_swe : np.array
+        High emissions SWE data
+    fig_file : str
+        Output file path
+    
+    Returns:
+    --------
+    str : Base64 encoded image string
+    """
+    
+    plt.figure(figsize=(12, 4.5))
+    
+    plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3], 'o-', color='blue', lw=2, markersize=4, label='Historical')
+    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3], 's-', color='orange', lw=2, markersize=4, label='Medium')
+    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3], '^-', color='red', lw=2, markersize=4, label='High')
+    
+    plt.xlabel('Water Year', fontsize=11)
+    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11)
+    plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    plt.legend(loc='best', fontsize=10)
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file:
+        plt.savefig(fig_file, dpi=150, bbox_inches='tight')
+        img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    return "data:image/png;base64," + img

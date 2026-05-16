@@ -2,74 +2,327 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Future Climate Scenario Analysis</title>
+<title>WRF Future Climate Scenario Analysis</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
-  /* Base */
-  body { font-family: Arial, sans-serif; background: #f7f9fb; color: #333; font-size: 11px; margin: 8px; }
-  html, body { margin: 0; padding: 0; }
-
-  header { background: linear-gradient(90deg, #f68b1f, #c46000); color: white; padding: 10px 20px; }
-  .header-container { display: grid; grid-template-columns: auto 1fr auto; align-items: center; max-width: 1500px; margin: 0 auto; column-gap: 40px; }
-  .header-logos { display: flex; align-items: center; gap: 20px; }
-  .header-logos img { height: 38px; width: auto; }
-  header h1 { font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0; }
-  
-  h2 { color: #b34b00; font-size: 13px; border-bottom: 2px solid #e3eaf5; padding-bottom: 2px; margin: 10px 0; }
-  h3 { color: #333; font-size: 12px; margin: 5px 0; text-align: center; }
-  .section { background: #fff; border: 1px solid #e2e6ea; border-radius: 6px; padding: 10px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
-  
-  /* Summary Table */
-  .summary-table-container { overflow-x: auto; }
-  .summary-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  .summary-table th, .summary-table td { border: 1px solid #dfe3ea; padding: 6px; text-align: center; }
-  .summary-table th { background: #f68b1f; color: white; }
-  .summary-table tr:nth-child(even) { background-color: #f8fafc; }
-  
-  .pos { color: #d32f2f; font-weight: bold; } /* Red for Increase */
-  .neg { color: #1976d2; font-weight: bold; } /* Blue for Decrease */
-
-  /* Heavy separation line for summary table */
-  .duration-start {
-      border-top: 3px solid #333 !important;
+  /* Base Styles */
+  body {
+    font-family: Arial, sans-serif;
+    background: #f7f9fb;
+    color: #333;
+    font-size: 11px;
+    margin: 8px;
   }
-  
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header Banner */
+  header {
+    background: linear-gradient(90deg, #f68b1f, #c46000);
+    color: white;
+    padding: 10px 20px;
+  }
+  .header-container {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    max-width: 1500px;
+    margin: 0 auto;
+    column-gap: 40px;
+  }
+  .header-logos {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-logos img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    background: transparent;
+  }
+  header h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 700px) {
+    .header-container {
+      grid-template-columns: 1fr;
+      row-gap: 8px;
+      text-align: center;
+    }
+    .header-logos {
+      justify-content: center;
+    }
+    .header-logos img {
+      height: 28px;
+    }
+  }
+
+  h2 {
+    color: #b34b00;
+    font-size: 13px;
+    border-bottom: 2px solid #e3eaf5;
+    padding-bottom: 4px;
+    margin: 10px 0 8px 0;
+    font-weight: 600;
+  }
+
+  .section {
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Section Titles */
+  .section-title {
+    text-align: center;
+    color: #b34b00;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 20px 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .divider {
+    border-top: 3px solid #f68b1f;
+    margin: 30px 0 20px 0;
+  }
+
+  /* Map Section */
+  .map-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .map-card {
+    width: 48%;
+    max-width: 700px;
+  }
+
+  /* Multi-Scenario Plots */
+  .multi-plot {
+    width: 90%;
+    max-width: 1400px;
+    margin: 0 auto 20px auto;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .multi-plot h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .plot-img {
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
   /* Tabs */
-  .tab-container { margin-top: 20px; }
-  .tabs { display: flex; border-bottom: 2px solid #ddd; }
-  .tab-btn { padding: 10px 20px; cursor: pointer; background: #f1f1f1; border: none; font-weight: bold; font-size: 12px; color: #555; border-radius: 6px 6px 0 0; margin-right: 5px; }
-  .tab-btn.active { background: #b34b00; color: white; }
-  .tab-content { display: none; padding: 15px; background: white; border: 1px solid #ddd; border-top: none; }
-  .tab-content.active { display: block; }
+  .tab-container {
+    margin-top: 20px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
 
-  /* Reused Table/Plot Styles */
-  table { border-collapse: collapse; width: 100%; font-size: 10.5px; margin-top: 5px; }
-  th, td { border: 1px solid #dfe3ea; text-align: center; padding: 4px; }
-  th { background-color: #f68b1f; color: white; }
-  tr:nth-child(even) { background-color: #f8fafc; }
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    gap: 5px;
+  }
 
-  .am-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-  .am-table { width: 48%; max-width: 600px; }
+  .tab-btn {
+    padding: 12px 24px;
+    cursor: pointer;
+    background: #f1f1f1;
+    border: none;
+    font-weight: bold;
+    font-size: 12px;
+    color: #555;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.3s;
+  }
 
-  .plots { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-  .plot-card { width: 30%; max-width: 400px; border: 1px solid #e1e5ea; padding: 5px; background: #fff; }
-  .plot-img { width: 100%; }
+  .tab-btn:hover {
+    background: #e0e0e0;
+  }
 
-  .idf-tables-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
-  .idf-half { width: 48%; }
-  
-  .swe-container { display: flex; justify-content: center; }
-  .swe-table { width: 100%; max-width: 600px; }
-  
-  /* Map Container Style matching out.html */
-  .map-section { display: flex; justify-content: center; margin-bottom: 12px; }
-  .map-card { width: 100%; max-width: 800px; }
+  .tab-btn.active {
+    background: #b34b00;
+    color: white;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 10.5px;
+    margin-top: 10px;
+  }
+
+  th, td {
+    border: 1px solid #dfe3ea;
+    text-align: center;
+    padding: 4px;
+    white-space: nowrap;
+  }
+
+  th {
+    background-color: #f68b1f;
+    color: white;
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+
+  tr:hover {
+    background-color: #fff1e0;
+  }
+
+  .idf-tables {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .idf-table {
+    width: 48%;
+    max-width: 700px;
+  }
+
+  .am-tables {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .am-table {
+    width: 48%;
+    max-width: 700px;
+  }
+
+  .swe-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .swe-table {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  /* Summary Table */
+  .summary-section {
+    max-width: 1200px;
+    margin: 20px auto;
+  }
+
+  .summary-table-container {
+    overflow-x: auto;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .summary-table th,
+  .summary-table td {
+    border: 1px solid #dfe3ea;
+    padding: 5px;
+    text-align: center;
+  }
+
+  .summary-table th {
+    background: #f68b1f;
+    color: white;
+    font-weight: 600;
+  }
+
+  .summary-table tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+
+  .pos {
+    color: #d32f2f;
+    font-weight: bold;
+  }
+
+  .neg {
+    color: #1976d2;
+    font-weight: bold;
+  }
+
+  .duration-start {
+    border-top: 3px solid #333 !important;
+  }
+
+  .note {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    margin-top: 20px;
+    padding: 10px;
+  }
+
+  @media(max-width:900px) {
+    .idf-table {
+      width: 100%;
+    }
+    .am-table {
+      width: 100%;
+    }
+    .map-card {
+      width: 100%;
+    }
+  }
 </style>
 </head>
 <body>
 
+<!-- Top Banner -->
 <header>
   <div class="header-container">
     <div class="header-logos left-logos">
@@ -84,26 +337,73 @@
   </div>
 </header>
 
-<div style="max-width: 1300px; margin: 20px auto; padding: 0 10px;">
+<!-- ========================================== -->
+<!-- SECTION 1: FIGURES -->
+<!-- ========================================== -->
 
-  <div class="map-section">
-    <div class="section map-card">
-      <h2>Site Location Map</h2>
-      <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
-    </div>
+<div class="section-title">📊 Multi-Scenario Comparison Figures</div>
+
+<!-- Site Location Map -->
+<div class="map-section">
+  <div class="section map-card">
+    <h2>Site Location Map</h2>
+    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
   </div>
+</div>
 
+<!-- PREC-IDF Multi-Scenario Comparison -->
+<div class="multi-plot">
+  <h2>PREC-IDF Curves: Climate Scenario Comparison (Historical vs Medium vs High)</h2>
+  <img class="plot-img" src="{{ fig_prec_comp }}" alt="PREC-IDF Multi-Scenario Comparison">
+</div>
+
+<!-- NG-IDF Multi-Scenario Comparison -->
+<div class="multi-plot">
+  <h2>NG-IDF Curves: Climate Scenario Comparison (Historical vs Medium vs High)</h2>
+  <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Multi-Scenario Comparison">
+</div>
+
+<!-- AM P Multi-Scenario Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Precipitation (AM P): Climate Scenario Comparison</h2>
+  <img class="plot-img" src="{{ fig_am_p_comp }}" alt="AM P Multi-Scenario Comparison">
+</div>
+
+<!-- AM W Multi-Scenario Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Water for Runoff (AM W): Climate Scenario Comparison</h2>
+  <img class="plot-img" src="{{ fig_am_w_comp }}" alt="AM W Multi-Scenario Comparison">
+</div>
+
+<!-- AM SWE Multi-Scenario Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Snow Water Equivalent (AM SWE): Climate Scenario Comparison</h2>
+  <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Multi-Scenario Comparison">
+</div>
+
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 2: IMPACT SUMMARY TABLE -->
+<!-- ========================================== -->
+
+<div class="section-title">📊 Impact Summary</div>
+
+<div class="summary-section">
   <div class="section">
-    <h2>Impact Summary Table (NG-IDF Comparison)</h2>
+    <h2>NG-IDF Changes vs Historical Baseline</h2>
     <div class="summary-table-container">
       <table class="summary-table">
         <thead>
           <tr>
             <th rowspan="2">Duration</th>
             <th rowspan="2">ARI (yrs)</th>
-            <th>Historical Baseline</th>
-            <th colspan="3">Future Medium (Diff vs Hist)</th>
-            <th colspan="3">Future High (Diff vs Hist)</th>
+            <th>Historical</th>
+            <th colspan="3">Medium Emissions</th>
+            <th colspan="3">High Emissions</th>
           </tr>
           <tr>
             <th>Value (mm)</th>
@@ -120,9 +420,9 @@
           <tr class="{{ 'duration-start' if loop.index0 % 7 == 0 else '' }}">
             <td>{{ row.duration }}</td>
             <td>{{ row.ari }}</td>
-            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist }}</td>
+            <td style="background:#f9f9f9; font-weight:bold;">{{ "%.2f"|format(row.hist) }}</td>
             
-            <td>{{ row.med }}</td>
+            <td>{{ "%.2f"|format(row.med) }}</td>
             <td class="{{ 'pos' if row.med_diff > 0 else 'neg' }}">
               {{ "+" if row.med_diff > 0 }}{{ "%.2f"|format(row.med_diff) }}
             </td>
@@ -130,7 +430,7 @@
               {{ "+" if row.med_pct > 0 }}{{ "%.1f"|format(row.med_pct) }}%
             </td>
 
-            <td>{{ row.high }}</td>
+            <td>{{ "%.2f"|format(row.high) }}</td>
             <td class="{{ 'pos' if row.high_diff > 0 else 'neg' }}">
               {{ "+" if row.high_diff > 0 }}{{ "%.2f"|format(row.high_diff) }}
             </td>
@@ -143,181 +443,411 @@
       </table>
     </div>
   </div>
+</div>
 
-  <div class="tab-container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="openTab(event, 'Historical')">Historical (Baseline)</button>
-      <button class="tab-btn" onclick="openTab(event, 'Medium')">Future (Medium Emissions)</button>
-      <button class="tab-btn" onclick="openTab(event, 'High')">Future (High Emissions)</button>
-    </div>
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
 
-    {% macro render_tab(data, title_prefix) %}
+<!-- ========================================== -->
+<!-- SECTION 3: DETAILED TABLES WITH TABS -->
+<!-- ========================================== -->
+
+<div class="section-title">📋 Detailed Data Tables by Scenario</div>
+
+<div class="tab-container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="openTab(event, 'Historical')">Historical Baseline</button>
+    <button class="tab-btn" onclick="openTab(event, 'Medium')">Future Medium Emissions</button>
+    <button class="tab-btn" onclick="openTab(event, 'High')">Future High Emissions</button>
+  </div>
+
+  <!-- Historical Tab -->
+  <div id="Historical" class="tab-content active">
     
-    <div class="plots">
-        <div class="plot-card">
-            <h3>24-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig24 }}" alt="24h Plot">
-        </div>
-        <div class="plot-card">
-            <h3>48-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig48 }}" alt="48h Plot">
-        </div>
-        <div class="plot-card">
-            <h3>72-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig72 }}" alt="72h Plot">
-        </div>
+    <!-- IDF Tables -->
+    <div class="idf-tables">
+      <div class="section idf-table">
+        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        {% set ARI = [2,5,10,25,50,100,500] %}
+        {% set IDX = [0,30,40,46,48,49,50] %}
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in hist.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ hist['P_' + dur][0, IDX[j]] }}</td>
+            <td>{{ hist['P_' + dur][1, IDX[j]] }}</td>
+            <td>{{ hist['P_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section idf-table">
+        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in hist.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ hist['NG_' + dur][0, IDX[j]] }}</td>
+            <td>{{ hist['NG_' + dur][1, IDX[j]] }}</td>
+            <td>{{ hist['NG_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
     </div>
 
+    <!-- AM Tables -->
     <div class="am-tables">
       <div class="section am-table">
-        <h3>Annual Maximum Precipitation (AM P)</h3>
+        <h2>Annual Maximum Precipitation (AM P) Time Series</h2>
         <table>
-          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
-          {% for i in range(data.am_24h_P|length) %}
           <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_P_date[i,0],data.am_24h_P_date[i,1],data.am_24h_P_date[i,2]) }}</td>
-            <td>{{ data.am_24h_P[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_P_date[i,0],data.am_48h_P_date[i,1],data.am_48h_P_date[i,2]) }}</td>
-            <td>{{ data.am_48h_P[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_P_date[i,0],data.am_72h_P_date[i,1],data.am_72h_P_date[i,2]) }}</td>
-            <td>{{ data.am_72h_P[i,3] }}</td>
+            {% for dur in hist.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(hist['am_' + hist.durations[0] + '_P']|length) %}
+          <tr>
+            {% for dur in hist.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(hist['am_' + dur + '_P_date'][i,0], hist['am_' + dur + '_P_date'][i,1], hist['am_' + dur + '_P_date'][i,2]) }}</td>
+            <td>{{ hist['am_' + dur + '_P'][i,3] }}</td>
+            {% endfor %}
           </tr>
           {% endfor %}
         </table>
       </div>
 
       <div class="section am-table">
-        <h3>Annual Maximum Water Available (AM W)</h3>
+        <h2>Annual Maximum Water for Runoff (AM W) Time Series</h2>
         <table>
-          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
-          {% for i in range(data.am_24h_W|length) %}
           <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_W_date[i,0],data.am_24h_W_date[i,1],data.am_24h_W_date[i,2]) }}</td>
-            <td>{{ data.am_24h_W[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_W_date[i,0],data.am_48h_W_date[i,1],data.am_48h_W_date[i,2]) }}</td>
-            <td>{{ data.am_48h_W[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_W_date[i,0],data.am_72h_W_date[i,1],data.am_72h_W_date[i,2]) }}</td>
-            <td>{{ data.am_72h_W[i,3] }}</td>
+            {% for dur in hist.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(hist['am_' + hist.durations[0] + '_W']|length) %}
+          <tr>
+            {% for dur in hist.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(hist['am_' + dur + '_W_date'][i,0], hist['am_' + dur + '_W_date'][i,1], hist['am_' + dur + '_W_date'][i,2]) }}</td>
+            <td>{{ hist['am_' + dur + '_W'][i,3] }}</td>
+            {% endfor %}
           </tr>
           {% endfor %}
         </table>
       </div>
     </div>
 
-    <div class="idf-tables-container">
-        <div class="idf-half">
-            <h3>PREC-IDF ({{ title_prefix }})</h3>
-            <table>
-                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
-                {% set ARI = [2,5,10,25,50,100,500] %}
-                {% set IDX = [0,30,40,46,48,49,50] %}
-                
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_24h[0, IDX[j]] }}</td><td>{{ data.P_24h[1, IDX[j]] }}</td><td>{{ data.P_24h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_48h[0, IDX[j]] }}</td><td>{{ data.P_48h[1, IDX[j]] }}</td><td>{{ data.P_48h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_72h[0, IDX[j]] }}</td><td>{{ data.P_72h[1, IDX[j]] }}</td><td>{{ data.P_72h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-            </table>
-        </div>
-
-        <div class="idf-half">
-            <h3>NG-IDF ({{ title_prefix }})</h3>
-            <table>
-                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
-                
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_24h[0, IDX[j]] }}</td><td>{{ data.NG_24h[1, IDX[j]] }}</td><td>{{ data.NG_24h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_48h[0, IDX[j]] }}</td><td>{{ data.NG_48h[1, IDX[j]] }}</td><td>{{ data.NG_48h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_72h[0, IDX[j]] }}</td><td>{{ data.NG_72h[1, IDX[j]] }}</td><td>{{ data.NG_72h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
-
+    <!-- SWE Table -->
     <div class="swe-container">
       <div class="section swe-table">
-        <h3>Annual Maximum Snow Water Equivalent (AM SWE)</h3>
+        <h2>Annual Maximum Snow Water Equivalent (AM SWE)</h2>
         <table>
           <tr><th>Date</th><th>AM SWE (mm)</th></tr>
-          {% for i in range(data.am_swe|length) %}
+          {% for i in range(hist.am_swe|length) %}
           <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_swe_date[i,0], data.am_swe_date[i,1], data.am_swe_date[i,2]) }}</td>
-            <td>{{ data.am_swe[i,3] }}</td>
+            <td>{{ "%04d-%02d-%02d"|format(hist.am_swe_date[i,0], hist.am_swe_date[i,1], hist.am_swe_date[i,2]) }}</td>
+            <td>{{ hist.am_swe[i,3] }}</td>
           </tr>
           {% endfor %}
         </table>
       </div>
-    </div>
-
-    {% endmacro %}
-    <div id="Historical" class="tab-content active">
-        {{ render_tab(hist, "Historical") }}
-    </div>
-
-    <div id="Medium" class="tab-content">
-        {{ render_tab(med, "Future Medium") }}
-    </div>
-
-    <div id="High" class="tab-content">
-        {{ render_tab(high, "Future High") }}
     </div>
   </div>
 
+  <!-- Medium Tab -->
+  <div id="Medium" class="tab-content">
+    
+    <!-- IDF Tables -->
+    <div class="idf-tables">
+      <div class="section idf-table">
+        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in med.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ med['P_' + dur][0, IDX[j]] }}</td>
+            <td>{{ med['P_' + dur][1, IDX[j]] }}</td>
+            <td>{{ med['P_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section idf-table">
+        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in med.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ med['NG_' + dur][0, IDX[j]] }}</td>
+            <td>{{ med['NG_' + dur][1, IDX[j]] }}</td>
+            <td>{{ med['NG_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- AM Tables -->
+    <div class="am-tables">
+      <div class="section am-table">
+        <h2>Annual Maximum Precipitation (AM P) Time Series</h2>
+        <table>
+          <tr>
+            {% for dur in med.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(med['am_' + med.durations[0] + '_P']|length) %}
+          <tr>
+            {% for dur in med.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(med['am_' + dur + '_P_date'][i,0], med['am_' + dur + '_P_date'][i,1], med['am_' + dur + '_P_date'][i,2]) }}</td>
+            <td>{{ med['am_' + dur + '_P'][i,3] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section am-table">
+        <h2>Annual Maximum Water for Runoff (AM W) Time Series</h2>
+        <table>
+          <tr>
+            {% for dur in med.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(med['am_' + med.durations[0] + '_W']|length) %}
+          <tr>
+            {% for dur in med.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(med['am_' + dur + '_W_date'][i,0], med['am_' + dur + '_W_date'][i,1], med['am_' + dur + '_W_date'][i,2]) }}</td>
+            <td>{{ med['am_' + dur + '_W'][i,3] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- SWE Table -->
+    <div class="swe-container">
+      <div class="section swe-table">
+        <h2>Annual Maximum Snow Water Equivalent (AM SWE)</h2>
+        <table>
+          <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+          {% for i in range(med.am_swe|length) %}
+          <tr>
+            <td>{{ "%04d-%02d-%02d"|format(med.am_swe_date[i,0], med.am_swe_date[i,1], med.am_swe_date[i,2]) }}</td>
+            <td>{{ med.am_swe[i,3] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- High Tab -->
+  <div id="High" class="tab-content">
+    
+    <!-- IDF Tables -->
+    <div class="idf-tables">
+      <div class="section idf-table">
+        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in high.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ high['P_' + dur][0, IDX[j]] }}</td>
+            <td>{{ high['P_' + dur][1, IDX[j]] }}</td>
+            <td>{{ high['P_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section idf-table">
+        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <p><strong>ARI = Average Recurrence Interval</strong></p>
+        <table>
+          <tr>
+            <th>ARI (yrs)</th>
+            <th>Magnitude (mm)</th>
+            <th>Lower 90% CI</th>
+            <th>Upper 90% CI</th>
+          </tr>
+          {% for dur in high.durations %}
+          <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
+          {% for j in range(7) %}
+          <tr>
+            <td>{{ ARI[j] }}</td>
+            <td>{{ high['NG_' + dur][0, IDX[j]] }}</td>
+            <td>{{ high['NG_' + dur][1, IDX[j]] }}</td>
+            <td>{{ high['NG_' + dur][2, IDX[j]] }}</td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- AM Tables -->
+    <div class="am-tables">
+      <div class="section am-table">
+        <h2>Annual Maximum Precipitation (AM P) Time Series</h2>
+        <table>
+          <tr>
+            {% for dur in high.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(high['am_' + high.durations[0] + '_P']|length) %}
+          <tr>
+            {% for dur in high.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(high['am_' + dur + '_P_date'][i,0], high['am_' + dur + '_P_date'][i,1], high['am_' + dur + '_P_date'][i,2]) }}</td>
+            <td>{{ high['am_' + dur + '_P'][i,3] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="section am-table">
+        <h2>Annual Maximum Water for Runoff (AM W) Time Series</h2>
+        <table>
+          <tr>
+            {% for dur in high.durations %}
+            <th>{{ dur }} Date</th>
+            <th>{{ dur }} (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(high['am_' + high.durations[0] + '_W']|length) %}
+          <tr>
+            {% for dur in high.durations %}
+            <td>{{ "%04d-%02d-%02d"|format(high['am_' + dur + '_W_date'][i,0], high['am_' + dur + '_W_date'][i,1], high['am_' + dur + '_W_date'][i,2]) }}</td>
+            <td>{{ high['am_' + dur + '_W'][i,3] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- SWE Table -->
+    <div class="swe-container">
+      <div class="section swe-table">
+        <h2>Annual Maximum Snow Water Equivalent (AM SWE)</h2>
+        <table>
+          <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+          {% for i in range(high.am_swe|length) %}
+          <tr>
+            <td>{{ "%04d-%02d-%02d"|format(high.am_swe_date[i,0], high.am_swe_date[i,1], high.am_swe_date[i,2]) }}</td>
+            <td>{{ high.am_swe[i,3] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
+<p class="note">Generated by NG-IDF Tool | WRF Future Climate Scenarios (Historical, Medium, High Emissions)</p>
+
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  // TABS LOGIC
+  // Tab switching function
   function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
+    
+    // Hide all tab contents
     tabcontent = document.getElementsByClassName("tab-content");
     for (i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = "none";
     }
+    
+    // Remove active class from all tabs
     tablinks = document.getElementsByClassName("tab-btn");
     for (i = 0; i < tablinks.length; i++) {
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
+    
+    // Show current tab and mark button as active
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
   }
 
-  // MAP LOGIC
+  // Map initialization
   const alaskaBoundaryUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/alaska.geojson";
 
-  // Lat/Lon from backend
   const siteLat = {{ lat }};
   const siteLon = {{ lon }};
 
-  // Initialize map
   var map = L.map('map').setView([siteLat, siteLon], 8);
 
-  // Base map
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 12,
       attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  // Alaska boundary
   fetch(alaskaBoundaryUrl)
     .then(r => r.json())
     .then(geo => {
@@ -330,7 +860,6 @@
       }).addTo(map);
     });
 
-  // Marker
   L.marker([siteLat, siteLon])
     .addTo(map)
     .bindPopup(`Site Location:<br>${siteLat.toFixed(3)}, ${siteLon.toFixed(3)}`);
