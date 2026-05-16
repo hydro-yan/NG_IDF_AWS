@@ -143,3 +143,98 @@ def generate_figs_multiple(idf_data_dict, fig_files_dict, durations):
             fig_codes[fig_key] = fig_code
     
     return fig_codes
+
+
+def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_file_w):
+    """
+    Generate combined time series plot for Annual Maximum P and W
+    
+    Parameters:
+    -----------
+    am_results : dict
+        Dictionary with AM data for each duration
+    durations : list
+        List of duration strings like ['24h', '48h', '72h']
+    fig_file_combined : str
+        Output file path for combined P and W time series
+    fig_file_w : str
+        Not used (kept for backward compatibility)
+    
+    Returns:
+    --------
+    tuple : (base64_combined, base64_combined) - returns same plot twice for compatibility
+    """
+    
+    # Create combined figure for P and W
+    fig, axes = plt.subplots(1, len(durations), figsize=(15, 4.5))
+    if len(durations) == 1:
+        axes = [axes]
+    
+    for idx, dur in enumerate(durations):
+        am_p = am_results[dur]['P']
+        am_w = am_results[dur]['W_veg']
+        
+        years_p = am_p[:, 0].astype(int)
+        values_p = am_p[:, 3]
+        
+        years_w = am_w[:, 0].astype(int)
+        values_w = am_w[:, 3]
+        
+        # Plot P in blue (same as PREC-IDF)
+        axes[idx].plot(years_p, values_p, 'o-', color='blue', linewidth=2, markersize=4, label='AM P')
+        
+        # Plot W in pink (same as NG-IDF)
+        axes[idx].plot(years_w, values_w, 's-', color='pink', linewidth=2, markersize=4, label='AM W')
+        
+        axes[idx].set_xlabel('Water Year', fontsize=10)
+        axes[idx].set_ylabel('Magnitude (mm)', fontsize=10)
+        axes[idx].set_title(f'{dur.replace("h", "-hour")} Duration', fontsize=11, fontweight='bold')
+        axes[idx].grid(True, alpha=0.3)
+        axes[idx].tick_params(axis='x', rotation=45)
+        axes[idx].legend(loc='best', fontsize=9)
+    
+    plt.tight_layout()
+    plt.savefig(fig_file_combined, dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    # Return base64 encoded string (return twice for backward compatibility)
+    img_combined = base64.b64encode(open(fig_file_combined, "rb").read()).decode('utf-8')
+    encoded = "data:image/png;base64," + img_combined
+    
+    return encoded, encoded
+
+
+def generate_swe_timeseries_plot(am_swe, fig_file):
+    """
+    Generate time series plot for Annual Maximum SWE
+    
+    Parameters:
+    -----------
+    am_swe : np.array
+        Array with shape (N, 4) containing [year, month, day, swe_value]
+    fig_file : str
+        Output file path
+    
+    Returns:
+    --------
+    str : Base64 encoded image string
+    """
+    
+    years = am_swe[:, 0].astype(int)
+    values = am_swe[:, 3]
+    
+    plt.figure(figsize=(10, 4))
+    plt.plot(years, values, 'o-', color='purple', linewidth=2, markersize=5)
+    plt.xlabel('Water Year', fontsize=11)
+    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11)
+    plt.title('Annual Maximum SWE Time Series', fontsize=12, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plt.savefig(fig_file, dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    # Return base64 encoded string
+    img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
+    return "data:image/png;base64," + img

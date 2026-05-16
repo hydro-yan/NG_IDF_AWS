@@ -11,7 +11,7 @@ from dhsvm_idf import generate_ng_idf
 from extract_AM import extract_AM_data
 import tempfile
 import shutil
-from gen_figures import generate_fig, generate_figs_multiple
+from gen_figures import generate_fig, generate_figs_multiple, generate_am_timeseries_plots, generate_swe_timeseries_plot
 
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -183,10 +183,37 @@ def NG_IDF():
 
         if scenario == "historical":
 
-            # Run historical Daymet workflow (same as before)
+            # Run historical Daymet workflow
             results = get_NG_IDF(input_data, forcing_type="Daymet")
 
             data = structure_results(results)
+            
+            # Generate time series plots for AM P, W, and SWE
+            import tempfile
+            with tempfile.TemporaryDirectory() as td:
+                fig_am_p_file = os.path.join(td, 'am_timeseries_p.png')
+                fig_am_w_file = os.path.join(td, 'am_timeseries_w.png')
+                fig_swe_file = os.path.join(td, 'am_swe_timeseries.png')
+                
+                # Generate AM P and W time series plots
+                durations = results['durations']  # ['24h', '48h', '72h'] for Daymet
+                fig_am_p, fig_am_w = generate_am_timeseries_plots(
+                    results['am_results'], 
+                    durations, 
+                    fig_am_p_file, 
+                    fig_am_w_file
+                )
+                
+                # Generate SWE time series plot
+                fig_swe = generate_swe_timeseries_plot(
+                    results['am_results']['swe'],
+                    fig_swe_file
+                )
+                
+                # Add time series figures to data
+                data['fig_am_p'] = fig_am_p
+                data['fig_am_w'] = fig_am_w
+                data['fig_swe'] = fig_swe
 
             # Render historical results using existing out.html
             return render_template("out.html",

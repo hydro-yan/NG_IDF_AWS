@@ -71,18 +71,19 @@
 
   h2 {
     color: #b34b00;
-    font-size: 12px;
+    font-size: 13px;
     border-bottom: 2px solid #e3eaf5;
-    padding-bottom: 2px;
-    margin: 6px 0;
+    padding-bottom: 4px;
+    margin: 10px 0 8px 0;
+    font-weight: 600;
   }
 
   .section {
     background: #fff;
     border: 1px solid #e2e6ea;
     border-radius: 6px;
-    padding: 6px;
-    margin-bottom: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
@@ -95,12 +96,13 @@
   th, td {
     border: 1px solid #dfe3ea;
     text-align: center;
-    padding: 2px 3px;
+    padding: 3px 4px;
     white-space: nowrap;
   }
   th {
     background-color: #f68b1f;
     color: white;
+    font-weight: 600;
   }
   tr:nth-child(even) { background-color: #f8fafc; }
   tr:hover { background-color: #fff1e0; }
@@ -108,24 +110,64 @@
   .plots {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin: 6px 0;
+    margin: 10px 0;
   }
-.plot-card {
-    width: 21%;
+
+  .plot-card {
+    width: 30%;
     max-width: 600px;
     background: #fff;
     border: 1px solid #e1e5ea;
     border-radius: 6px;
-    padding: 4px;
+    padding: 8px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
+  }
+
+  .plot-card h2 {
+    font-size: 12px;
+    margin: 0 0 8px 0;
+    text-align: center;
+  }
+
   .plot-img {
     display: block;
     width: 100%;
     border-radius: 4px;
     border: 1px solid #ddd;
+  }
+
+  .timeseries-plot {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 16px auto;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .timeseries-plot h2 {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .swe-plot {
+    width: 70%;
+    max-width: 900px;
+    margin: 0 auto 16px auto;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .swe-plot h2 {
+    text-align: center;
+    margin-bottom: 10px;
   }
 
   .am-tables {
@@ -134,26 +176,31 @@
     gap: 20px;
     flex-wrap: wrap;
   }
-  .am-table { width: 42%; max-width: 600px; }
+  .am-table { width: 48%; max-width: 700px; }
 
-.swe-container { 
+  .swe-container { 
     display: flex; 
     flex-direction: column; 
-    align-items: center; 
-}
+    align-items: center;
+  }
 
-.swe-table {
+  .swe-table {
     width: 100%;
     max-width: 600px;
-    margin: 0 auto;          /* centers the table */
-}
+    margin: 0 auto;
+  }
 
-.swe-table tr:nth-child(even) {
+  .swe-table tr:nth-child(even) {
     background-color: #f8fafc !important;
-}
+  }
 
-  .idf-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
-  .idf-table { width: 42%; max-width: 600px; }
+  .idf-tables { 
+    display: flex; 
+    justify-content: center; 
+    gap: 20px; 
+    flex-wrap: wrap; 
+  }
+  .idf-table { width: 48%; max-width: 700px; }
 
   @media(max-width:900px){
     .plot-card{width:100%;}
@@ -162,7 +209,28 @@
     .idf-table{width:100%;}
   }
 
-  .note { text-align:center; font-size:10px; color:#666; margin-top:8px; }
+  .note { 
+    text-align:center; 
+    font-size:10px; 
+    color:#666; 
+    margin-top:20px; 
+    padding: 10px;
+  }
+
+  .divider {
+    border-top: 3px solid #f68b1f;
+    margin: 30px 0 20px 0;
+  }
+
+  .section-title {
+    text-align: center;
+    color: #b34b00;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 20px 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
 </style>
 </head>
@@ -183,11 +251,161 @@
   </div>
 </header>
 
-<!-- ⭐⭐ NEW MAP SECTION (Option A) ⭐⭐ -->
+<!-- ========================================== -->
+<!-- SECTION 1: FIGURES -->
+<!-- ========================================== -->
+
+<div class="section-title">📊 Visualization Results</div>
+
+<!-- Site Location Map -->
 <div class="am-tables">
   <div class="section am-table">
     <h2>Site Location Map</h2>
     <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
+  </div>
+</div>
+
+<!-- NG-IDF Curve Plots (3 durations) -->
+<div class="plots">
+  <div class="plot-card">
+    <h2>24-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig24 }}" alt="24-Hour IDF Curves">
+  </div>
+
+  <div class="plot-card">
+    <h2>48-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig48 }}" alt="48-Hour IDF Curves">
+  </div>
+
+  <div class="plot-card">
+    <h2>72-Hour IDF Curves</h2>
+    <img class="plot-img" src="{{ fig72 }}" alt="72-Hour IDF Curves">
+  </div>
+</div>
+
+<!-- Time Series Plot of AM P and W (Combined) -->
+<div class="timeseries-plot">
+  <h2>Annual Maximum Precipitation (AM P) and Water Available for Runoff (AM W) Time Series</h2>
+  <img class="plot-img" src="{{ fig_am_p }}" alt="AM P and W Time Series">
+</div>
+
+<!-- Time Series Plot of AM SWE -->
+<div class="swe-plot">
+  <h2>Annual Maximum Snow Water Equivalent (AM SWE) Time Series</h2>
+  <img class="plot-img" src="{{ fig_swe }}" alt="AM SWE Time Series">
+</div>
+
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 2: TABLES -->
+<!-- ========================================== -->
+
+<div class="section-title">📋 Detailed Data Tables</div>
+
+<!-- PREC-IDF and NG-IDF Tables with 90% CI -->
+<div class="idf-tables">
+  <div class="section idf-table">
+    <h2>PREC-IDF Curves Table with 90% Confidence Intervals</h2>
+    <p><strong>ARI = Average Recurrence Interval</strong></p>
+
+    {% set ARI        = [2,5,10,25,50,100,500] %}
+    {% set IDX        = [0,30,40,46,48,49,50] %}
+
+    <table>
+      <tr>
+        <th>ARI (yrs)</th>
+        <th>Magnitude (mm)</th>
+        <th>Lower 90% CI (mm)</th>
+        <th>Upper 90% CI (mm)</th>
+      </tr>
+
+      <!-- 24-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ P_24h[0, IDX[j]] }}</td>
+        <td>{{ P_24h[1, IDX[j]] }}</td>
+        <td>{{ P_24h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- 48-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ P_48h[0, IDX[j]] }}</td>
+        <td>{{ P_48h[1, IDX[j]] }}</td>
+        <td>{{ P_48h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- 72-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ P_72h[0, IDX[j]] }}</td>
+        <td>{{ P_72h[1, IDX[j]] }}</td>
+        <td>{{ P_72h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="section idf-table">
+    <h2>NG-IDF Curves Table with 90% Confidence Intervals</h2>
+    <p><strong>ARI = Average Recurrence Interval</strong></p>
+
+    {% set ARI        = [2,5,10,25,50,100,500] %}
+    {% set IDX        = [0,30,40,46,48,49,50] %}
+
+    <table>
+      <tr>
+        <th>ARI (yrs)</th>
+        <th>Magnitude (mm)</th>
+        <th>Lower 90% CI (mm)</th>
+        <th>Upper 90% CI (mm)</th>
+      </tr>
+
+      <!-- 24-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ NG_24h[0, IDX[j]] }}</td>
+        <td>{{ NG_24h[1, IDX[j]] }}</td>
+        <td>{{ NG_24h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- 48-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ NG_48h[0, IDX[j]] }}</td>
+        <td>{{ NG_48h[1, IDX[j]] }}</td>
+        <td>{{ NG_48h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+
+      <!-- 72-HOUR -->
+      <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
+      {% for j in range(7) %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ NG_72h[0, IDX[j]] }}</td>
+        <td>{{ NG_72h[1, IDX[j]] }}</td>
+        <td>{{ NG_72h[2, IDX[j]] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
   </div>
 </div>
 
@@ -228,130 +446,6 @@
   </div>
 </div>
 
-<!-- Figures -->
-<div class="plots">
-  <div class="plot-card">
-    <h2>24-Hour IDF Curves</h2>
-    <img class="plot-img" src="{{ fig24 }}" alt="24-Hour IDF Curves">
-  </div>
-
-  <div class="plot-card">
-    <h2>48-Hour IDF Curves</h2>
-    <img class="plot-img" src="{{ fig48 }}" alt="48-Hour IDF Curves">
-  </div>
-
-  <div class="plot-card">
-    <h2>72-Hour IDF Curves</h2>
-    <img class="plot-img" src="{{ fig72 }}" alt="72-Hour IDF Curves">
-  </div>
-</div>
-
-<!-- PREC-IDF and NG-IDF Tables -->
-<div class="idf-tables">
-<div class="section idf-table">
-  <h2>PREC-IDF Curves Table</h2>
-  <p><strong>ARI = Average Recurrence Interval</strong></p>
-
-  {% set ARI        = [2,5,10,25,50,100,500] %}
-  {% set IDX        = [0,30,40,46,48,49,50] %}
-
-  <table>
-    <tr>
-  <th>ARI (yrs)</th>
-  <th>Magnitude (mm)</th>
-  <th>Lower 90% CI (mm)</th>
-  <th>Upper 90% CI (mm)</th>
-</tr>
-
-    <!-- 24-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ P_24h[0, IDX[j]] }}</td>
-      <td>{{ P_24h[1, IDX[j]] }}</td>
-      <td>{{ P_24h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-
-    <!-- 48-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ P_48h[0, IDX[j]] }}</td>
-      <td>{{ P_48h[1, IDX[j]] }}</td>
-      <td>{{ P_48h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-
-    <!-- 72-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ P_72h[0, IDX[j]] }}</td>
-      <td>{{ P_72h[1, IDX[j]] }}</td>
-      <td>{{ P_72h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-
-
-
-<div class="section idf-table">
-  <h2>NG-IDF Curves Table</h2>
-  <p><strong>ARI = Average Recurrence Interval</strong></p>
-
-  {% set ARI        = [2,5,10,25,50,100,500] %}
-  {% set IDX        = [0,30,40,46,48,49,50] %}
-
-  <table>
-    <tr>
-      <th>ARI (yrs)</th>
-      <th>Magnitude (mm)</th>
-      <th>Lower 90% CI (mm)</th>
-      <th>Upper 90% CI (mm)</th>
-    </tr>
-
-    <!-- 24-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">24-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ NG_24h[0, IDX[j]] }}</td>
-      <td>{{ NG_24h[1, IDX[j]] }}</td>
-      <td>{{ NG_24h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-
-    <!-- 48-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">48-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ NG_48h[0, IDX[j]] }}</td>
-      <td>{{ NG_48h[1, IDX[j]] }}</td>
-      <td>{{ NG_48h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-
-    <!-- 72-HOUR -->
-    <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">72-Hour</td></tr>
-    {% for j in range(7) %}
-    <tr>
-      <td>{{ ARI[j] }}</td>
-      <td>{{ NG_72h[0, IDX[j]] }}</td>
-      <td>{{ NG_72h[1, IDX[j]] }}</td>
-      <td>{{ NG_72h[2, IDX[j]] }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-
-</div>
-
 <!-- SWE Table -->
 <div class="am-tables">
   <div class="section am-table">
@@ -368,8 +462,7 @@
   </div>
 </div>
 
-
-<p class="note">Generated by NG-IDF Tool</p>
+<p class="note">Generated by NG-IDF Tool | Daymet Historical Scenario (1989-2021)</p>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
