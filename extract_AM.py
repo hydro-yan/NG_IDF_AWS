@@ -92,8 +92,8 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
     lines = lines[2:]  # remove the first 2 header lines
 
     num_steps = len(lines)
-    # year, mon, day, hour,  W_veg (mm), P (mm), P_int (mm), SWE (mm)
-    output_timestep = npnan(num_steps, 8)
+    # year, mon, day, hour,  W_veg (mm), P (mm), P_int (mm), SWE (mm), deltaSWE (m)
+    output_timestep = npnan(num_steps, 9)
 
     # fill the date
     for t in range(num_steps):
@@ -115,6 +115,7 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         output_timestep[count, 5] = float(item[3]) * 1000 # Precip (mm)
         output_timestep[count, 6] = float(item[5]) * 1000 # P_int (mm)
         output_timestep[count, 7] = float(item[13]) * 1000# SWE (mm)
+        output_timestep[count, 8] = float(item[6]) * 1000# deltaSWE (m)
         count += 1
 
     # post-processing: no negatives
@@ -122,35 +123,88 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         output_timestep[output_timestep[:, k] <= 0, k] = 0
 
     #----------------------------------------------------------------------------------------------------------
-    # 2. Aggregate data for different durations
+    # 2. Aggregate data for different durations using MOVING WINDOWS
     aggregated_data = {}
     
-    for duration in durations:
-        steps_per_duration = duration // time_step
+    # For Daymet: first aggregate 3h -> 24h, then use 24h as base for moving windows
+    # For WRF/CESM: use hourly data as base for all moving windows
+    
+    if forcing_type == "Daymet":
+        # Step 1: Aggregate 3-hourly to 24-hourly (non-overlapping)
+        steps_per_24h = 24 // time_step  # 8 steps for 24 hours
+        num_24h_periods = len(output_timestep) // steps_per_24h
+        data_24h = npnan(num_24h_periods, 9)
         
-        if duration == time_step:
-            # No aggregation needed for 1-hour data when time_step is 1
-            aggregated_data[duration] = output_timestep.copy()
-        else:
-            # Aggregate to the specified duration
-            num_periods = len(output_timestep) // steps_per_duration
-            # 0-year, 1-mon, 2-day, 3-hour, 4-W_veg, 5-P, 6-P_int, 7-SWE
-            agg_output = npnan(num_periods, 8)
+        for k in range(num_24h_periods):
+            start_idx = k * steps_per_24h
+            end_idx = (k + 1) * steps_per_24h
             
-            for k in range(num_periods):
-                start_idx = k * steps_per_duration
-                end_idx = (k + 1) * steps_per_duration
+            # Use the timestamp of the last timestep in the window
+            data_24h[k, 0:4] = output_timestep[end_idx - 1, 0:4]
+            # Sum W_veg, P, P_int, deltaSWE
+            data_24h[k, 4] = np.sum(output_timestep[start_idx:end_idx, 4])
+            data_24h[k, 5] = np.sum(output_timestep[start_idx:end_idx, 5])
+            data_24h[k, 6] = np.sum(output_timestep[start_idx:end_idx, 6])
+            data_24h[k, 8] = np.sum(output_timestep[start_idx:end_idx, 8])
+            # SWE: use the last value
+            data_24h[k, 7] = output_timestep[end_idx - 1, 7]
+        
+        aggregated_data[24] = data_24h
+        
+        # Step 2: Use 24h data as base for moving windows (48h, 72h)
+        base_data = data_24h
+        base_duration = 24
+        
+        for duration in [48, 72]:
+            window_size = duration // base_duration  # 2 for 48h, 3 for 72h
+            num_windows = len(base_data) - window_size + 1
+            agg_output = npnan(num_windows, 9)
+            
+            for k in range(num_windows):
+                start_idx = k
+                end_idx = k + window_size
                 
-                # Use the timestamp of the last timestep in the aggregation window
-                agg_output[k, 0:4] = output_timestep[end_idx - 1, 0:4]
-                # Sum W_veg, P, P_int
-                agg_output[k, 4] = np.sum(output_timestep[start_idx:end_idx, 4])
-                agg_output[k, 5] = np.sum(output_timestep[start_idx:end_idx, 5])
-                agg_output[k, 6] = np.sum(output_timestep[start_idx:end_idx, 6])
+                # Use the timestamp of the last period in the window
+                agg_output[k, 0:4] = base_data[end_idx - 1, 0:4]
+                # Sum W_veg, P, P_int, deltaSWE over the window
+                agg_output[k, 4] = np.sum(base_data[start_idx:end_idx, 4])
+                agg_output[k, 5] = np.sum(base_data[start_idx:end_idx, 5])
+                agg_output[k, 6] = np.sum(base_data[start_idx:end_idx, 6])
+                agg_output[k, 8] = np.sum(base_data[start_idx:end_idx, 8])
                 # SWE: use the last value
-                agg_output[k, 7] = output_timestep[end_idx - 1, 7]
+                agg_output[k, 7] = base_data[end_idx - 1, 7]
             
             aggregated_data[duration] = agg_output
+    
+    else:  # WRF or CESM - use hourly data with moving windows for all durations
+        base_data = output_timestep
+        
+        for duration in durations:
+            window_size = duration // time_step  # Number of timesteps in window
+            
+            if duration == time_step:
+                # No aggregation needed for 1-hour data
+                aggregated_data[duration] = base_data.copy()
+            else:
+                # Moving window aggregation
+                num_windows = len(base_data) - window_size + 1
+                agg_output = npnan(num_windows, 9)
+                
+                for k in range(num_windows):
+                    start_idx = k
+                    end_idx = k + window_size
+                    
+                    # Use the timestamp of the last timestep in the window
+                    agg_output[k, 0:4] = base_data[end_idx - 1, 0:4]
+                    # Sum W_veg, P, P_int, deltaSWE over the window
+                    agg_output[k, 4] = np.sum(base_data[start_idx:end_idx, 4])
+                    agg_output[k, 5] = np.sum(base_data[start_idx:end_idx, 5])
+                    agg_output[k, 6] = np.sum(base_data[start_idx:end_idx, 6])
+                    agg_output[k, 8] = np.sum(base_data[start_idx:end_idx, 8])
+                    # SWE: use the last value
+                    agg_output[k, 7] = base_data[end_idx - 1, 7]
+                
+                aggregated_data[duration] = agg_output
 
     # 🔴 IMPORTANT: Filter to complete water years (Oct 1 onwards for first year)
     for duration in durations:
@@ -180,7 +234,7 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         num_year = len(wy_list)
         
         # Initialize AM outputs: cols = year, mon, day, AM
-        am_W_veg = npnan(num_year, 4)
+        am_W_veg = npnan(num_year, 6)  #year, mon, day, AM, P_int, deltaSWE
         am_P = npnan(num_year, 4)
         am_P_int = npnan(num_year, 4)
         am_swe = npnan(num_year, 4)
@@ -194,6 +248,15 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
                 # W_veg
                 am_W_veg[count, 3] = np.max(wy_data[:, 4])
                 am_W_veg[count, 0:3] = wy_data[np.argmax(wy_data[:, 4]), 0:3]
+                am_W_veg[count, 4] = wy_data[np.argmax(wy_data[:, 4]), 6]  #P_int
+                am_W_veg[count, 5] = -wy_data[np.argmax(wy_data[:, 4]), 8]  #deltaSWE
+                if abs(am_W_veg[count, 5]) < 1e-10:  # If essentially zero
+                    am_W_veg[count, 5] = 0.0
+
+                if (am_W_veg[count, 3] != (am_W_veg[count, 4]-am_W_veg[count, 5])):
+                    am_W_veg[count, 3] = am_W_veg[count, 4]-am_W_veg[count, 5]  # update W due to tighly numerical or condension/sublimation 
+                    
+                    
                 
                 # P
                 am_P[count, 3] = np.max(wy_data[:, 5])
@@ -220,10 +283,70 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
             am_results['swe'] = am_swe
 
     #----------------------------------------------------------------------------------------------------------
-    # 4. Write AM data to files (R will read and delete them)
+    # 4. VALIDATION: Assert that larger durations have AM values >= smaller durations
+    print("\n" + "="*80, flush=True)
+    print("VALIDATION: Checking that larger durations have AM >= smaller durations", flush=True)
+    print("="*80, flush=True)
+    
+    # Check for each water year
+    num_years = len(am_results[f'{durations[0]}h']['P'])
+    validation_passed = True
+    
+    for year_idx in range(num_years):
+        year = int(am_results[f'{durations[0]}h']['P'][year_idx, 0])
+        
+        # Get AM P values for all durations for this year
+        am_p_values = {}
+        am_w_values = {}
+        
+        for dur in durations:
+            dur_key = f'{dur}h'
+            am_p_values[dur] = am_results[dur_key]['P'][year_idx, 3]
+            am_w_values[dur] = am_results[dur_key]['W_veg'][year_idx, 3]
+        
+        # Check that values are monotonically increasing (or equal)
+        for i in range(len(durations) - 1):
+            dur_short = durations[i]
+            dur_long = durations[i + 1]
+            
+            # Check P
+            if am_p_values[dur_long] < am_p_values[dur_short] - 0.01:  # Allow small numerical tolerance
+                print(f"⚠️  WARNING Year {year}: P_{dur_long}h ({am_p_values[dur_long]:.2f}) < P_{dur_short}h ({am_p_values[dur_short]:.2f})", flush=True)
+                validation_passed = False
+            
+            # Check W
+            if am_w_values[dur_long] < am_w_values[dur_short] - 0.01:  # Allow small numerical tolerance
+                print(f"⚠️  WARNING Year {year}: W_{dur_long}h ({am_w_values[dur_long]:.2f}) < W_{dur_short}h ({am_w_values[dur_short]:.2f})", flush=True)
+                validation_passed = False
+    
+    if validation_passed:
+        print("✅ VALIDATION PASSED: All AM values satisfy duration hierarchy (72h≥48h≥24h≥...≥1h)", flush=True)
+    else:
+        print("❌ VALIDATION FAILED: Some AM values violate duration hierarchy!", flush=True)
+        print("   This indicates an issue with the moving window aggregation logic.", flush=True)
+        exit()
+    
+    print("="*80 + "\n", flush=True)
+    
+    # Optional: Print summary statistics for verification
+    print("Summary of AM P values by duration:", flush=True)
+    for dur in durations:
+        dur_key = f'{dur}h'
+        am_p = am_results[dur_key]['P'][:, 3]
+        print(f"  {dur:3d}h: min={np.min(am_p):6.2f}, mean={np.mean(am_p):6.2f}, max={np.max(am_p):6.2f} mm", flush=True)
+    
+    print("\nSummary of AM W values by duration:", flush=True)
+    for dur in durations:
+        dur_key = f'{dur}h'
+        am_w = am_results[dur_key]['W_veg'][:, 3]
+        print(f"  {dur:3d}h: min={np.min(am_w):6.2f}, mean={np.mean(am_w):6.2f}, max={np.max(am_w):6.2f} mm", flush=True)
+    print()
+
+    #----------------------------------------------------------------------------------------------------------
+    # 5. Write AM data to files (R will read and delete them)
     for duration in durations:
         dur_key = f'{duration}h'
-        np.savetxt(am_files_dict[f'am_{dur_key}_W_veg'], am_results[dur_key]['W_veg'], fmt='%d %d %d %5.4f')
+        np.savetxt(am_files_dict[f'am_{dur_key}_W_veg'], am_results[dur_key]['W_veg'], fmt='%d %d %d %5.4f %5.4f %5.4f')
         np.savetxt(am_files_dict[f'am_{dur_key}_P'], am_results[dur_key]['P'], fmt='%d %d %d %5.4f')
 
     # print(f"After writing AM files — ls -l {td}", flush=True)

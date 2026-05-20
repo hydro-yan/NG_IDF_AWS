@@ -78,12 +78,12 @@ def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label):
     
     # Set x-ticks to ARI values
     plt.xticks(ari_ticks, ari_tick_labels)
-    plt.xlabel('Average Recurrence Interval (years)')
-    plt.ylabel(f'Magnitude (mm) - {duration_label}')
+    plt.xlabel('Average Recurrence Interval (years)', fontsize=10, fontweight='bold')
+    plt.ylabel(f'Magnitude (mm) - {duration_label}', fontsize=10, fontweight='bold')
     plt.grid(True, which='both', linestyle='--', alpha=0.5)
     plt.ylim(ymin, ymax)
     plt.legend(loc='upper left')
-    plt.title(f'IDF Curves - {duration_label}')
+    #plt.title(f'IDF Curves - {duration_label}')
     
     plt.savefig(fig_file, dpi=150)
     plt.close()
@@ -185,10 +185,9 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_f
         
         # Plot W in pink (same as NG-IDF)
         axes[idx].plot(years_w, values_w, 's-', color='pink', linewidth=2, markersize=4, label='AM W')
-        
-        axes[idx].set_xlabel('Water Year', fontsize=10)
-        axes[idx].set_ylabel('Magnitude (mm)', fontsize=10)
-        axes[idx].set_title(f'{dur.replace("h", "-hour")} Duration', fontsize=11, fontweight='bold')
+        axes[idx].set_xlabel('Water Year', fontsize=10, fontweight='bold')
+        axes[idx].set_ylabel(f'Magnitude (mm) - {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        #axes[idx].set_title(f'{dur.replace("h", "-hour")} Duration', fontsize=11, fontweight='bold')
         axes[idx].grid(True, alpha=0.3)
         axes[idx].tick_params(axis='x', rotation=45)
         axes[idx].legend(loc='best', fontsize=9)
@@ -225,9 +224,9 @@ def generate_swe_timeseries_plot(am_swe, fig_file):
     
     plt.figure(figsize=(10, 4))
     plt.plot(years, values, 'o-', color='purple', linewidth=2, markersize=5)
-    plt.xlabel('Water Year', fontsize=11)
-    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11)
-    plt.title('Annual Maximum SWE Time Series', fontsize=12, fontweight='bold')
+    plt.xlabel('Water Year', fontsize=10, fontweight='bold')
+    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=10, fontweight='bold')
+    #plt.title('Annual Maximum SWE Time Series', fontsize=12, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()

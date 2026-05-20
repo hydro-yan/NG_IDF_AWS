@@ -158,8 +158,8 @@
   }
   
   .swe-plot {
-    width: 70%;
-    max-width: 900px;
+    width: 50%;
+    max-width: 700px;
     margin: 0 auto 16px auto;
     background: #fff;
     border: 1px solid #e1e5ea;
@@ -189,7 +189,6 @@
 
   .swe-table {
     width: 100%;
-    max-width: 600px;
     margin: 0 auto;
   }
 
@@ -412,37 +411,80 @@
   </div>
 </div>
 
-<!-- AM P & AM W Tables -->
+<!-- AM P Table -->
 <div class="am-tables">
-  <div class="section am-table">
+  <div class="section am-table" style="width: 90%; max-width: 1200px;">
     <h2>Annual Maximum Precipitation (AM P) Time Series Table</h2>
     <table>
-      <tr><th>24 h Date</th><th>24 h Magnitude (mm)</th><th>48 h Date</th><th>48 h Magnitude (mm)</th><th>72 h Date</th><th>72 h Magnitude (mm)</th></tr>
+      <tr>
+        <th rowspan="2">Year</th>
+        <th colspan="2">24-hour</th>
+        <th colspan="2">48-hour</th>
+        <th colspan="2">72-hour</th>
+      </tr>
+      <tr>
+        <th>Date</th>
+        <th>P (mm)</th>
+        <th>Date</th>
+        <th>P (mm)</th>
+        <th>Date</th>
+        <th>P (mm)</th>
+      </tr>
       {% for i in range(am_24h_P|length) %}
       <tr>
-        <td>{{ "%04d-%02d-%02d"|format(am_24h_P_date[i,0],am_24h_P_date[i,1],am_24h_P_date[i,2]) }}</td>
+        <td style="font-weight:bold;">{{ am_24h_P_date[i,0] }}</td>
+        <td>{{ "%02d-%02d"|format(am_24h_P_date[i,1],am_24h_P_date[i,2]) }}</td>
         <td>{{ am_24h_P[i,3] }}</td>
-        <td>{{ "%04d-%02d-%02d"|format(am_48h_P_date[i,0],am_48h_P_date[i,1],am_48h_P_date[i,2]) }}</td>
+        <td>{{ "%02d-%02d"|format(am_48h_P_date[i,1],am_48h_P_date[i,2]) }}</td>
         <td>{{ am_48h_P[i,3] }}</td>
-        <td>{{ "%04d-%02d-%02d"|format(am_72h_P_date[i,0],am_72h_P_date[i,1],am_72h_P_date[i,2]) }}</td>
+        <td>{{ "%02d-%02d"|format(am_72h_P_date[i,1],am_72h_P_date[i,2]) }}</td>
         <td>{{ am_72h_P[i,3] }}</td>
       </tr>
       {% endfor %}
     </table>
   </div>
+</div>
 
-  <div class="section am-table">
-    <h2>Annual Maximum Water Available for Runoff (AM W) Time Series Table</h2>
+<!-- AM W Table -->
+<div class="am-tables">
+  <div class="section am-table" style="width: 90%; max-width: 1400px;">
+    <h2>Annual Maximum Water Available for Runoff (W = Throughfall - &#9651;SWE) Time Series Table. Throughfall = Precip if no vegetation; negative &#9651;SWE suggests snowmelt.</h2>
     <table>
-      <tr><th>24 h Date</th><th>24 h Magnitude (mm)</th><th>48 h Date</th><th>48 h Magnitude (mm)</th><th>72 h Date</th><th>72 h Magnitude (mm)</th></tr>
+      <tr>
+        <th rowspan="2">Year</th>
+        <th colspan="4">24-hour</th>
+        <th colspan="4">48-hour</th>
+        <th colspan="4">72-hour</th>
+      </tr>
+      <tr>
+        <th>Date</th>
+        <th>W (mm)</th>
+        <th>Throughfall (mm)</th>
+        <th>&#9651;SWE (mm)</th>
+        <th>Date</th>
+        <th>W (mm)</th>
+        <th>Throughfall (mm)</th>
+        <th>&#9651;SWE (mm)</th>
+        <th>Date</th>
+        <th>W (mm)</th>
+        <th>Throughfall (mm)</th>
+        <th>&#9651;SWE (mm)</th>
+      </tr>
       {% for i in range(am_24h_W|length) %}
       <tr>
-        <td>{{ "%04d-%02d-%02d"|format(am_24h_W_date[i,0],am_24h_W_date[i,1],am_24h_W_date[i,2]) }}</td>
+        <td style="font-weight:bold;">{{ am_24h_W_date[i,0] }}</td>
+        <td>{{ "%02d-%02d"|format(am_24h_W_date[i,1],am_24h_W_date[i,2]) }}</td>
         <td>{{ am_24h_W[i,3] }}</td>
-        <td>{{ "%04d-%02d-%02d"|format(am_48h_W_date[i,0],am_48h_W_date[i,1],am_48h_W_date[i,2]) }}</td>
+        <td>{{ am_24h_W_P_int[i] }}</td>
+        <td>{{ am_24h_W_deltaSWE[i] }}</td>
+        <td>{{ "%02d-%02d"|format(am_48h_W_date[i,1],am_48h_W_date[i,2]) }}</td>
         <td>{{ am_48h_W[i,3] }}</td>
-        <td>{{ "%04d-%02d-%02d"|format(am_72h_W_date[i,0],am_72h_W_date[i,1],am_72h_W_date[i,2]) }}</td>
+        <td>{{ am_48h_W_P_int[i] }}</td>
+        <td>{{ am_48h_W_deltaSWE[i] }}</td>
+        <td>{{ "%02d-%02d"|format(am_72h_W_date[i,1],am_72h_W_date[i,2]) }}</td>
         <td>{{ am_72h_W[i,3] }}</td>
+        <td>{{ am_72h_W_P_int[i] }}</td>
+        <td>{{ am_72h_W_deltaSWE[i] }}</td>
       </tr>
       {% endfor %}
     </table>
@@ -450,14 +492,19 @@
 </div>
 
 <!-- SWE Table -->
-<div class="am-tables">
-  <div class="section am-table">
+<div class="am-tables" style="justify-content: center;">
+  <div class="section am-table" style="width: 50%; max-width: 700px; margin: 0 auto;">
     <h2>Annual Maximum Snow Water Equivalent (AM SWE) Time Series Table</h2>
     <table class="swe-table">
-      <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+      <tr>
+        <th>Year</th>
+        <th>Date</th>
+        <th>AM SWE (mm)</th>
+      </tr>
       {% for i in range(am_swe|length) %}
       <tr>
-        <td>{{ "%04d-%02d-%02d"|format(am_swe_date[i,0], am_swe_date[i,1], am_swe_date[i,2]) }}</td>
+        <td style="font-weight:bold;">{{ am_swe_date[i,0] }}</td>
+        <td>{{ "%02d-%02d"|format(am_swe_date[i,1], am_swe_date[i,2]) }}</td>
         <td>{{ am_swe[i,3] }}</td>
       </tr>
       {% endfor %}

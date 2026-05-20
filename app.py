@@ -117,15 +117,21 @@ def structure_results(results):
         # Base64-encoded figure string (can be used directly in HTML <img src="...">)
         structured[f'fig_{dur}'] = fig_codes[f'fig_{dur}']
         
-        # Annual maximum data (N years x 4 columns: Year, Month, Day, Value)
+        # Annual maximum data
+        # AM P: (N years x 4 columns: Year, Month, Day, Value)
+        # AM W: (N years x 6 columns: Year, Month, Day, W_value, P_int, deltaSWE)
         # Example: [[2033, 10, 15, 45.3], [2034, 11, 3, 52.1], ...]
         structured[f'am_{dur}_P'] = np.round(am_results[dur]['P'], 2)        # Precipitation AM
-        structured[f'am_{dur}_W'] = np.round(am_results[dur]['W_veg'], 2)    # Net Groundwater AM
+        structured[f'am_{dur}_W'] = np.round(am_results[dur]['W_veg'], 2)    # Net Groundwater AM (6 columns)
         
         # Date-only arrays (N years x 3 columns: Year, Month, Day)
         # Example: [[2033, 10, 15], [2034, 11, 3], ...]
         structured[f'am_{dur}_P_date'] = process_dates(am_results[dur]['P'])
         structured[f'am_{dur}_W_date'] = process_dates(am_results[dur]['W_veg'])
+        
+        # Extract P_int and deltaSWE from W_veg array (columns 4 and 5)
+        structured[f'am_{dur}_W_P_int'] = np.round(am_results[dur]['W_veg'][:, 4], 2)      # Throughfall
+        structured[f'am_{dur}_W_deltaSWE'] = np.round(am_results[dur]['W_veg'][:, 5], 2)   # deltaSWE
     
     # Add Snow Water Equivalent (SWE) data (only computed for 24h duration)
     structured['am_swe'] = np.round(am_results['swe'], 2)
