@@ -129,9 +129,19 @@ def structure_results(results):
         structured[f'am_{dur}_P_date'] = process_dates(am_results[dur]['P'])
         structured[f'am_{dur}_W_date'] = process_dates(am_results[dur]['W_veg'])
         
-        # Extract P_int and deltaSWE from W_veg array (columns 4 and 5)
-        structured[f'am_{dur}_W_P_int'] = np.round(am_results[dur]['W_veg'][:, 4], 2)      # Throughfall
-        structured[f'am_{dur}_W_deltaSWE'] = np.round(am_results[dur]['W_veg'][:, 5], 2)   # deltaSWE
+        # Extract mechanism from W_veg array (column 7: 1=Rain, 2=Melt, 3=ROS)
+        mechanism_values = am_results[dur]['W_veg'][:, 7].astype(int)
+        mechanism_labels = []
+        for mech in mechanism_values:
+            if mech == 1:
+                mechanism_labels.append("R")
+            elif mech == 2:
+                mechanism_labels.append("M")
+            elif mech == 3:
+                mechanism_labels.append("ROS")
+            else:
+                mechanism_labels.append("Unknown")
+        structured[f'am_{dur}_W_mechanism'] = mechanism_labels
     
     # Add Snow Water Equivalent (SWE) data (only computed for 24h duration)
     structured['am_swe'] = np.round(am_results['swe'], 2)

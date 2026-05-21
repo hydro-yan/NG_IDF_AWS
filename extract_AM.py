@@ -160,19 +160,17 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
             num_windows = len(base_data) - window_size + 1
             agg_output = npnan(num_windows, 9)
             
-            for k in range(num_windows):
-                start_idx = k
-                end_idx = k + window_size
-                
-                # Use the timestamp of the last period in the window
-                agg_output[k, 0:4] = base_data[end_idx - 1, 0:4]
-                # Sum W_veg, P, P_int, deltaSWE over the window
-                agg_output[k, 4] = np.sum(base_data[start_idx:end_idx, 4])
-                agg_output[k, 5] = np.sum(base_data[start_idx:end_idx, 5])
-                agg_output[k, 6] = np.sum(base_data[start_idx:end_idx, 6])
-                agg_output[k, 8] = np.sum(base_data[start_idx:end_idx, 8])
-                # SWE: use the last value
-                agg_output[k, 7] = base_data[end_idx - 1, 7]
+            # Use the timestamp of the last period in each window
+            agg_output[:, 0:4] = base_data[window_size-1:, 0:4]
+            
+            # Fast moving sum using cumulative sum for columns 4,5,6,8
+            for col in [4, 5, 6, 8]:
+                cumsum = np.cumsum(base_data[:, col])
+                # Moving sum = cumsum[i] - cumsum[i-window_size]
+                agg_output[:, col] = cumsum[window_size-1:] - np.concatenate(([0], cumsum[:-window_size]))
+            
+            # SWE: use the last value in each window
+            agg_output[:, 7] = base_data[window_size-1:, 7]
             
             aggregated_data[duration] = agg_output
     
@@ -186,23 +184,21 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
                 # No aggregation needed for 1-hour data
                 aggregated_data[duration] = base_data.copy()
             else:
-                # Moving window aggregation
+                # Fast moving window aggregation using cumulative sum
                 num_windows = len(base_data) - window_size + 1
                 agg_output = npnan(num_windows, 9)
                 
-                for k in range(num_windows):
-                    start_idx = k
-                    end_idx = k + window_size
-                    
-                    # Use the timestamp of the last timestep in the window
-                    agg_output[k, 0:4] = base_data[end_idx - 1, 0:4]
-                    # Sum W_veg, P, P_int, deltaSWE over the window
-                    agg_output[k, 4] = np.sum(base_data[start_idx:end_idx, 4])
-                    agg_output[k, 5] = np.sum(base_data[start_idx:end_idx, 5])
-                    agg_output[k, 6] = np.sum(base_data[start_idx:end_idx, 6])
-                    agg_output[k, 8] = np.sum(base_data[start_idx:end_idx, 8])
-                    # SWE: use the last value
-                    agg_output[k, 7] = base_data[end_idx - 1, 7]
+                # Use the timestamp of the last timestep in each window
+                agg_output[:, 0:4] = base_data[window_size-1:, 0:4]
+                
+                # Fast moving sum using cumulative sum for columns 4,5,6,8
+                for col in [4, 5, 6, 8]:
+                    cumsum = np.cumsum(base_data[:, col])
+                    # Moving sum = cumsum[i] - cumsum[i-window_size]
+                    agg_output[:, col] = cumsum[window_size-1:] - np.concatenate(([0], cumsum[:-window_size]))
+                
+                # SWE: use the last value in each window
+                agg_output[:, 7] = base_data[window_size-1:, 7]
                 
                 aggregated_data[duration] = agg_output
 
@@ -270,7 +266,7 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         num_year = len(wy_list)
         
         # Initialize AM outputs: cols = year, mon, day, AM
-        am_W_veg = npnan(num_year, 6)  #year, mon, day, AM, P_int, deltaSWE
+        am_W_veg = npnan(num_year, 8)  #year, mon, day, AM, P_int, deltaSWE, SWE, mechanism (1-Rain, 2-Melt, 3-ROS)
         am_P = npnan(num_year, 4)
         am_P_int = npnan(num_year, 4)
         am_swe = npnan(num_year, 4)
@@ -286,13 +282,33 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
                 am_W_veg[count, 0:3] = wy_data[np.argmax(wy_data[:, 4]), 0:3]
                 am_W_veg[count, 4] = wy_data[np.argmax(wy_data[:, 4]), 6]  #P_int
                 am_W_veg[count, 5] = -wy_data[np.argmax(wy_data[:, 4]), 8]  #deltaSWE
+                am_W_veg[count, 6] = wy_data[np.argmax(wy_data[:, 4]), 7]  #SWE
                 if abs(am_W_veg[count, 5]) < 1e-10:  # If essentially zero
                     am_W_veg[count, 5] = 0.0
 
                 if (am_W_veg[count, 3] != (am_W_veg[count, 4]-am_W_veg[count, 5])):
                     am_W_veg[count, 3] = am_W_veg[count, 4]-am_W_veg[count, 5]  # update W due to tighly numerical or condension/sublimation 
-                    
-                    
+
+                # classify the mechanism    
+                temp_p = am_W_veg[count, 4]
+                temp_deltaSWE = am_W_veg[count, 5]
+                temp_swe = am_W_veg[count, 6]
+
+                if temp_p > 0 and temp_swe == 0:
+                    am_W_veg[count, 7] = 1  # Rain
+                if temp_p == 0 and temp_deltaSWE < 0:
+                    am_W_veg[count, 7] = 2  # Melt
+                if (temp_swe>0 and temp_deltaSWE<=0 and temp_p>0) or (temp_p>temp_deltaSWE>0):
+                    am_W_veg[count, 7] = 3  # ROS
+                
+                # Ensure mechanism is assigned (no NaN values)
+                if np.isnan(am_W_veg[count, 7]):
+                    print(f"⚠️  Warning: Year {int(am_W_veg[count, 0])}, Duration {duration}h - No mechanism matched.  P={temp_p:.2f}, SWE={temp_swe:.2f}, deltaSWE={temp_deltaSWE:.2f}", flush=True)
+                    if temp_swe>0 and temp_p>0:
+                        am_W_veg[count, 7] = 3
+                    else:
+                        am_W_veg[count, 7] = 1
+
                 
                 # P
                 am_P[count, 3] = np.max(wy_data[:, 5])
@@ -366,27 +382,27 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         print("   If violations are large (> 5 mm), this may indicate a calculation error.\n", flush=True)
         # Don't exit - allow the analysis to continue
     
-    print("="*80 + "\n", flush=True)
+    #print("="*80 + "\n", flush=True)
     
     # Optional: Print summary statistics for verification
-    print("Summary of AM P values by duration:", flush=True)
-    for dur in durations:
-        dur_key = f'{dur}h'
-        am_p = am_results[dur_key]['P'][:, 3]
-        print(f"  {dur:3d}h: min={np.min(am_p):6.2f}, mean={np.mean(am_p):6.2f}, max={np.max(am_p):6.2f} mm", flush=True)
+    # print("Summary of AM P values by duration:", flush=True)
+    # for dur in durations:
+    #     dur_key = f'{dur}h'
+    #     am_p = am_results[dur_key]['P'][:, 3]
+    #     print(f"  {dur:3d}h: min={np.min(am_p):6.2f}, mean={np.mean(am_p):6.2f}, max={np.max(am_p):6.2f} mm", flush=True)
     
-    print("\nSummary of AM W values by duration:", flush=True)
-    for dur in durations:
-        dur_key = f'{dur}h'
-        am_w = am_results[dur_key]['W_veg'][:, 3]
-        print(f"  {dur:3d}h: min={np.min(am_w):6.2f}, mean={np.mean(am_w):6.2f}, max={np.max(am_w):6.2f} mm", flush=True)
-    print()
+    # print("\nSummary of AM W values by duration:", flush=True)
+    # for dur in durations:
+    #     dur_key = f'{dur}h'
+    #     am_w = am_results[dur_key]['W_veg'][:, 3]
+    #     print(f"  {dur:3d}h: min={np.min(am_w):6.2f}, mean={np.mean(am_w):6.2f}, max={np.max(am_w):6.2f} mm", flush=True)
+    # print()
 
     #----------------------------------------------------------------------------------------------------------
     # 5. Write AM data to files (R will read and delete them)
     for duration in durations:
         dur_key = f'{duration}h'
-        np.savetxt(am_files_dict[f'am_{dur_key}_W_veg'], am_results[dur_key]['W_veg'], fmt='%d %d %d %5.4f %5.4f %5.4f')
+        np.savetxt(am_files_dict[f'am_{dur_key}_W_veg'], am_results[dur_key]['W_veg'], fmt='%d %d %d %5.4f %5.4f %5.4f %5.4f %d')
         np.savetxt(am_files_dict[f'am_{dur_key}_P'], am_results[dur_key]['P'], fmt='%d %d %d %5.4f')
 
     # print(f"After writing AM files — ls -l {td}", flush=True)

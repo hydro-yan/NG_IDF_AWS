@@ -447,44 +447,38 @@
 
 <!-- AM W Table -->
 <div class="am-tables">
-  <div class="section am-table" style="width: 90%; max-width: 1400px;">
-    <h2>Annual Maximum Water Available for Runoff (W = Throughfall - &#9651;SWE) Time Series Table. Throughfall = Precip if no vegetation; negative &#9651;SWE suggests snowmelt.</h2>
+  <div class="section am-table" style="width: 90%; max-width: 1200px;">
+    <h2>Annual Maximum Water Available for Runoff (AM W) Time Series Table. R: rainfall. M: snowmelt only. ROS: rain-on-snow.</h2>
     <table>
       <tr>
         <th rowspan="2">Year</th>
-        <th colspan="4">24-hour</th>
-        <th colspan="4">48-hour</th>
-        <th colspan="4">72-hour</th>
+        <th colspan="3">24-hour</th>
+        <th colspan="3">48-hour</th>
+        <th colspan="3">72-hour</th>
       </tr>
       <tr>
         <th>Date</th>
         <th>W (mm)</th>
-        <th>Throughfall (mm)</th>
-        <th>&#9651;SWE (mm)</th>
+        <th>Mechanism</th>
         <th>Date</th>
         <th>W (mm)</th>
-        <th>Throughfall (mm)</th>
-        <th>&#9651;SWE (mm)</th>
+        <th>Mechanism</th>
         <th>Date</th>
         <th>W (mm)</th>
-        <th>Throughfall (mm)</th>
-        <th>&#9651;SWE (mm)</th>
+        <th>Mechanism</th>
       </tr>
       {% for i in range(am_24h_W|length) %}
       <tr>
         <td style="font-weight:bold;">{{ am_24h_W_date[i,0] }}</td>
         <td>{{ "%02d-%02d"|format(am_24h_W_date[i,1],am_24h_W_date[i,2]) }}</td>
         <td>{{ am_24h_W[i,3] }}</td>
-        <td>{{ am_24h_W_P_int[i] }}</td>
-        <td>{{ am_24h_W_deltaSWE[i] }}</td>
+        <td>{{ am_24h_W_mechanism[i] }}</td>
         <td>{{ "%02d-%02d"|format(am_48h_W_date[i,1],am_48h_W_date[i,2]) }}</td>
         <td>{{ am_48h_W[i,3] }}</td>
-        <td>{{ am_48h_W_P_int[i] }}</td>
-        <td>{{ am_48h_W_deltaSWE[i] }}</td>
+        <td>{{ am_48h_W_mechanism[i] }}</td>
         <td>{{ "%02d-%02d"|format(am_72h_W_date[i,1],am_72h_W_date[i,2]) }}</td>
         <td>{{ am_72h_W[i,3] }}</td>
-        <td>{{ am_72h_W_P_int[i] }}</td>
-        <td>{{ am_72h_W_deltaSWE[i] }}</td>
+        <td>{{ am_72h_W_mechanism[i] }}</td>
       </tr>
       {% endfor %}
     </table>
@@ -499,7 +493,7 @@
       <tr>
         <th>Year</th>
         <th>Date</th>
-        <th>AM SWE (mm)</th>
+        <th>SWE (mm)</th>
       </tr>
       {% for i in range(am_swe|length) %}
       <tr>

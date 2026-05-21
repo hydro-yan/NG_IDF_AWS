@@ -28,10 +28,10 @@ esti_idf90 <- function(data) {
     if (inherits(par1, "try-error")) return(output)
 
     # Monte Carlo matrix for all quantiles
-    flow <- matrix(0, nrow = 1000, ncol = nprob)
+    flow <- matrix(0, nrow = 500, ncol = nprob)
 
     # Monte Carlo sampling
-    for (i in 1:1000) {
+    for (i in 1:500) {
 
         # resample synthetic data
         resample <- quagum(runif(length(data)), para = c(par1[[1]], par1[[2]]))
