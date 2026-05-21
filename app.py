@@ -14,6 +14,8 @@ import shutil
 from gen_figures import (generate_fig, generate_figs_multiple, generate_am_timeseries_plots, 
                          generate_swe_timeseries_plot, generate_multi_scenario_idf_plots,
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot)
+from concurrent.futures import ProcessPoolExecutor
+import time
 
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -240,17 +242,44 @@ def NG_IDF():
 
         elif scenario == "future_wrf":
 
-            # Run WRF Multi-Scenario Workflow
-            # 1. Historical Baseline (WRF Historical)
-            res_hist = get_NG_IDF(input_data, forcing_type="WRF_historical")
+            # Run WRF Multi-Scenario Workflow IN PARALLEL (3 processors)
+            print("Starting WRF parallel processing with 3 scenarios...", flush=True)
+            start_time = time.time()
+            
+            # Define the 3 scenarios to run in parallel
+            wrf_scenarios = ["WRF_historical", "WRF_medium", "WRF_high"]
+            
+            # Use ProcessPoolExecutor to run 3 scenarios in parallel
+            with ProcessPoolExecutor(max_workers=3) as executor:
+                # Submit all 3 jobs to the executor
+                futures = {
+                    executor.submit(get_NG_IDF, input_data, forcing_type): forcing_type
+                    for forcing_type in wrf_scenarios
+                }
+                
+                # Collect results as they complete
+                results_dict = {}
+                for future in futures:
+                    forcing_type = futures[future]
+                    try:
+                        result = future.result()
+                        results_dict[forcing_type] = result
+                        print(f"Completed: {forcing_type}", flush=True)
+                    except Exception as exc:
+                        print(f"ERROR in {forcing_type}: {exc}", flush=True)
+                        raise
+            
+            elapsed_time = time.time() - start_time
+            print(f"WRF parallel processing completed in {elapsed_time:.2f} seconds", flush=True)
+            
+            # Extract and structure results
+            res_hist = results_dict["WRF_historical"]
             hist_data = structure_results(res_hist)
-
-            # 2. Future Medium (WRF Medium)
-            res_med = get_NG_IDF(input_data, forcing_type="WRF_medium")
+            
+            res_med = results_dict["WRF_medium"]
             med_data = structure_results(res_med)
-
-            # 3. Future High (WRF High)
-            res_high = get_NG_IDF(input_data, forcing_type="WRF_high")
+            
+            res_high = results_dict["WRF_high"]
             high_data = structure_results(res_high)
 
             # 4. Generate multi-scenario comparison plots
