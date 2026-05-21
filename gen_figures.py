@@ -241,7 +241,7 @@ def generate_swe_timeseries_plot(am_swe, fig_file):
 
 def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations, fig_file_prec, fig_file_ng):
     """
-    Generate multi-scenario IDF comparison plots
+    Generate multi-scenario IDF comparison plots in 2x4 grid
     
     Parameters:
     -----------
@@ -271,11 +271,12 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
     ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
     
-    # Create PREC-IDF comparison plot
+    # Create PREC-IDF comparison plot in 2x4 grid
     n_dur = len(durations)
-    fig_prec, axes_prec = plt.subplots(1, n_dur, figsize=(3.5*n_dur, 4))
-    if n_dur == 1:
-        axes_prec = [axes_prec]
+    nrows = 2
+    ncols = 4
+    fig_prec, axes_prec = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_prec = axes_prec.flatten()
     
     for idx, dur in enumerate(durations):
         hist_curve = hist_data[f'P_{dur}'][0, :]
@@ -294,7 +295,11 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         axes_prec[idx].grid(True, alpha=0.3)
         axes_prec[idx].legend(loc='best', fontsize=8)
     
-    plt.suptitle('PREC-IDF Curves: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_prec[7].axis('off')
+    
+    #plt.suptitle('PREC-IDF Curves: Climate Scenario Comparison', fontsize=14, fontweight='bold', y=0.995)
     plt.tight_layout()
     
     # Save to file or memory
@@ -308,10 +313,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         img_prec = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
     
-    # Create NG-IDF comparison plot
-    fig_ng, axes_ng = plt.subplots(1, n_dur, figsize=(3.5*n_dur, 4))
-    if n_dur == 1:
-        axes_ng = [axes_ng]
+    # Create NG-IDF comparison plot in 2x4 grid
+    fig_ng, axes_ng = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_ng = axes_ng.flatten()
     
     for idx, dur in enumerate(durations):
         hist_curve = hist_data[f'NG_{dur}'][0, :]
@@ -330,7 +334,11 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         axes_ng[idx].grid(True, alpha=0.3)
         axes_ng[idx].legend(loc='best', fontsize=8)
     
-    plt.suptitle('NG-IDF Curves: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_ng[7].axis('off')
+    
+    #plt.suptitle('NG-IDF Curves: Climate Scenario Comparison', fontsize=14, fontweight='bold', y=0.995)
     plt.tight_layout()
     
     # Save to file or memory
@@ -349,7 +357,7 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
 
 def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w):
     """
-    Generate multi-scenario AM time series plots
+    Generate multi-scenario AM time series plots in 2x4 grid
     
     Parameters:
     -----------
@@ -371,10 +379,12 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
     tuple : (base64_p, base64_w) encoded image strings
     """
     
-    # Create combined P plot
-    fig_p, axes_p = plt.subplots(1, len(durations), figsize=(15, 4.5))
-    if len(durations) == 1:
-        axes_p = [axes_p]
+    # Create combined P plot in 2x4 grid
+    n_dur = len(durations)
+    nrows = 2
+    ncols = 4
+    fig_p, axes_p = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_p = axes_p.flatten()
     
     for idx, dur in enumerate(durations):
         hist_p = hist_am[dur]['P']
@@ -385,14 +395,18 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
         axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
         
-        axes_p[idx].set_xlabel('Water Year', fontsize=10)
-        axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=10)
-        axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=11, fontweight='bold')
+        axes_p[idx].set_xlabel('Water Year', fontsize=9)
+        axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=9)
+        axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_p[idx].grid(True, alpha=0.3)
         axes_p[idx].tick_params(axis='x', rotation=45)
         axes_p[idx].legend(loc='best', fontsize=8)
     
-    plt.suptitle('Annual Maximum Precipitation: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_p[7].axis('off')
+    
+    #plt.suptitle('Annual Maximum Precipitation: Climate Scenario Comparison', fontsize=14, fontweight='bold', y=0.995)
     plt.tight_layout()
     
     # Save to file or memory
@@ -406,10 +420,9 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         img_p = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
     
-    # Create combined W plot
-    fig_w, axes_w = plt.subplots(1, len(durations), figsize=(15, 4.5))
-    if len(durations) == 1:
-        axes_w = [axes_w]
+    # Create combined W plot in 2x4 grid
+    fig_w, axes_w = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_w = axes_w.flatten()
     
     for idx, dur in enumerate(durations):
         hist_w = hist_am[dur]['W_veg']
@@ -420,14 +433,18 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
         axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
         
-        axes_w[idx].set_xlabel('Water Year', fontsize=10)
-        axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=10)
-        axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=11, fontweight='bold')
+        axes_w[idx].set_xlabel('Water Year', fontsize=9)
+        axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=9)
+        axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_w[idx].grid(True, alpha=0.3)
         axes_w[idx].tick_params(axis='x', rotation=45)
         axes_w[idx].legend(loc='best', fontsize=8)
     
-    plt.suptitle('Annual Maximum Water for Runoff: Climate Scenario Comparison', fontsize=12, fontweight='bold', y=1.02)
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_w[7].axis('off')
+    
+    #plt.suptitle('Annual Maximum Water for Runoff: Climate Scenario Comparison', fontsize=14, fontweight='bold', y=0.995)
     plt.tight_layout()
     
     # Save to file or memory
@@ -446,7 +463,7 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
 
 def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
     """
-    Generate multi-scenario SWE time series plot
+    Generate multi-scenario SWE time series plot (smaller size)
     
     Parameters:
     -----------
@@ -464,7 +481,7 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
     str : Base64 encoded image string
     """
     
-    plt.figure(figsize=(12, 4.5))
+    plt.figure(figsize=(8, 4))
     
     plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3], 'o-', color='blue', lw=2, markersize=4, label='Historical')
     plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3], 's-', color='orange', lw=2, markersize=4, label='Medium')
@@ -472,7 +489,7 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
     
     plt.xlabel('Water Year', fontsize=11)
     plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11)
-    plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
+    #plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.legend(loc='best', fontsize=10)
