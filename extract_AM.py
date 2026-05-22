@@ -45,7 +45,7 @@ def finddate(year,month,day,var):
 
 #--------------------------------------------------------------------------------------------------------------
 # User inputs
-def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"):
+def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet", year_range=None):
     """
     Extract Annual Maximum data from DHSVM output
     
@@ -62,6 +62,9 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
     forcing_type : str
         Type of forcing data: "Daymet", "WRF_historical", "WRF_medium", "WRF_high", 
         "CESM_hist_LE2", "CESM_hist_LE4", etc.
+    year_range : tuple or None
+        Optional (start_year, end_year) to filter data. If None, uses full range.
+        Example: (2006, 2021) for historical, (2034, 2049) for near-term future
     
     Returns:
     --------
@@ -85,7 +88,7 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
             s_date = datetime.datetime(1989, 5, 31, 16, 0, 0)
             e_date = datetime.datetime(2021, 9, 30, 15, 0, 0)
         durations = [1, 3, 6, 12, 24, 48, 72]  # hours
-
+    
     #----------------------------------------------------------------------------------------------------------
     # 1. read time-step Pixel.CENTER output
     lines = [line.rstrip('\n') for line in open(pixel_file)]
@@ -121,6 +124,33 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
     # post-processing: no negatives
     for k in range(4, 8):
         output_timestep[output_timestep[:, k] <= 0, k] = 0
+    
+    # Apply custom date range filter if provided
+    # This filters the data AFTER reading from Pixel.CENTER to only include specified date range
+    if year_range is not None:
+        filter_start_date, filter_end_date = year_range
+        print(f"Applying custom date range filter: {filter_start_date} to {filter_end_date}", flush=True)
+        print(f"Data before filtering: {len(output_timestep)} timesteps", flush=True)
+        print(f"  First date: {int(output_timestep[0, 0])}-{int(output_timestep[0, 1]):02d}-{int(output_timestep[0, 2]):02d}", flush=True)
+        print(f"  Last date: {int(output_timestep[-1, 0])}-{int(output_timestep[-1, 1]):02d}-{int(output_timestep[-1, 2]):02d}", flush=True)
+        
+        # Create mask for rows within the date range
+        # Convert dates to comparable format: YYYYMMDD
+        def date_to_int(year, month, day):
+            return int(year) * 10000 + int(month) * 100 + int(day)
+        
+        start_int = date_to_int(filter_start_date[0], filter_start_date[1], filter_start_date[2])
+        end_int = date_to_int(filter_end_date[0], filter_end_date[1], filter_end_date[2])
+        
+        date_ints = np.array([date_to_int(output_timestep[i, 0], output_timestep[i, 1], output_timestep[i, 2]) 
+                              for i in range(len(output_timestep))])
+        
+        date_mask = (date_ints >= start_int) & (date_ints <= end_int)
+        output_timestep = output_timestep[date_mask, :]
+        
+        print(f"Data after filtering: {len(output_timestep)} timesteps", flush=True)
+        print(f"  First date: {int(output_timestep[0, 0])}-{int(output_timestep[0, 1]):02d}-{int(output_timestep[0, 2]):02d}", flush=True)
+        print(f"  Last date: {int(output_timestep[-1, 0])}-{int(output_timestep[-1, 1]):02d}-{int(output_timestep[-1, 2]):02d}", flush=True)
 
     #----------------------------------------------------------------------------------------------------------
     # 2. Aggregate data for different durations using MOVING WINDOWS

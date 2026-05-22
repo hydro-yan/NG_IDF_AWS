@@ -198,7 +198,15 @@ def NG_IDF():
         lon = input_data['value2']
         scenario = request.form.get("scenario", "historical")
 
-        print("scenario from form:", repr(scenario), flush=True)
+        # Debug: Print scenario value with quotes to see exact string
+        print(f"DEBUG: scenario from form: '{scenario}' (type: {type(scenario)})", flush=True)
+        print(f"DEBUG: scenario repr: {repr(scenario)}", flush=True)
+        print(f"DEBUG: scenario bytes: {scenario.encode('utf-8')}", flush=True)
+        
+        # Strip any whitespace that might have been added
+        scenario = scenario.strip()
+        print(f"DEBUG: scenario after strip: '{scenario}'", flush=True)
+        
         # ---------------------------------------------
         # BRANCH: HISTORICAL, WRF FUTURE, OR CESM FUTURE
         # ---------------------------------------------
@@ -529,6 +537,201 @@ def NG_IDF():
                                    fig_am_w_comp=fig_am_w_comp,
                                    fig_swe_comp=fig_swe_comp)
 
+        elif scenario == "future_cesm_near":
+
+            # Run CESM Near-Term (16-year) Multi-Scenario Workflow IN PARALLEL (8 processors)
+            # Historical: 2006-2021 (16 years), Future: 2034-2049 (16 years)
+            # 4 historical + 4 future ensemble members
+            print("Starting CESM Near-Term parallel processing with 8 ensemble members...", flush=True)
+            print("Historical period: 2006-2021 (16 years)", flush=True)
+            print("Future period: 2034-2049 (16 years)", flush=True)
+            start_time = time.time()
+            
+            # Define all 8 CESM scenarios to run in parallel
+            cesm_scenarios = [
+                "CESM_hist_LE2", "CESM_futu_LE2",
+                "CESM_hist_LE4", "CESM_futu_LE4",
+                "CESM_hist_LE7", "CESM_futu_LE7",
+                "CESM_hist_LE9", "CESM_futu_LE9"
+            ]
+            
+            # Use ProcessPoolExecutor to run all 8 scenarios in parallel
+            # Pass year_range parameter to filter data
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                # Submit all 8 jobs to the executor with year range filtering
+                futures = {}
+                for forcing_type in cesm_scenarios:
+                    # Determine year range based on scenario type
+                    # Note: We need to be careful with water year boundaries
+                    # Water Year N starts Oct 1 of year N-1 and ends Sep 30 of year N
+                    # To get WY 2006-2021 (16 WY): need data from Oct 2004 to Sep 2021
+                    # To get WY 2034-2049 (16 WY): need data from Oct 2032 to Sep 2049
+                    # After R removes first year: WY 2007-2021 (15 WY) and WY 2035-2049 (15 WY)
+                    # To get 16 WY after R filtering, we need 17 WY before, which means:
+                    # Historical: 2004-2021 → WY 2005-2021 (17 WY) → R removes 2005 → WY 2006-2021 (16 WY)
+                    # Future: 2032-2048 → WY 2033-2049 (17 WY) → R removes 2033 → WY 2034-2049 (16 WY)
+                    if "hist" in forcing_type:
+                        year_range = ((2005, 1, 1), (2021, 9, 30))  # 2005/1/1 to 2021/9/30 → WY 2006-2021 (16 WY after R filtering)
+                    else:  # "futu" in forcing_type
+                        year_range = ((2033, 1, 1), (2049, 9, 30))  # 2033/1/1 to 2049/9/30 → WY 2034-2049 (16 WY after R filtering)
+                    
+                    futures[executor.submit(get_NG_IDF, input_data, forcing_type, year_range)] = forcing_type
+                
+                # Collect results as they complete
+                results_dict = {}
+                for future in futures:
+                    forcing_type = futures[future]
+                    try:
+                        result = future.result()
+                        results_dict[forcing_type] = result
+                        print(f"Completed: {forcing_type}", flush=True)
+                    except Exception as exc:
+                        print(f"ERROR in {forcing_type}: {exc}", flush=True)
+                        raise
+            
+            elapsed_time = time.time() - start_time
+            print(f"CESM Near-Term parallel processing completed in {elapsed_time:.2f} seconds", flush=True)
+            
+            # Extract and structure results for each ensemble member
+            res_hist_le2 = results_dict["CESM_hist_LE2"]
+            hist_le2_data = structure_results(res_hist_le2)
+            
+            res_futu_le2 = results_dict["CESM_futu_LE2"]
+            futu_le2_data = structure_results(res_futu_le2)
+            
+            res_hist_le4 = results_dict["CESM_hist_LE4"]
+            hist_le4_data = structure_results(res_hist_le4)
+            
+            res_futu_le4 = results_dict["CESM_futu_LE4"]
+            futu_le4_data = structure_results(res_futu_le4)
+            
+            res_hist_le7 = results_dict["CESM_hist_LE7"]
+            hist_le7_data = structure_results(res_hist_le7)
+            
+            res_futu_le7 = results_dict["CESM_futu_LE7"]
+            futu_le7_data = structure_results(res_futu_le7)
+            
+            res_hist_le9 = results_dict["CESM_hist_LE9"]
+            hist_le9_data = structure_results(res_hist_le9)
+            
+            res_futu_le9 = results_dict["CESM_futu_LE9"]
+            futu_le9_data = structure_results(res_futu_le9)
+
+            # Get durations from CESM data (7 durations: 1h, 3h, 6h, 12h, 24h, 48h, 72h)
+            durations = hist_le2_data['durations']
+            
+            # Generate CESM multi-ensemble comparison plots
+            print("Generating CESM Near-Term ensemble comparison plots...", flush=True)
+            fig_prec_comp, fig_ng_comp = generate_cesm_ensemble_idf_plots(
+                hist_le2_data, hist_le4_data, hist_le7_data, hist_le9_data,
+                futu_le2_data, futu_le4_data, futu_le7_data, futu_le9_data,
+                durations, None, None
+            )
+            
+            fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
+                res_hist_le2['am_results'], res_hist_le4['am_results'], 
+                res_hist_le7['am_results'], res_hist_le9['am_results'],
+                res_futu_le2['am_results'], res_futu_le4['am_results'],
+                res_futu_le7['am_results'], res_futu_le9['am_results'],
+                durations, None, None
+            )
+            
+            fig_swe_comp = generate_cesm_ensemble_swe_plot(
+                res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
+                res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
+                res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
+                res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
+                None
+            )
+            
+            # Build Comprehensive Summary Table for CESM Near-Term
+            aris = [2, 5, 10, 25, 50, 100, 500]
+            indices = [0, 30, 40, 46, 48, 49, 50]
+            
+            summary_rows = []
+
+            for dur in durations:
+                key = f"NG_{dur}"
+                
+                # Get arrays for all ensemble members
+                hist_le2_arr = hist_le2_data[key]
+                futu_le2_arr = futu_le2_data[key]
+                hist_le4_arr = hist_le4_data[key]
+                futu_le4_arr = futu_le4_data[key]
+                hist_le7_arr = hist_le7_data[key]
+                futu_le7_arr = futu_le7_data[key]
+                hist_le9_arr = hist_le9_data[key]
+                futu_le9_arr = futu_le9_data[key]
+
+                for ari, idx in zip(aris, indices):
+                    # LE2
+                    val_hist_le2 = hist_le2_arr[0, idx]
+                    val_futu_le2 = futu_le2_arr[0, idx]
+                    diff_le2 = val_futu_le2 - val_hist_le2
+                    pct_le2 = (diff_le2 / val_hist_le2 * 100) if val_hist_le2 != 0 else 0.0
+
+                    # LE4
+                    val_hist_le4 = hist_le4_arr[0, idx]
+                    val_futu_le4 = futu_le4_arr[0, idx]
+                    diff_le4 = val_futu_le4 - val_hist_le4
+                    pct_le4 = (diff_le4 / val_hist_le4 * 100) if val_hist_le4 != 0 else 0.0
+
+                    # LE7
+                    val_hist_le7 = hist_le7_arr[0, idx]
+                    val_futu_le7 = futu_le7_arr[0, idx]
+                    diff_le7 = val_futu_le7 - val_hist_le7
+                    pct_le7 = (diff_le7 / val_hist_le7 * 100) if val_hist_le7 != 0 else 0.0
+
+                    # LE9
+                    val_hist_le9 = hist_le9_arr[0, idx]
+                    val_futu_le9 = futu_le9_arr[0, idx]
+                    diff_le9 = val_futu_le9 - val_hist_le9
+                    pct_le9 = (diff_le9 / val_hist_le9 * 100) if val_hist_le9 != 0 else 0.0
+
+                    summary_rows.append({
+                        "duration": dur,
+                        "ari": ari,
+                        "hist_le2": val_hist_le2,
+                        "futu_le2": val_futu_le2,
+                        "diff_le2": diff_le2,
+                        "pct_le2": pct_le2,
+                        "hist_le4": val_hist_le4,
+                        "futu_le4": val_futu_le4,
+                        "diff_le4": diff_le4,
+                        "pct_le4": pct_le4,
+                        "hist_le7": val_hist_le7,
+                        "futu_le7": val_futu_le7,
+                        "diff_le7": diff_le7,
+                        "pct_le7": pct_le7,
+                        "hist_le9": val_hist_le9,
+                        "futu_le9": val_futu_le9,
+                        "diff_le9": diff_le9,
+                        "pct_le9": pct_le9
+                    })
+
+            # Use the new near-term template
+            return render_template("out_cesm_near.html",
+                                   lat=lat, lon=lon,
+                                   hist_le2=hist_le2_data,
+                                   futu_le2=futu_le2_data,
+                                   hist_le4=hist_le4_data,
+                                   futu_le4=futu_le4_data,
+                                   hist_le7=hist_le7_data,
+                                   futu_le7=futu_le7_data,
+                                   hist_le9=hist_le9_data,
+                                   futu_le9=futu_le9_data,
+                                   summary_rows=summary_rows,
+                                   fig_prec_comp=fig_prec_comp,
+                                   fig_ng_comp=fig_ng_comp,
+                                   fig_am_p_comp=fig_am_p_comp,
+                                   fig_am_w_comp=fig_am_w_comp,
+                                   fig_swe_comp=fig_swe_comp)
+        
+        else:
+            # Unknown scenario - return to main page with error message
+            print(f"ERROR: Unknown scenario '{scenario}'", flush=True)
+            return render_template("NG_IDF.html")
+
     return render_template("NG_IDF.html")
 
 
@@ -537,7 +740,24 @@ def NG_IDF():
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # read the values and start processing 
-def get_NG_IDF(input_data, forcing_type="Daymet"):
+def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None):
+    """
+    Generate NG-IDF curves for a given location and forcing type.
+    
+    Parameters:
+    -----------
+    input_data : dict
+        Dictionary with keys 'value1' through 'value10' containing model parameters
+    forcing_type : str
+        Type of forcing data (e.g., "Daymet", "WRF_historical", "CESM_hist_LE2", etc.)
+    year_range : tuple or None
+        Optional (start_year, end_year) to filter data. If None, uses full range.
+        Example: (2006, 2021) for 16-year historical period
+    
+    Returns:
+    --------
+    dict : Dictionary containing durations, idf_data, fig_codes, and am_results
+    """
 
     # 0-lat, 1-lon, 2-LAI, 3-Height (m), 4-land cover fraction, 5-Land cover type, 6-Rain LAI Multiplier, 7-Snow LAI Multiplier, 8-Max Snow Intercp (m), 9-Snow Intercp Effi
     value = []  
@@ -728,8 +948,8 @@ def get_NG_IDF(input_data, forcing_type="Daymet"):
         print(f"Files in temp directory after DHSVM:")
         os.system('ls -lh ' + td)
 
-        # Extract AM data
-        am_results = extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type)
+        # Extract AM data with optional year range filtering
+        am_results = extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type, year_range)
 
         # Debug: inspect am_results in docker logs (docker logs -f <container>)
         # print("am_results keys:", list(am_results.keys()), flush=True)
