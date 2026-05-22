@@ -21,6 +21,22 @@
   h3 { color: #333; font-size: 12px; margin: 5px 0; text-align: center; }
   .section { background: #fff; border: 1px solid #e2e6ea; border-radius: 6px; padding: 10px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
   
+  /* Section Titles */
+  .section-title {
+    text-align: center;
+    color: #b34b00;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 20px 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .divider {
+    border-top: 3px solid #f68b1f;
+    margin: 30px 0 20px 0;
+  }
+  
   /* Summary Table */
   .summary-table-container { overflow-x: auto; }
   .summary-table { width: 100%; border-collapse: collapse; font-size: 10px; }
@@ -51,11 +67,7 @@
   tr:nth-child(even) { background-color: #f8fafc; }
 
   .am-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-  .am-table { width: 48%; max-width: 600px; }
-
-  .plots { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-  .plot-card { width: 30%; max-width: 400px; border: 1px solid #e1e5ea; padding: 5px; background: #fff; }
-  .plot-img { width: 100%; }
+  .am-table { width: 100%; max-width: none; }
 
   .idf-tables-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
   .idf-half { width: 48%; }
@@ -65,7 +77,50 @@
   
   /* Map Container Style matching out.html */
   .map-section { display: flex; justify-content: center; margin-bottom: 12px; }
-  .map-card { width: 100%; max-width: 800px; }
+  .map-card { width: 48%; max-width: 700px; }
+
+  /* Multi-Scenario Plots */
+  .multi-plot {
+    width: 90%;
+    max-width: 1400px;
+    margin: 0 auto 20px auto;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .multi-plot h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .plot-img {
+    display: block;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  /* Smaller SWE plot */
+  .swe-plot-small {
+    width: 60%;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .swe-plot-small h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
 </style>
 </head>
 <body>
@@ -84,15 +139,77 @@
   </div>
 </header>
 
-<div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
+<!-- ========================================== -->
+<!-- SECTION 1: FIGURES -->
+<!-- ========================================== -->
 
-  <div class="map-section">
-    <div class="section map-card">
-      <h2>Site Location Map</h2>
-      <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
-    </div>
+<div class="section-title">📊 CESM2-LE: Multi-Ensemble Comparison Figures</div>
+
+<!-- Site Location Map -->
+<div class="map-section">
+  <div class="section map-card">
+    <h2>Site Location Map</h2>
+    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
   </div>
+</div>
 
+<!-- PREC-IDF Multi-Ensemble Comparison -->
+<div class="multi-plot">
+  <h2>PREC-IDF Curves: CESM2-LE Ensemble Comparison (4 Historical + 4 Future Members)</h2>
+  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+    Solid lines: Historical ensemble members (1989-2021). Dashed lines: Future ensemble members (2033-2065, SSP3-70).
+  </p>
+  <img class="plot-img" src="{{ fig_prec_comp }}" alt="PREC-IDF Ensemble Comparison">
+</div>
+
+<!-- NG-IDF Multi-Ensemble Comparison -->
+<div class="multi-plot">
+  <h2>NG-IDF Curves: CESM2-LE Ensemble Comparison (4 Historical + 4 Future Members)</h2>
+  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+    Solid lines: Historical ensemble members (1989-2021). Dashed lines: Future ensemble members (2033-2065, SSP3-70).
+  </p>
+  <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Ensemble Comparison">
+</div>
+
+<!-- AM P Multi-Ensemble Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Precipitation (AM P): CESM2-LE Ensemble Comparison</h2>
+  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+  </p>
+  <img class="plot-img" src="{{ fig_am_p_comp }}" alt="AM P Ensemble Comparison">
+</div>
+
+<!-- AM W Multi-Ensemble Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Water for Runoff (AM W): CESM2-LE Ensemble Comparison</h2>
+  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+  </p>
+  <img class="plot-img" src="{{ fig_am_w_comp }}" alt="AM W Ensemble Comparison">
+</div>
+
+<!-- AM SWE Multi-Ensemble Time Series -->
+<div class="swe-plot-small">
+  <h2>Annual Maximum Snow Water Equivalent (AM SWE): CESM2-LE Ensemble Comparison</h2>
+  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+  </p>
+  <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Ensemble Comparison">
+</div>
+
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 2: IMPACT SUMMARY TABLE -->
+<!-- ========================================== -->
+
+<div class="section-title">📊 Impact Summary</div>
+
+<div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
   <div class="section">
     <h2>Impact Summary Table (NG-IDF Comparison) - CESM2-LE Ensemble Members</h2>
     <p style="font-size:10px; margin:5px 0; color:#555;">
@@ -103,45 +220,41 @@
       <table class="summary-table">
         <thead>
           <tr>
-            <th rowspan="2">Duration</th>
-            <th rowspan="2">ARI (yrs)</th>
-            <th colspan="2">Historical LE2</th>
-            <th colspan="2">Future LE2</th>
-            <th colspan="2">Historical LE4</th>
-            <th colspan="2">Future LE4</th>
-            <th colspan="2">Historical LE7</th>
-            <th colspan="2">Future LE7</th>
-            <th colspan="2">Historical LE9</th>
-            <th colspan="2">Future LE9</th>
+            <th>ARI (yrs)</th>
+            <th colspan="3">LE2</th>
+            <th colspan="3">LE4</th>
+            <th colspan="3">LE7</th>
+            <th colspan="3">LE9</th>
           </tr>
           <tr>
-            <th>Value (mm)</th>
-            <th>% Change</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
-            <th>Value (mm)</th>
-            <th>% Change</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
-            <th>Value (mm)</th>
-            <th>% Change</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
-            <th>Value (mm)</th>
-            <th>% Change</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
+            <th></th>
+            <th>Hist (mm)</th>
+            <th>Futu (mm)</th>
+            <th>Diff</th>
+            <th>Hist (mm)</th>
+            <th>Futu (mm)</th>
+            <th>Diff</th>
+            <th>Hist (mm)</th>
+            <th>Futu (mm)</th>
+            <th>Diff</th>
+            <th>Hist (mm)</th>
+            <th>Futu (mm)</th>
+            <th>Diff</th>
           </tr>
         </thead>
         <tbody>
+          {% set durations_list = ['1h', '3h', '6h', '12h', '24h', '48h', '72h'] %}
+          {% for dur in durations_list %}
+          <tr style="background:#e8e8e8;">
+            <td colspan="13" style="font-weight:bold; text-align:left; padding-left:10px;">{{ dur.replace('h', '-Hour') }}</td>
+          </tr>
           {% for row in summary_rows %}
-          <tr class="{{ 'duration-start' if loop.index0 % 7 == 0 else '' }}">
-            <td>{{ row.duration }}</td>
+          {% if row.duration == dur %}
+          <tr>
             <td>{{ row.ari }}</td>
             
             <!-- LE2 -->
-            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le2 }}</td>
-            <td>-</td>
+            <td>{{ row.hist_le2 }}</td>
             <td>{{ row.futu_le2 }}</td>
             <td class="{{ 'pos' if row.diff_le2 > 0 else 'neg' }}">
               {{ "+" if row.diff_le2 > 0 }}{{ "%.2f"|format(row.diff_le2) }}
@@ -149,8 +262,7 @@
             </td>
             
             <!-- LE4 -->
-            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le4 }}</td>
-            <td>-</td>
+            <td>{{ row.hist_le4 }}</td>
             <td>{{ row.futu_le4 }}</td>
             <td class="{{ 'pos' if row.diff_le4 > 0 else 'neg' }}">
               {{ "+" if row.diff_le4 > 0 }}{{ "%.2f"|format(row.diff_le4) }}
@@ -158,8 +270,7 @@
             </td>
             
             <!-- LE7 -->
-            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le7 }}</td>
-            <td>-</td>
+            <td>{{ row.hist_le7 }}</td>
             <td>{{ row.futu_le7 }}</td>
             <td class="{{ 'pos' if row.diff_le7 > 0 else 'neg' }}">
               {{ "+" if row.diff_le7 > 0 }}{{ "%.2f"|format(row.diff_le7) }}
@@ -167,20 +278,34 @@
             </td>
             
             <!-- LE9 -->
-            <td style="background:#f9f9f9; font-weight:bold;">{{ row.hist_le9 }}</td>
-            <td>-</td>
+            <td>{{ row.hist_le9 }}</td>
             <td>{{ row.futu_le9 }}</td>
             <td class="{{ 'pos' if row.diff_le9 > 0 else 'neg' }}">
               {{ "+" if row.diff_le9 > 0 }}{{ "%.2f"|format(row.diff_le9) }}
               <br/>({{ "+" if row.pct_le9 > 0 }}{{ "%.1f"|format(row.pct_le9) }}%)
             </td>
           </tr>
+          {% endif %}
+          {% endfor %}
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
+</div>
 
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 3: DETAILED TABLES WITH TABS -->
+<!-- ========================================== -->
+
+<div class="section-title">📋 Detailed Data Tables by Ensemble Member</div>
+
+<div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
   <div class="tab-container">
     <div class="tabs">
       <button class="tab-btn active" onclick="openTab(event, 'HistLE2')">Historical LE2</button>
@@ -195,113 +320,115 @@
 
     {% macro render_tab(data, title_prefix) %}
     
-    <div class="plots">
-        <div class="plot-card">
-            <h3>24-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig24 }}" alt="24h Plot">
-        </div>
-        <div class="plot-card">
-            <h3>48-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig48 }}" alt="48h Plot">
-        </div>
-        <div class="plot-card">
-            <h3>72-Hour Curves</h3>
-            <img class="plot-img" src="{{ data.fig72 }}" alt="72h Plot">
-        </div>
-    </div>
-
-    <div class="am-tables">
-      <div class="section am-table">
-        <h3>Annual Maximum Precipitation (AM P)</h3>
-        <table>
-          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
-          {% for i in range(data.am_24h_P|length) %}
-          <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_P_date[i,0],data.am_24h_P_date[i,1],data.am_24h_P_date[i,2]) }}</td>
-            <td>{{ data.am_24h_P[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_P_date[i,0],data.am_48h_P_date[i,1],data.am_48h_P_date[i,2]) }}</td>
-            <td>{{ data.am_48h_P[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_P_date[i,0],data.am_72h_P_date[i,1],data.am_72h_P_date[i,2]) }}</td>
-            <td>{{ data.am_72h_P[i,3] }}</td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-
-      <div class="section am-table">
-        <h3>Annual Maximum Water Available (AM W)</h3>
-        <table>
-          <tr><th>24 h Date</th><th>24 h (mm)</th><th>48 h Date</th><th>48 h (mm)</th><th>72 h Date</th><th>72 h (mm)</th></tr>
-          {% for i in range(data.am_24h_W|length) %}
-          <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_24h_W_date[i,0],data.am_24h_W_date[i,1],data.am_24h_W_date[i,2]) }}</td>
-            <td>{{ data.am_24h_W[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_48h_W_date[i,0],data.am_48h_W_date[i,1],data.am_48h_W_date[i,2]) }}</td>
-            <td>{{ data.am_48h_W[i,3] }}</td>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_72h_W_date[i,0],data.am_72h_W_date[i,1],data.am_72h_W_date[i,2]) }}</td>
-            <td>{{ data.am_72h_W[i,3] }}</td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-
+    <!-- IDF Tables -->
     <div class="idf-tables-container">
-        <div class="idf-half">
+        <div class="section idf-half">
             <h3>PREC-IDF ({{ title_prefix }})</h3>
             <table>
                 <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
                 {% set ARI = [2,5,10,25,50,100,500] %}
                 {% set IDX = [0,30,40,46,48,49,50] %}
                 
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
+                {% for dur in data.durations %}
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
                 {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_24h[0, IDX[j]] }}</td><td>{{ data.P_24h[1, IDX[j]] }}</td><td>{{ data.P_24h[2, IDX[j]] }}</td></tr>
+                <tr><td>{{ ARI[j] }}</td><td>{{ data['P_' + dur][0, IDX[j]] }}</td><td>{{ data['P_' + dur][1, IDX[j]] }}</td><td>{{ data['P_' + dur][2, IDX[j]] }}</td></tr>
                 {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_48h[0, IDX[j]] }}</td><td>{{ data.P_48h[1, IDX[j]] }}</td><td>{{ data.P_48h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.P_72h[0, IDX[j]] }}</td><td>{{ data.P_72h[1, IDX[j]] }}</td><td>{{ data.P_72h[2, IDX[j]] }}</td></tr>
                 {% endfor %}
             </table>
         </div>
 
-        <div class="idf-half">
+        <div class="section idf-half">
             <h3>NG-IDF ({{ title_prefix }})</h3>
             <table>
                 <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
                 
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">24-Hour</td></tr>
+                {% for dur in data.durations %}
+                <tr><td colspan="4" style="background:#eee;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
                 {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_24h[0, IDX[j]] }}</td><td>{{ data.NG_24h[1, IDX[j]] }}</td><td>{{ data.NG_24h[2, IDX[j]] }}</td></tr>
+                <tr><td>{{ ARI[j] }}</td><td>{{ data['NG_' + dur][0, IDX[j]] }}</td><td>{{ data['NG_' + dur][1, IDX[j]] }}</td><td>{{ data['NG_' + dur][2, IDX[j]] }}</td></tr>
                 {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">48-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_48h[0, IDX[j]] }}</td><td>{{ data.NG_48h[1, IDX[j]] }}</td><td>{{ data.NG_48h[2, IDX[j]] }}</td></tr>
-                {% endfor %}
-
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">72-Hour</td></tr>
-                {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data.NG_72h[0, IDX[j]] }}</td><td>{{ data.NG_72h[1, IDX[j]] }}</td><td>{{ data.NG_72h[2, IDX[j]] }}</td></tr>
                 {% endfor %}
             </table>
         </div>
     </div>
 
+    <!-- AM P Table -->
+    <div class="am-tables">
+      <div class="section am-table" style="width: 100%; max-width: none;">
+        <h3>Annual Maximum Precipitation (AM P)</h3>
+        <div style="overflow-x: auto;">
+        <table>
+          <tr>
+            <th rowspan="2">Year</th>
+            {% for dur in data.durations %}
+            <th colspan="2">{{ dur.replace('h', '-hour') }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            {% for dur in data.durations %}
+            <th>Date</th>
+            <th>P (mm)</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(data['am_' + data.durations[0] + '_P']|length) %}
+          <tr>
+            <td style="font-weight:bold;">{{ data['am_' + data.durations[0] + '_P_date'][i,0] }}</td>
+            {% for dur in data.durations %}
+            <td>{{ "%02d-%02d"|format(data['am_' + dur + '_P_date'][i,1],data['am_' + dur + '_P_date'][i,2]) }}</td>
+            <td>{{ data['am_' + dur + '_P'][i,3] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AM W Table -->
+    <div class="am-tables">
+      <div class="section am-table" style="width: 100%; max-width: none;">
+        <h3>Annual Maximum Water Available for Runoff (AM W). R: rainfall. M: snowmelt only. ROS: rain-on-snow.</h3>
+        <div style="overflow-x: auto;">
+        <table>
+          <tr>
+            <th rowspan="2">Year</th>
+            {% for dur in data.durations %}
+            <th colspan="3">{{ dur.replace('h', '-hour') }}</th>
+            {% endfor %}
+          </tr>
+          <tr>
+            {% for dur in data.durations %}
+            <th>Date</th>
+            <th>W (mm)</th>
+            <th>Mechanism</th>
+            {% endfor %}
+          </tr>
+          {% for i in range(data['am_' + data.durations[0] + '_W']|length) %}
+          <tr>
+            <td style="font-weight:bold;">{{ data['am_' + data.durations[0] + '_W_date'][i,0] }}</td>
+            {% for dur in data.durations %}
+            <td>{{ "%02d-%02d"|format(data['am_' + dur + '_W_date'][i,1],data['am_' + dur + '_W_date'][i,2]) }}</td>
+            <td>{{ data['am_' + dur + '_W'][i,3] }}</td>
+            <td>{{ data['am_' + dur + '_W_mechanism'][i] }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SWE Table -->
     <div class="swe-container">
       <div class="section swe-table">
         <h3>Annual Maximum Snow Water Equivalent (AM SWE)</h3>
         <table>
-          <tr><th>Date</th><th>AM SWE (mm)</th></tr>
+          <tr><th>Year</th><th>Date</th><th>AM SWE (mm)</th></tr>
           {% for i in range(data.am_swe|length) %}
           <tr>
-            <td>{{ "%04d-%02d-%02d"|format(data.am_swe_date[i,0], data.am_swe_date[i,1], data.am_swe_date[i,2]) }}</td>
+            <td style="font-weight:bold;">{{ data.am_swe_date[i,0] }}</td>
+            <td>{{ "%02d-%02d"|format(data.am_swe_date[i,1], data.am_swe_date[i,2]) }}</td>
             <td>{{ data.am_swe[i,3] }}</td>
           </tr>
           {% endfor %}
@@ -343,8 +470,11 @@
         {{ render_tab(futu_le9, "Future LE9") }}
     </div>
   </div>
-
 </div>
+
+<p style="text-align:center; font-size:10px; color:#666; margin-top:20px; padding:10px;">
+  Generated by NG-IDF Tool | CESM2-LE Ensemble Analysis (Historical + SSP3-70 Future Scenarios)
+</p>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 

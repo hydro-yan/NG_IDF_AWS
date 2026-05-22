@@ -355,6 +355,225 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     return "data:image/png;base64," + img_prec, "data:image/png;base64," + img_ng
 
 
+def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_le9_am,
+                                     futu_le2_am, futu_le4_am, futu_le7_am, futu_le9_am,
+                                     durations, fig_file_p, fig_file_w):
+    """
+    Generate CESM multi-ensemble AM time series plots in 2x4 grid
+    Shows all 4 historical and 4 future ensemble members
+    
+    Parameters:
+    -----------
+    hist_le2_am, hist_le4_am, hist_le7_am, hist_le9_am : dict
+        Historical ensemble member AM results
+    futu_le2_am, futu_le4_am, futu_le7_am, futu_le9_am : dict
+        Future ensemble member AM results
+    durations : list
+        List of duration strings
+    fig_file_p : str
+        Output file for P comparison
+    fig_file_w : str
+        Output file for W comparison
+    
+    Returns:
+    --------
+    tuple : (base64_p, base64_w) encoded image strings
+    """
+    
+    try:
+        # Color schemes for ensemble members
+        hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
+        futu_colors = ['red', 'orange', 'darkred', 'coral']
+        hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
+        futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+        
+        # Create combined P plot in 2x4 grid
+        n_dur = len(durations)
+        nrows = 2
+        ncols = 4
+        fig_p, axes_p = plt.subplots(nrows, ncols, figsize=(16, 8))
+        axes_p = axes_p.flatten()
+        
+        for idx, dur in enumerate(durations):
+            # Plot all 4 historical ensemble members
+            for i, (data, color, label) in enumerate(zip(
+                [hist_le2_am, hist_le4_am, hist_le7_am, hist_le9_am],
+                hist_colors,
+                hist_labels
+            )):
+                p = data[dur]['P']
+                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3], '-', color=color, lw=1.5,
+                               markersize=3, alpha=0.8, label=label)
+            
+            # Plot all 4 future ensemble members
+            for i, (data, color, label) in enumerate(zip(
+                [futu_le2_am, futu_le4_am, futu_le7_am, futu_le9_am],
+                futu_colors,
+                futu_labels
+            )):
+                p = data[dur]['P']
+                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3], '--', color=color, lw=1.5,
+                               markersize=3, alpha=0.8, label=label)
+            
+            axes_p[idx].set_xlabel('Water Year', fontsize=9)
+            axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=9)
+            axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+            axes_p[idx].grid(True, alpha=0.3)
+            axes_p[idx].tick_params(axis='x', rotation=45)
+            axes_p[idx].legend(loc='best', fontsize=6, ncol=2)
+        
+        # Hide the last subplot if we have 7 durations
+        if n_dur == 7:
+            axes_p[7].axis('off')
+        
+        plt.tight_layout()
+        
+        # Save to file or memory
+        if fig_file_p:
+            plt.savefig(fig_file_p, dpi=150, bbox_inches='tight')
+            img_p = base64.b64encode(open(fig_file_p, "rb").read()).decode('utf-8')
+        else:
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+            buf.seek(0)
+            img_p = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        # Create combined W plot in 2x4 grid
+        fig_w, axes_w = plt.subplots(nrows, ncols, figsize=(16, 8))
+        axes_w = axes_w.flatten()
+        
+        for idx, dur in enumerate(durations):
+            # Plot all 4 historical ensemble members
+            for i, (data, color, label) in enumerate(zip(
+                [hist_le2_am, hist_le4_am, hist_le7_am, hist_le9_am],
+                hist_colors,
+                hist_labels
+            )):
+                w = data[dur]['W_veg']
+                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3], '-', color=color, lw=1.5,
+                               markersize=3, alpha=0.8, label=label)
+            
+            # Plot all 4 future ensemble members
+            for i, (data, color, label) in enumerate(zip(
+                [futu_le2_am, futu_le4_am, futu_le7_am, futu_le9_am],
+                futu_colors,
+                futu_labels
+            )):
+                w = data[dur]['W_veg']
+                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3], '--', color=color, lw=1.5,
+                               markersize=3, alpha=0.8, label=label)
+            
+            axes_w[idx].set_xlabel('Water Year', fontsize=9)
+            axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=9)
+            axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+            axes_w[idx].grid(True, alpha=0.3)
+            axes_w[idx].tick_params(axis='x', rotation=45)
+            axes_w[idx].legend(loc='best', fontsize=6, ncol=2)
+        
+        # Hide the last subplot if we have 7 durations
+        if n_dur == 7:
+            axes_w[7].axis('off')
+        
+        plt.tight_layout()
+        
+        # Save to file or memory
+        if fig_file_w:
+            plt.savefig(fig_file_w, dpi=150, bbox_inches='tight')
+            img_w = base64.b64encode(open(fig_file_w, "rb").read()).decode('utf-8')
+        else:
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+            buf.seek(0)
+            img_w = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        return "data:image/png;base64," + img_p, "data:image/png;base64," + img_w
+    
+    except Exception as e:
+        print(f"ERROR in generate_cesm_ensemble_am_plots: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        # Return empty base64 strings on error
+        return "", ""
+
+
+def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hist_le9_swe,
+                                     futu_le2_swe, futu_le4_swe, futu_le7_swe, futu_le9_swe,
+                                     fig_file):
+    """
+    Generate CESM multi-ensemble SWE time series plot
+    Shows all 4 historical and 4 future ensemble members
+    
+    Parameters:
+    -----------
+    hist_le2_swe, hist_le4_swe, hist_le7_swe, hist_le9_swe : np.array
+        Historical ensemble member SWE data
+    futu_le2_swe, futu_le4_swe, futu_le7_swe, futu_le9_swe : np.array
+        Future ensemble member SWE data
+    fig_file : str
+        Output file path
+    
+    Returns:
+    --------
+    str : Base64 encoded image string
+    """
+    
+    try:
+        # Color schemes for ensemble members
+        hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
+        futu_colors = ['red', 'orange', 'darkred', 'coral']
+        hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
+        futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+        
+        plt.figure(figsize=(10, 5))
+        
+        # Plot all 4 historical ensemble members
+        for i, (swe, color, label) in enumerate(zip(
+            [hist_le2_swe, hist_le4_swe, hist_le7_swe, hist_le9_swe],
+            hist_colors,
+            hist_labels
+        )):
+            plt.plot(swe[:, 0].astype(int), swe[:, 3], '-', color=color, lw=2,
+                    markersize=4, alpha=0.8, label=label)
+        
+        # Plot all 4 future ensemble members
+        for i, (swe, color, label) in enumerate(zip(
+            [futu_le2_swe, futu_le4_swe, futu_le7_swe, futu_le9_swe],
+            futu_colors,
+            futu_labels
+        )):
+            plt.plot(swe[:, 0].astype(int), swe[:, 3], '--', color=color, lw=2,
+                    markersize=4, alpha=0.8, label=label)
+        
+        plt.xlabel('Water Year', fontsize=11, fontweight='bold')
+        plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11, fontweight='bold')
+        plt.grid(True, alpha=0.3)
+        plt.xticks(rotation=45)
+        plt.legend(loc='best', fontsize=9, ncol=2)
+        plt.tight_layout()
+        
+        # Save to file or memory
+        if fig_file:
+            plt.savefig(fig_file, dpi=150, bbox_inches='tight')
+            img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
+        else:
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+            buf.seek(0)
+            img = base64.b64encode(buf.read()).decode('utf-8')
+        plt.close()
+        
+        return "data:image/png;base64," + img
+    
+    except Exception as e:
+        print(f"ERROR in generate_cesm_ensemble_swe_plot: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        # Return empty base64 string on error
+        return ""
+
+
 def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w):
     """
     Generate multi-scenario AM time series plots in 2x4 grid
@@ -507,3 +726,148 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
     plt.close()
     
     return "data:image/png;base64," + img
+
+
+def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
+                                      futu_le2, futu_le4, futu_le7, futu_le9,
+                                      durations, fig_file_prec, fig_file_ng):
+    """
+    Generate CESM multi-ensemble IDF comparison plots in 2x4 grid
+    Shows all 4 historical ensemble members and all 4 future ensemble members
+    
+    Parameters:
+    -----------
+    hist_le2, hist_le4, hist_le7, hist_le9 : dict
+        Historical ensemble member IDF data
+    futu_le2, futu_le4, futu_le7, futu_le9 : dict
+        Future ensemble member IDF data
+    durations : list
+        List of duration strings like ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+    fig_file_prec : str
+        Output file path for PREC-IDF comparison
+    fig_file_ng : str
+        Output file path for NG-IDF comparison
+    
+    Returns:
+    --------
+    tuple : (base64_prec, base64_ng) encoded image strings
+    """
+    
+    # Probabilities for IDF curves
+    probs = np.concatenate([np.arange(0.50, 1.00, 0.01), np.array([0.998])])
+    ari_values = 1.0 / (1.0 - probs)
+    
+    # ARI tick positions
+    ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
+    ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
+    
+    # Color schemes for ensemble members
+    hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
+    futu_colors = ['red', 'orange', 'darkred', 'coral']
+    hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
+    futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+    
+    # Create PREC-IDF comparison plot in 2x4 grid
+    n_dur = len(durations)
+    nrows = 2
+    ncols = 4
+    fig_prec, axes_prec = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_prec = axes_prec.flatten()
+    
+    for idx, dur in enumerate(durations):
+        # Plot all 4 historical ensemble members
+        for i, (data, color, label) in enumerate(zip(
+            [hist_le2, hist_le4, hist_le7, hist_le9],
+            hist_colors,
+            hist_labels
+        )):
+            curve = data[f'P_{dur}'][0, :]
+            axes_prec[idx].semilogx(ari_values, curve, '-', color=color, lw=1.5, 
+                                   alpha=0.8, label=label)
+        
+        # Plot all 4 future ensemble members
+        for i, (data, color, label) in enumerate(zip(
+            [futu_le2, futu_le4, futu_le7, futu_le9],
+            futu_colors,
+            futu_labels
+        )):
+            curve = data[f'P_{dur}'][0, :]
+            axes_prec[idx].semilogx(ari_values, curve, '--', color=color, lw=1.5,
+                                   alpha=0.8, label=label)
+        
+        axes_prec[idx].set_xticks(ari_ticks)
+        axes_prec[idx].set_xticklabels(ari_tick_labels)
+        axes_prec[idx].set_xlabel('ARI (years)', fontsize=9)
+        axes_prec[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_prec[idx].set_title(f'PREC-IDF {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        axes_prec[idx].grid(True, alpha=0.3)
+        axes_prec[idx].legend(loc='best', fontsize=6, ncol=2)
+    
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_prec[7].axis('off')
+    
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_prec:
+        plt.savefig(fig_file_prec, dpi=150, bbox_inches='tight')
+        img_prec = base64.b64encode(open(fig_file_prec, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_prec = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    # Create NG-IDF comparison plot in 2x4 grid
+    fig_ng, axes_ng = plt.subplots(nrows, ncols, figsize=(16, 8))
+    axes_ng = axes_ng.flatten()
+    
+    for idx, dur in enumerate(durations):
+        # Plot all 4 historical ensemble members
+        for i, (data, color, label) in enumerate(zip(
+            [hist_le2, hist_le4, hist_le7, hist_le9],
+            hist_colors,
+            hist_labels
+        )):
+            curve = data[f'NG_{dur}'][0, :]
+            axes_ng[idx].semilogx(ari_values, curve, '-', color=color, lw=1.5,
+                                 alpha=0.8, label=label)
+        
+        # Plot all 4 future ensemble members
+        for i, (data, color, label) in enumerate(zip(
+            [futu_le2, futu_le4, futu_le7, futu_le9],
+            futu_colors,
+            futu_labels
+        )):
+            curve = data[f'NG_{dur}'][0, :]
+            axes_ng[idx].semilogx(ari_values, curve, '--', color=color, lw=1.5,
+                                 alpha=0.8, label=label)
+        
+        axes_ng[idx].set_xticks(ari_ticks)
+        axes_ng[idx].set_xticklabels(ari_tick_labels)
+        axes_ng[idx].set_xlabel('ARI (years)', fontsize=9)
+        axes_ng[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_ng[idx].set_title(f'NG-IDF {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        axes_ng[idx].grid(True, alpha=0.3)
+        axes_ng[idx].legend(loc='best', fontsize=6, ncol=2)
+    
+    # Hide the last subplot if we have 7 durations
+    if n_dur == 7:
+        axes_ng[7].axis('off')
+    
+    plt.tight_layout()
+    
+    # Save to file or memory
+    if fig_file_ng:
+        plt.savefig(fig_file_ng, dpi=150, bbox_inches='tight')
+        img_ng = base64.b64encode(open(fig_file_ng, "rb").read()).decode('utf-8')
+    else:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        buf.seek(0)
+        img_ng = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close()
+    
+    return "data:image/png;base64," + img_prec, "data:image/png;base64," + img_ng

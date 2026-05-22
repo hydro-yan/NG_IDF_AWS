@@ -13,7 +13,9 @@ import tempfile
 import shutil
 from gen_figures import (generate_fig, generate_figs_multiple, generate_am_timeseries_plots, 
                          generate_swe_timeseries_plot, generate_multi_scenario_idf_plots,
-                         generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot)
+                         generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
+                         generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
+                         generate_cesm_ensemble_swe_plot)
 from concurrent.futures import ProcessPoolExecutor
 import time
 
@@ -357,44 +359,97 @@ def NG_IDF():
 
         elif scenario == "future_cesm":
 
-            # Run CESM Multi-Scenario Workflow (4 historical + 4 future ensemble members)
-            # Historical LE2
-            res_hist_le2 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE2")
+            # Run CESM Multi-Scenario Workflow IN PARALLEL (8 processors)
+            # 4 historical + 4 future ensemble members
+            print("Starting CESM parallel processing with 8 ensemble members...", flush=True)
+            start_time = time.time()
+            
+            # Define all 8 CESM scenarios to run in parallel
+            cesm_scenarios = [
+                "CESM_hist_LE2", "CESM_futu_LE2",
+                "CESM_hist_LE4", "CESM_futu_LE4",
+                "CESM_hist_LE7", "CESM_futu_LE7",
+                "CESM_hist_LE9", "CESM_futu_LE9"
+            ]
+            
+            # Use ProcessPoolExecutor to run all 8 scenarios in parallel
+            with ProcessPoolExecutor(max_workers=8) as executor:
+                # Submit all 8 jobs to the executor
+                futures = {
+                    executor.submit(get_NG_IDF, input_data, forcing_type): forcing_type
+                    for forcing_type in cesm_scenarios
+                }
+                
+                # Collect results as they complete
+                results_dict = {}
+                for future in futures:
+                    forcing_type = futures[future]
+                    try:
+                        result = future.result()
+                        results_dict[forcing_type] = result
+                        print(f"Completed: {forcing_type}", flush=True)
+                    except Exception as exc:
+                        print(f"ERROR in {forcing_type}: {exc}", flush=True)
+                        raise
+            
+            elapsed_time = time.time() - start_time
+            print(f"CESM parallel processing completed in {elapsed_time:.2f} seconds", flush=True)
+            
+            # Extract and structure results for each ensemble member
+            res_hist_le2 = results_dict["CESM_hist_LE2"]
             hist_le2_data = structure_results(res_hist_le2)
-
-            # Future LE2
-            res_futu_le2 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE2")
+            
+            res_futu_le2 = results_dict["CESM_futu_LE2"]
             futu_le2_data = structure_results(res_futu_le2)
-
-            # Historical LE4
-            res_hist_le4 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE4")
+            
+            res_hist_le4 = results_dict["CESM_hist_LE4"]
             hist_le4_data = structure_results(res_hist_le4)
-
-            # Future LE4
-            res_futu_le4 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE4")
+            
+            res_futu_le4 = results_dict["CESM_futu_LE4"]
             futu_le4_data = structure_results(res_futu_le4)
-
-            # Historical LE7
-            res_hist_le7 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE7")
+            
+            res_hist_le7 = results_dict["CESM_hist_LE7"]
             hist_le7_data = structure_results(res_hist_le7)
-
-            # Future LE7
-            res_futu_le7 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE7")
+            
+            res_futu_le7 = results_dict["CESM_futu_LE7"]
             futu_le7_data = structure_results(res_futu_le7)
-
-            # Historical LE9
-            res_hist_le9 = get_NG_IDF(input_data, forcing_type="CESM_hist_LE9")
+            
+            res_hist_le9 = results_dict["CESM_hist_LE9"]
             hist_le9_data = structure_results(res_hist_le9)
-
-            # Future LE9
-            res_futu_le9 = get_NG_IDF(input_data, forcing_type="CESM_futu_LE9")
+            
+            res_futu_le9 = results_dict["CESM_futu_LE9"]
             futu_le9_data = structure_results(res_futu_le9)
 
+            # Get durations from CESM data (7 durations: 1h, 3h, 6h, 12h, 24h, 48h, 72h)
+            durations = hist_le2_data['durations']
+            
+            # Generate CESM multi-ensemble comparison plots
+            print("Generating CESM ensemble comparison plots...", flush=True)
+            fig_prec_comp, fig_ng_comp = generate_cesm_ensemble_idf_plots(
+                hist_le2_data, hist_le4_data, hist_le7_data, hist_le9_data,
+                futu_le2_data, futu_le4_data, futu_le7_data, futu_le9_data,
+                durations, None, None
+            )
+            
+            fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
+                res_hist_le2['am_results'], res_hist_le4['am_results'], 
+                res_hist_le7['am_results'], res_hist_le9['am_results'],
+                res_futu_le2['am_results'], res_futu_le4['am_results'],
+                res_futu_le7['am_results'], res_futu_le9['am_results'],
+                durations, None, None
+            )
+            
+            fig_swe_comp = generate_cesm_ensemble_swe_plot(
+                res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
+                res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
+                res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
+                res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
+                None
+            )
+            
             # Build Comprehensive Summary Table for CESM
             aris = [2, 5, 10, 25, 50, 100, 500]
             indices = [0, 30, 40, 46, 48, 49, 50]
-            # Use ALL durations from CESM data (7 durations)
-            durations = hist_le2_data['durations']
             
             summary_rows = []
 
@@ -467,7 +522,12 @@ def NG_IDF():
                                    futu_le7=futu_le7_data,
                                    hist_le9=hist_le9_data,
                                    futu_le9=futu_le9_data,
-                                   summary_rows=summary_rows)
+                                   summary_rows=summary_rows,
+                                   fig_prec_comp=fig_prec_comp,
+                                   fig_ng_comp=fig_ng_comp,
+                                   fig_am_p_comp=fig_am_p_comp,
+                                   fig_am_w_comp=fig_am_w_comp,
+                                   fig_swe_comp=fig_swe_comp)
 
     return render_template("NG_IDF.html")
 
