@@ -181,9 +181,23 @@ def structure_results(results):
 # ----------------------------------------------------------------------------------------------------------------------------
 app = Flask(__name__)
 
-@app.route("/NG_IDF", methods=["GET", "POST"])
+# Access control token for external collaborators
+SHARED_TOKEN = os.environ.get("SHARED_TOKEN", "pnnl_collab_secure")
 
+@app.route("/NG_IDF", methods=["GET", "POST"])
 def NG_IDF():
+    # 1. Grab the user's real IP address
+    user_ip = request.remote_addr
+    
+    # 2. Let PNNL staff bypass the token automatically
+    is_pnnl_staff = user_ip.startswith('10.15.')
+    
+    # 3. Grab the token from the URL
+    user_token = request.args.get('auth_token')
+    
+    # 4. Block anyone who isn't PNNL staff AND doesn't have the token
+    if not is_pnnl_staff and user_token != SHARED_TOKEN:
+        abort(403)
 
     if request.method == "POST":
 
