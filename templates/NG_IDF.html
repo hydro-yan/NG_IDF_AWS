@@ -23,25 +23,12 @@
   }
 
   .header-container {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+    display: flex;
+    justify-content: center;
     align-items: center;
     max-width: 1500px;
     margin: 0 auto;
     padding: 0 20px;
-    column-gap: 40px;
-  }
-
-  .header-logos {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .header-logos img {
-    height: 60px;
-    width: auto;
-    object-fit: contain;
   }
 
   header h1 {
@@ -54,18 +41,8 @@
   }
 
   @media (max-width: 1000px) {
-    .header-container {
-      grid-template-columns: 1fr;
-      row-gap: 8px;
-      text-align: center;
-    }
-    .header-logos {
-      justify-content: center;
-    }
-    .header-logos img {
-      height: 32px;
-    }
     header h1 {
+      font-size: 1.1rem;
       margin: 4px 0;
     }
   }
@@ -473,7 +450,7 @@
 </main>
 
 <footer>
-  © 2025 NG-IDF Research | Developed by PNNL
+  2026 NG-IDF Research | Developed by PNNL
 </footer>
 
 <script>
