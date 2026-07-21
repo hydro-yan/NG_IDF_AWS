@@ -57,9 +57,10 @@
     display: grid;
     grid-template-columns: minmax(320px, 1fr) minmax(260px, 460px);
     gap: 40px;
-    align-items: center;
+    align-items: start;
     margin-bottom: 20px;
   }
+
 
   .hero-text h3 {
     margin: 0 0 8px;
@@ -251,9 +252,162 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
+  /* Mode selector */
+  .mode-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    .mode-selector {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .mode-option {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    background: #fff;
+  }
+
+  .mode-option:hover {
+    border-color: #f0a860;
+  }
+
+  .mode-option.selected {
+    border-color: #b34b00;
+    background: #fff7ef;
+  }
+
+  .mode-option input[type="radio"] {
+    margin-right: 8px;
+  }
+
+  .mode-option .mode-title {
+    font-weight: 600;
+    color: #b34b00;
+    font-size: 1rem;
+  }
+
+  .mode-option .mode-desc {
+    font-size: 0.85rem;
+    color: #555;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .land-cover-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    .land-cover-selector {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .lc-option {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    background: #fff;
+  }
+
+  .lc-option:hover {
+    border-color: #f0a860;
+  }
+
+  .lc-option.selected {
+    border-color: #b34b00;
+    background: #fff7ef;
+    font-weight: 600;
+  }
+
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 700px) {
+    .scenario-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .scenario-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #fff;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .scenario-card.enabled {
+    cursor: pointer;
+  }
+
+  .scenario-card.enabled:hover {
+    border-color: #f0a860;
+  }
+
+  .scenario-card.selected {
+    border-color: #b34b00;
+    background: #fff7ef;
+  }
+
+  .scenario-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #f5f5f5;
+  }
+
+  .scenario-card .scenario-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #333;
+  }
+
+  .scenario-card.enabled .scenario-title {
+    color: #b34b00;
+  }
+
+  .badge-soon {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+    background: #999;
+    border-radius: 10px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .scenario-card .scenario-desc {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.3;
+  }
 </style>
 </head>
 <body>
+
 
 <header>
   <div class="header-container">
@@ -273,22 +427,64 @@
         a consistent approach for estimating extreme storms and floods across both rainfall- and snow-dominated regions 
         (<a href="https://doi.org/10.1002/2017WR021290" target="_blank">Yan et al., 2018</a>).
       </p>
-      <p>
-        Enter the site parameters below. The tool will compute both PREC-IDF and NG-IDF curves, along with their 90% confidence intervals (CIs).
-        It also provides annual maximum (AM) time series for 
-        (1) snow water equivalent (SWE), (2) precipitation (P), and (3) water available for runoff (W).
+      <p style="font-size:0.85rem; color:#555; font-style:italic; margin-top:12px;">
+        <strong>Disclaimer:</strong> This tool is a research and screening product intended to support preliminary
+        comparisons between conventional PREC-IDF estimates and the advanced NG-IDF approach.
+        Results are provided for informational and exploratory purposes only and are not intended for
+        direct use in hydrologic design or facility engineering. Final engineering and regulatory
+        approvals must be obtained through applicable governing standards and authorities.
       </p>
     </div>
+
+
     <img class="hero-img" src="./static/web.png" alt="NG-IDF Tool Diagram">
   </div>
 
   <div class="card">
     <h2>User Instructions</h2>
     <p class="note">
-      1. Input values for your local site within Interior Alaska.<br/>
-      2. Click <b>Submit</b> to generate time series and IDF curves.
+      1. Choose a tool mode below.<br/>
+      2. For <b>Point Mode</b>: input values for your local site within Interior Alaska, then click <b>Submit</b>
+      to generate site-specific annual maximum (AM) time series, IDF curves and their confidence intervals (CIs), and permafrost active layer depth (ALD) results.<br/>
+      3. For <b>Spatial Map Mode</b>: select a land cover type, a scenario, a storm duration, and an average
+      recurrence interval (ARI), then click <b>View Map</b> to view precomputed spatial maps of PREC-IDF and
+      NG-IDF curves and permafrost ALD results.
+
     </p>
   </div>
+
+
+  <!-- ============================== -->
+  <!-- MODE SELECTION -->
+  <!-- ============================== -->
+  <div class="card">
+    <h2>Select Tool Mode</h2>
+    <p class="note">Choose how you would like to run the NG-IDF Tool.</p>
+
+    <div class="mode-selector">
+      <label class="mode-option selected" id="modeOptionPoint">
+        <input type="radio" name="toolMode" value="point" checked onchange="setToolMode('point')">
+        <span class="mode-title">1) Point Mode (Customized Land Cover)</span>
+        <div class="mode-desc">
+          Site-specific inputs, run with DHSVM on the backend.
+        </div>
+      </label>
+
+      <label class="mode-option" id="modeOptionSpatial">
+        <input type="radio" name="toolMode" value="spatial" onchange="setToolMode('spatial')">
+        <span class="mode-title">2) Spatial Map Mode (Predefined Land Cover)</span>
+        <div class="mode-desc">
+          Predefined land cover, precomputed spatial map results.
+        </div>
+      </label>
+
+    </div>
+  </div>
+
+  <!-- ============================== -->
+  <!-- POINT MODE SECTION -->
+  <!-- ============================== -->
+  <div id="pointModeSection">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -321,6 +517,7 @@
   </script>
 
   <form id="idfForm" method="post">
+
 
     <div class="card">
       <h2>Scenario Selection</h2>
@@ -390,7 +587,114 @@
     <button type="submit" form="idfForm">Submit</button>
   </div>
 
+  </div><!-- /#pointModeSection -->
+
+  <!-- ============================== -->
+  <!-- SPATIAL MAP MODE SECTION -->
+  <!-- ============================== -->
+  <div id="spatialModeSection" style="display:none;">
+
+  <form id="spatialForm" method="post" action="/NG_IDF">
+    <!-- Marks this submission as a Spatial Map Mode request (vs. Point Mode) -->
+    <input type="hidden" name="mode" value="spatial">
+
+    <div class="card">
+      <h2>Select Land Cover Type</h2>
+      <p class="note">
+        Choose the predefined land cover type for the spatial map results.
+      </p>
+      <div class="land-cover-selector">
+        <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open</div>
+        <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest</div>
+        <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest</div>
+      </div>
+      <input type="hidden" id="landCoverInput" name="land_cover" value="open">
+    </div>
+
+
+    <div class="card">
+      <h2>Select Scenario</h2>
+      <p class="note">
+        Choose a scenario for the spatial map.
+      </p>
+
+
+      <div class="scenario-grid">
+        <div class="scenario-card enabled" data-scenario="historical" onclick="selectSpatialScenario('historical')">
+          <div class="scenario-title">Historical Weather (Daymet)</div>
+          <div class="scenario-desc">Historical baseline built from Daymet gridded meteorological data.</div>
+        </div>
+
+        <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectSpatialScenario('future_wrf')">
+          <div class="scenario-title">Future Scenario: WRF Mid Century</div>
+          <div class="scenario-desc">Mid Century (2034–2065) scenario based on WRF dynamical downscaling.</div>
+        </div>
+
+        <div class="scenario-card enabled selected" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
+          <div class="scenario-title">Future Scenario: CESM Near Term</div>
+          <div class="scenario-desc">Near Term (2034–2049) scenario based on CESM2-LE ensemble members (SSP3-70).</div>
+        </div>
+
+        <div class="scenario-card enabled" data-scenario="future_cesm_mid" onclick="selectSpatialScenario('future_cesm_mid')">
+          <div class="scenario-title">Future Scenario: CESM Mid Century</div>
+          <div class="scenario-desc">Mid Century (2034–2065) scenario based on CESM2-LE ensemble members (SSP3-70).</div>
+        </div>
+      </div>
+
+
+      <input type="hidden" id="spatialScenarioInput" name="spatial_scenario" value="future_cesm_near">
+    </div>
+
+
+    <div class="card">
+      <h2>Select Duration</h2>
+      <p class="note">
+        Choose the storm duration for the spatial map results. Note: Historical Weather (Daymet)
+        is only available at 24-hour, 48-hour, and 72-hour durations; WRF and CESM-LE scenarios
+        support sub-daily durations as well.
+      </p>
+      <div class="land-cover-selector" id="durationSelector" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="lc-option" data-hours="1" onclick="selectDuration('1')">1-Hour</div>
+        <div class="lc-option" data-hours="3" onclick="selectDuration('3')">3-Hour</div>
+        <div class="lc-option" data-hours="6" onclick="selectDuration('6')">6-Hour</div>
+        <div class="lc-option" data-hours="12" onclick="selectDuration('12')">12-Hour</div>
+        <div class="lc-option selected" data-hours="24" onclick="selectDuration('24')">24-Hour</div>
+        <div class="lc-option" data-hours="48" onclick="selectDuration('48')">48-Hour</div>
+        <div class="lc-option" data-hours="72" onclick="selectDuration('72')">72-Hour</div>
+      </div>
+      <input type="hidden" id="durationInput" name="duration" value="24">
+    </div>
+
+
+    <div class="card">
+      <h2>Select Average Recurrence Interval (ARI)</h2>
+
+      <p class="note">
+        Choose the return period (average recurrence interval) for the spatial map results.
+      </p>
+      <div class="land-cover-selector" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="lc-option" data-ari="2" onclick="selectARI('2')">2-Year</div>
+        <div class="lc-option" data-ari="5" onclick="selectARI('5')">5-Year</div>
+        <div class="lc-option" data-ari="10" onclick="selectARI('10')">10-Year</div>
+        <div class="lc-option selected" data-ari="25" onclick="selectARI('25')">25-Year</div>
+        <div class="lc-option" data-ari="50" onclick="selectARI('50')">50-Year</div>
+        <div class="lc-option" data-ari="100" onclick="selectARI('100')">100-Year</div>
+        <div class="lc-option" data-ari="500" onclick="selectARI('500')">500-Year</div>
+      </div>
+      <input type="hidden" id="ariInput" name="ari" value="25">
+    </div>
+
+    <div class="submit-section">
+      <button type="button" onclick="viewSpatialMap()">View Map</button>
+    </div>
+
+  </form>
+
+  </div><!-- /#spatialModeSection -->
+
+
   <div class="card references">
+
     <h2>Methods and References</h2>
   <!-- Section 1 -->
   <div style="margin-bottom: 25px;">
@@ -468,6 +772,116 @@ function myfunction(){
   adv.style.display=(adv.style.display==="none"||adv.style.display==="")?"block":"none";
 }
 </script>
+
+<script>
+// ============================================================
+// Tool Mode Toggle: Point Mode <-> Spatial Map Mode
+// ============================================================
+function setToolMode(mode) {
+  const pointSection = document.getElementById("pointModeSection");
+  const spatialSection = document.getElementById("spatialModeSection");
+  const modeOptionPoint = document.getElementById("modeOptionPoint");
+  const modeOptionSpatial = document.getElementById("modeOptionSpatial");
+
+  if (mode === "point") {
+    pointSection.style.display = "block";
+    spatialSection.style.display = "none";
+    modeOptionPoint.classList.add("selected");
+    modeOptionSpatial.classList.remove("selected");
+  } else {
+    pointSection.style.display = "none";
+    spatialSection.style.display = "block";
+    modeOptionPoint.classList.remove("selected");
+    modeOptionSpatial.classList.add("selected");
+  }
+}
+
+// ============================================================
+// Spatial Map Mode: Land Cover Selection
+// ============================================================
+function selectLandCover(lc) {
+  document.querySelectorAll(".lc-option[data-lc]").forEach(function(el) {
+    el.classList.toggle("selected", el.getAttribute("data-lc") === lc);
+  });
+  document.getElementById("landCoverInput").value = lc;
+}
+
+
+// ============================================================
+// Spatial Map Mode: Scenario Selection (only enabled cards)
+// ============================================================
+function selectSpatialScenario(scenario) {
+  document.querySelectorAll(".scenario-card.enabled").forEach(function(el) {
+    el.classList.toggle("selected", el.getAttribute("data-scenario") === scenario);
+  });
+  document.getElementById("spatialScenarioInput").value = scenario;
+  updateDurationOptions(scenario);
+}
+
+// ============================================================
+// Spatial Map Mode: Duration Selection
+// ============================================================
+function selectDuration(hours) {
+  const opt = document.querySelector('.lc-option[data-hours="' + hours + '"]');
+  if (opt && opt.classList.contains("disabled")) {
+    return; // ignore clicks on disabled (unavailable) durations
+  }
+  document.querySelectorAll(".lc-option[data-hours]").forEach(function(el) {
+    el.classList.toggle("selected", el.getAttribute("data-hours") === hours);
+  });
+  document.getElementById("durationInput").value = hours;
+}
+
+// Restrict available durations depending on the selected scenario.
+// Historical Weather (Daymet) only supports 24/48/72-hour durations;
+// WRF and CESM-LE scenarios support 1/3/6/12/24/48/72-hour durations.
+function updateDurationOptions(scenario) {
+  const subDailyHours = ["1", "3", "6", "12"];
+  const isDaymet = (scenario === "historical");
+
+  document.querySelectorAll(".lc-option[data-hours]").forEach(function(el) {
+    const hours = el.getAttribute("data-hours");
+    if (isDaymet && subDailyHours.includes(hours)) {
+      el.classList.add("disabled");
+      el.classList.remove("selected");
+      el.style.opacity = "0.5";
+      el.style.cursor = "not-allowed";
+    } else {
+      el.classList.remove("disabled");
+      el.style.opacity = "";
+      el.style.cursor = "pointer";
+    }
+  });
+
+  // If the currently selected duration is no longer valid, fall back to 24-hour.
+  const currentHours = document.getElementById("durationInput").value;
+  if (isDaymet && subDailyHours.includes(currentHours)) {
+    selectDuration("24");
+  }
+}
+
+// ============================================================
+// Spatial Map Mode: Average Recurrence Interval (ARI) Selection
+// ============================================================
+function selectARI(ari) {
+  document.querySelectorAll(".lc-option[data-ari]").forEach(function(el) {
+    el.classList.toggle("selected", el.getAttribute("data-ari") === ari);
+  });
+  document.getElementById("ariInput").value = ari;
+}
+
+// ============================================================
+// Spatial Map Mode: View Map (placeholder - backend wiring TBD)
+// ============================================================
+function viewSpatialMap() {
+  document.getElementById("overlay").style.display = "flex";
+  document.getElementById("spatialForm").submit();
+}
+
+
+
+</script>
+
 
 <div id="overlay">
   <div class="spinner"></div>
