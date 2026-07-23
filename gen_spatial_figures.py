@@ -107,7 +107,7 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         ("Delta Junction",  -145.7336, 64.0378),
     ]
 
-    def add_sites(ax, fontsize=9, star=12):
+    def add_sites(ax, fontsize=7, star=10):
         for name, clon, clat in sites:
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
@@ -128,10 +128,14 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         gl.ylabel_style = {"size": 8}
 
     # ---- 2x2 layout ----
-    fig, axes = plt.subplots(2, 2, figsize=(17, 15),
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8.6),
                             subplot_kw={"projection": proj},
                             constrained_layout=True)
     axf = axes.flatten()
+
+    # Tighten the spacing between panels (smaller gap between (a) and (b), etc.)
+    fig.set_constrained_layout_pads(w_pad=0.0, h_pad=0.02, wspace=0.0, hspace=0.02)
+
 
     # ===== Panel (a): context map =====
     ax = axf[0]
@@ -150,9 +154,9 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
             color="blue", linewidth=1.8, transform=data_crs, zorder=5,
             label="Study domain")
 
-    add_sites(ax, fontsize=10, star=14)
+    add_sites(ax, fontsize=8, star=12)
     add_grid(ax)
-    ax.set_title("(a) Study Area: Interior Alaska", fontsize=14)
+    ax.set_title("(a) Study Area: Interior Alaska", fontsize=11)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.85)
 
     # ===== Panels (b)(c)(d) =====
@@ -168,26 +172,33 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
 
         add_sites(ax)
         add_grid(ax)
-        ax.set_title(title, fontsize=14)
+        ax.set_title(title, fontsize=11)
 
         cb = fig.colorbar(mesh, ax=ax, orientation="vertical",
-                        fraction=0.046, pad=0.03)
-        cb.set_label(clabel, fontsize=11)
+                        fraction=0.046, pad=0.01)
+        cb.set_label(clabel, fontsize=9)
+        cb.ax.tick_params(labelsize=8)
         cb.solids.set_alpha(1.0)
 
     # ---- invisible colorbar on (a) so it aligns with (c) ----
     cb_a = fig.colorbar(mesh_ref, ax=axf[0], orientation="vertical",
-                        fraction=0.046, pad=0.03)
-    cb_a.ax.set_visible(False)
+                        fraction=0.046, pad=0.01)
+    cb_a.outline.set_visible(False)
+    cb_a.ax.set_facecolor("none")
+    cb_a.ax.tick_params(size=0, labelsize=0, colors="none")
+    for s in cb_a.ax.spines.values():
+        s.set_visible(False)
+    cb_a.solids.set_alpha(0.0)
 
-    fig.suptitle(f"{duration}h {ari}-yr Return Level: PREC-IDF vs NG-IDF, Interior Alaska "
-                 f"({land_cover.capitalize()} Land Cover)",
-                fontsize=16)
+    # fig.suptitle(f"{duration}h {ari}-yr Return Level: PREC-IDF vs NG-IDF, Interior Alaska "
+    #              f"({land_cover.capitalize()} Land Cover)",
+    #             fontsize=16)
+
 
     if fig_file is None:
         fig_file = "./ng_idf_spatial_comparison.png"
 
-    plt.savefig(fig_file, dpi=150, bbox_inches="tight")
+    plt.savefig(fig_file, dpi=150, bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
 
     # Encode the saved PNG as a base64 data URI so it can be embedded directly

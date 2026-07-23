@@ -363,7 +363,6 @@ def NG_IDF():
             data = structure_results(results)
             
             # Generate time series plots for AM P, W, and SWE
-            import tempfile
             with tempfile.TemporaryDirectory() as td:
                 fig_am_p_file = os.path.join(td, 'am_timeseries_p.png')
                 fig_am_w_file = os.path.join(td, 'am_timeseries_w.png')
