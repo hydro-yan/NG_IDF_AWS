@@ -15,5 +15,6 @@ RUN apt-get install -y --no-install-recommends build-essential r-base
 RUN mkdir -p ./Rlibrary && chmod 777 ./Rlibrary
 RUN R -e "install.packages('lmom', dependencies=TRUE, repos='http://cran.rstudio.com/', lib='./Rlibrary')"
 EXPOSE 5000
+RUN conda install -y -c conda-forge cartopy
 ENTRYPOINT ["python", "app.py"]
 

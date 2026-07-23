@@ -16,6 +16,8 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
                          generate_cesm_ensemble_swe_plot)
+from gen_spatial_figures import generate_daymet_idf_figure
+
 from concurrent.futures import ProcessPoolExecutor
 import time
 
@@ -234,7 +236,103 @@ def NG_IDF():
 
         input_data = dict()
 
+        # Determine which mode the form was submitted from: "point" or "spatial"
+        tool_mode = request.form.get("mode", "point")
+
+        if tool_mode == "spatial":
+            # Spatial Map Mode inputs (predefined land cover, precomputed spatial maps)
+            # land_cover: "open" | "evergreen" | "deciduous"
+            land_cover = request.form.get("land_cover", "open")
+
+            # The HTML form submits long-form scenario names; normalize them to
+            # the short codes used by the backend/spatial map lookup:
+            #   "historical"         -> "daymet"
+            #   "future_wrf"         -> "wrf"
+            #   "future_cesm_near"   -> "cesm_near"
+            #   "future_cesm_mid"    -> "cesm_mid"
+            spatial_scenario_raw = request.form.get("spatial_scenario", "future_cesm_near")
+            scenario_map = {
+                "historical": "daymet",
+                "future_wrf": "wrf",
+                "future_cesm_near": "cesm_near",
+                "future_cesm_mid": "cesm_mid",
+            }
+            spatial_scenario = scenario_map.get(spatial_scenario_raw, spatial_scenario_raw)
+
+            # duration: string, "1" to "72" (hours)
+            duration = request.form.get("duration", "24")
+
+            # ari: string, "2" to "500" (years)
+            ari = request.form.get("ari", "25")
+
+            print(f"DEBUG: Spatial Map Mode - land_cover={land_cover}, "
+                  f"spatial_scenario={spatial_scenario} (raw={spatial_scenario_raw}), "
+                  f"duration={duration}, ari={ari}", flush=True)
+
+            # Human-readable label for the scenario, shown in the results page
+            scenario_label_map = {
+                "daymet": "Historical Weather (Daymet)",
+                "wrf": "Future Weather (WRF)",
+                "cesm_near": "Future Weather (CESM Near-Term)",
+                "cesm_mid": "Future Weather (CESM Mid-Century)",
+            }
+            spatial_scenario_label = scenario_label_map.get(spatial_scenario, spatial_scenario)
+
+            # Only the "daymet" (historical) spatial scenario is currently wired up
+            # to a figure-generation function. Other scenarios will show a
+            # "not yet available" notice on the results page.
+            if spatial_scenario == "daymet":
+                try:
+                    # Generate the spatial comparison figure and save it to a
+                    # temporary PNG file. generate_daymet_idf_figure() reads
+                    # the PNG back and returns it as a base64 data URI, which
+                    # we pass straight into the HTML template's <img> tag.
+                    with tempfile.TemporaryDirectory() as td:
+                        fig_file = os.path.join(
+                            td, f"daymet_spatial_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        fig_spatial = generate_daymet_idf_figure(
+                            land_cover, spatial_scenario, duration, ari, fig_file
+                        )
+
+                    return render_template(
+                        "out_spatial.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        fig_spatial=fig_spatial,
+                    )
+                except FileNotFoundError as exc:
+                    print(f"ERROR: Spatial map data not found: {exc}", flush=True)
+                    return render_template(
+                        "out_spatial.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        error=(f"No precomputed spatial map data available for "
+                               f"{land_cover} land cover at {duration}-hour / "
+                               f"{ari}-year for this scenario."),
+                    )
+            else:
+                # WRF / CESM spatial maps not yet implemented
+                return render_template(
+                    "out_spatial.html",
+                    land_cover=land_cover,
+                    spatial_scenario=spatial_scenario,
+                    spatial_scenario_label=spatial_scenario_label,
+                    duration=duration,
+                    ari=ari,
+                    error=("Spatial map figures for this scenario are not yet "
+                           "available. Currently only Historical Weather (Daymet) "
+                           "is supported."),
+                )
+
         # user input
+
         for i in range(1, 11):
             key = f"Value{i}"
             input_data[f"value{i}"] = float(request.form[key])
@@ -242,6 +340,7 @@ def NG_IDF():
         lat = input_data['value1']
         lon = input_data['value2']
         scenario = request.form.get("scenario", "historical")
+
 
         # Debug: Print scenario value with quotes to see exact string
         print(f"DEBUG: scenario from form: '{scenario}' (type: {type(scenario)})", flush=True)
