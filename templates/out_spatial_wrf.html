@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>NG-IDF Spatial Map Results</title>
+<title>NG-IDF Spatial Map Results — WRF</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
@@ -86,11 +86,21 @@
     text-align: center;
   }
   .plot-img {
-    max-width: 900px;
+    max-width: 1100px;
     width: 100%;
     height: auto;
     border: 1px solid #e2e6ea;
     border-radius: 6px;
+  }
+
+  .note-box {
+    background: #eef6ff;
+    border: 1px solid #cfe3fb;
+    color: #1a4a73;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    margin-bottom: 16px;
   }
 
   .error-box {
@@ -128,14 +138,13 @@
 
 <header>
   <div class="header-container">
-    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool — Spatial Map Results</h1>
+    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool — WRF Spatial Map Results</h1>
   </div>
 </header>
 
 <div class="container">
 
   <a class="back-link" href="/NG_IDF{% if request.args.get('auth_token') %}?auth_token={{ request.args.get('auth_token') }}{% endif %}">&larr; Back to NG-IDF Tool</a>
-
 
   <div class="section">
     <h2>Query Parameters</h2>
@@ -155,17 +164,20 @@
     </div>
   </div>
   {% else %}
-  <div class="section plot-card">
-    <h2>Spatial IDF Comparison Map</h2>
-    <img class="plot-img" src="{{ fig_spatial }}" alt="Spatial IDF Comparison Map">
+
+  <div class="note-box">
+    Panels (b) and (c) show <strong>historical</strong> PREC-IDF and NG-IDF magnitudes (inches)
+    for the selected duration/ARI, sharing a common magnitude color scale. Panels (d)–(g) show the
+    percent change relative to historical under the <strong>Medium</strong> (moderately hotter and drier)
+    and <strong>High</strong> (severely hotter and drier) future scenarios, sharing a common percent-change
+    color scale.
   </div>
 
-  {% if fig_alt %}
   <div class="section plot-card">
-    <h2>Spatial Active Layer Thickness Map</h2>
-    <img class="plot-img" src="{{ fig_alt }}" alt="Spatial Active Layer Thickness Map">
+    <h2>WRF Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
+    <img class="plot-img" src="{{ fig_spatial_wrf }}" alt="WRF Spatial IDF Comparison Map">
   </div>
-  {% endif %}
+
   {% endif %}
 
 </div>

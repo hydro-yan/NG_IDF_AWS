@@ -16,7 +16,9 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
                          generate_cesm_ensemble_swe_plot)
-from gen_spatial_figures import generate_daymet_idf_figure
+from gen_spatial_figures import generate_daymet_idf_figure, generate_daymet_alt_figure, generate_wrf_idf_figure
+
+
 
 from concurrent.futures import ProcessPoolExecutor
 import time
@@ -295,6 +297,16 @@ def NG_IDF():
                             land_cover, spatial_scenario, duration, ari, fig_file
                         )
 
+                        # Also generate the Active Layer Thickness (ALT) spatial
+                        # map for the same land cover, saved to its own temp PNG
+                        # and returned as a base64 data URI as well.
+                        fig_alt_file = os.path.join(
+                            td, f"daymet_alt_{land_cover}.png"
+                        )
+                        fig_alt = generate_daymet_alt_figure(
+                            land_cover, spatial_scenario, duration, ari, fig_alt_file
+                        )
+
                     return render_template(
                         "out_spatial.html",
                         land_cover=land_cover,
@@ -303,6 +315,7 @@ def NG_IDF():
                         duration=duration,
                         ari=ari,
                         fig_spatial=fig_spatial,
+                        fig_alt=fig_alt,
                     )
                 except FileNotFoundError as exc:
                     print(f"ERROR: Spatial map data not found: {exc}", flush=True)
@@ -317,8 +330,45 @@ def NG_IDF():
                                f"{land_cover} land cover at {duration}-hour / "
                                f"{ari}-year for this scenario."),
                     )
+            elif spatial_scenario == "wrf":
+                try:
+                    # Generate the 3x3 WRF IDF comparison figure (historical
+                    # magnitude + Medium/High future % change) and save it to
+                    # a temporary PNG file. generate_wrf_idf_figure() reads
+                    # the PNG back and returns it as a base64 data URI, which
+                    # we pass straight into the HTML template's <img> tag.
+                    with tempfile.TemporaryDirectory() as td:
+                        fig_file = os.path.join(
+                            td, f"wrf_spatial_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        fig_spatial_wrf = generate_wrf_idf_figure(
+                            land_cover, spatial_scenario, duration, ari, fig_file
+                        )
+
+                    return render_template(
+                        "out_spatial_wrf.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        fig_spatial_wrf=fig_spatial_wrf,
+                    )
+                except (FileNotFoundError, ValueError) as exc:
+                    print(f"ERROR: WRF spatial map data not found: {exc}", flush=True)
+                    return render_template(
+                        "out_spatial_wrf.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        error=(f"No precomputed WRF spatial map data available for "
+                               f"{land_cover} land cover at {duration}-hour / "
+                               f"{ari}-year for this scenario. ({exc})"),
+                    )
             else:
-                # WRF / CESM spatial maps not yet implemented
+                # CESM spatial maps not yet implemented
                 return render_template(
                     "out_spatial.html",
                     land_cover=land_cover,
@@ -327,9 +377,10 @@ def NG_IDF():
                     duration=duration,
                     ari=ari,
                     error=("Spatial map figures for this scenario are not yet "
-                           "available. Currently only Historical Weather (Daymet) "
-                           "is supported."),
+                           "available. Currently Historical Weather (Daymet) and "
+                           "Future Weather (WRF) are supported."),
                 )
+
 
         # user input
 
