@@ -71,18 +71,21 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
 
     # ---- Load data ----
     df = pd.read_csv(idf_path)
+    MM_TO_IN = 1.0 / 25.4
+    df["prec_idf_hist_in"] = df["prec_idf_hist"] * MM_TO_IN
+    df["ng_idf_hist_in"]   = df["ng_idf_hist"]   * MM_TO_IN
     df["diff_pct"] = (df["ng_idf_hist"] - df["prec_idf_hist"]) / df["prec_idf_hist"] * 100.0
 
     shared_vmin = np.nanpercentile(
-        np.concatenate([df["prec_idf_hist"].values, df["ng_idf_hist"].values]), 2)
+        np.concatenate([df["prec_idf_hist_in"].values, df["ng_idf_hist_in"].values]), 2)
     shared_vmax = np.nanpercentile(
-        np.concatenate([df["prec_idf_hist"].values, df["ng_idf_hist"].values]), 98)
+        np.concatenate([df["prec_idf_hist_in"].values, df["ng_idf_hist_in"].values]), 98)
     dlim = np.nanpercentile(np.abs(df["diff_pct"].values), 98)
-
+    mag_label = f"{duration}-h {ari}-yr Magnitude (in)"
     panels = [
-        ("prec_idf_hist", "(b) PREC-IDF", "viridis", shared_vmin, shared_vmax, "Magnitude (mm)"),
-        ("ng_idf_hist",   "(c) NG-IDF",   "viridis", shared_vmin, shared_vmax, "Magnitude (mm)"),
-        ("diff_pct",      "(d) Difference (NG - PREC)", "RdBu_r", -dlim, dlim, "Difference (%)"),
+        ("prec_idf_hist_in", "(b) PREC-IDF", "viridis", shared_vmin, shared_vmax, mag_label),
+        ("ng_idf_hist_in",   "(c) NG-IDF",   "viridis", shared_vmin, shared_vmax, mag_label),
+        ("diff_pct", "(d) Difference (NG - PREC)", "RdBu_r", -dlim, dlim, "Difference (%)"),
     ]
 
     data_crs = ccrs.PlateCarree()
@@ -117,7 +120,10 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                ax.text(clon+0.05, clat+0.05, name, fontsize=fontsize, color="black",
+                # Move the "North Pole" label lower so it doesn't overlap
+                # with the nearby "Fort Wainwright" label.
+                text_dy = -0.09 if name == "North Pole" else 0.05
+                ax.text(clon+0.05, clat+text_dy, name, fontsize=fontsize, color="black",
                         weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                 ec="none", alpha=0.8))
@@ -246,11 +252,11 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
 
     ald_path = f"./spatial_map/{land_cover}/Daymet/ng_idf_ald_results.csv"
 
-
+    M_TO_FT = 3.28084
     df = pd.read_csv(ald_path)
     df = df.dropna(subset=["lat", "lon", "mean_ALD_hist"])
-
-    VAR = "mean_ALD_hist"
+    df["mean_ALD_hist_ft"] = df["mean_ALD_hist"] * M_TO_FT
+    VAR = "mean_ALD_hist_ft"
     vmin = np.nanpercentile(df[VAR].values, 2)
     vmax = np.nanpercentile(df[VAR].values, 98)
 
@@ -287,7 +293,10 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
+                # Move the "North Pole" label lower so it doesn't overlap
+                # with the nearby "Fort Wainwright" label.
+                text_dy = -0.09 if name == "North Pole" else 0.05
+                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                 ec="none", alpha=0.8))
@@ -345,7 +354,7 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
 
     cb = fig.colorbar(mesh, ax=ax, orientation="vertical",
                     fraction=0.046, pad=0.01)
-    cb.set_label("ALT (m)", fontsize=9)
+    cb.set_label("ALT (ft)", fontsize=9)
     cb.ax.tick_params(labelsize=8)     
     cb.solids.set_alpha(1.0)
 
@@ -489,13 +498,16 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
         ("Delta Junction",  -145.7336, 64.0378),
     ]
 
-    def add_sites(ax, fontsize=7, star=10):
+    def add_sites(ax, fontsize=5, star=10):
         for name, clon, clat in sites:
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
+                # Move the "North Pole" label lower so it doesn't overlap
+                # with the nearby "Fort Wainwright" label.
+                text_dy = -0.09 if name == "North Pole" else 0.05
+                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                   ec="none", alpha=0.8))
@@ -548,9 +560,9 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
             color="blue", linewidth=1.8, transform=data_crs, zorder=5,
             label="Study domain")
 
-    add_sites(ax, fontsize=8, star=12)
+    add_sites(ax, fontsize=5, star=12)
     add_grid(ax)
-    ax.set_title("(a) Land Cover / Study Domain", fontsize=11)
+    ax.set_title("(a) Land Cover / Study Domain", fontsize=9)
     if lulc_mesh is None:
         ax.legend(loc="lower left", fontsize=9, framealpha=0.85)
 
@@ -563,7 +575,7 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
                              alpha=ALPHA, shading="auto", zorder=3)
         add_sites(ax)
         add_grid(ax)
-        ax.set_title(title, fontsize=11)
+        ax.set_title(title, fontsize=9)
         return mesh
 
     mag_mesh = None
@@ -603,13 +615,13 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
         return bbox.x0 + bbox.width / 2, bbox.y0 + bbox.height / 2
 
     xm, ym = cell_center(axf[3])
-    fig.text(xm, ym, "Medium Scenario:\nModerately Hotter\nand Drier",
-             ha="center", va="center", fontsize=11, weight="bold",
+    fig.text(xm, ym, "Medium Scenario (2033-2065):\nModerately Hotter and Drier",
+             ha="center", va="center", fontsize=8, weight="bold",
              color="black", wrap=True)
 
     xh, yh = cell_center(axf[6])
-    fig.text(xh, yh, "High Scenario:\nSeverely Hotter\nand Drier",
-             ha="center", va="center", fontsize=11, weight="bold",
+    fig.text(xh, yh, "High Scenario (2033-2065):\nSeverely Hotter and Drier",
+             ha="center", va="center", fontsize=8, weight="bold",
              color="black", wrap=True)
 
     # ---- save ----

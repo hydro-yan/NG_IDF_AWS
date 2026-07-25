@@ -140,7 +140,7 @@
   <div class="section">
     <h2>Query Parameters</h2>
     <table class="meta-table">
-      <tr><th>Land Cover</th><td>{{ land_cover | capitalize }}</td></tr>
+      <tr><th>Land Cover</th><td>{{ 'Deciduous Forest' if land_cover | lower == 'deciduous' else 'Evergreen Forest' if land_cover | lower == 'evergreen' else land_cover | capitalize }}</td></tr>
       <tr><th>Scenario</th><td>{{ spatial_scenario_label }}</td></tr>
       <tr><th>Storm Duration</th><td>{{ duration }}-hour</td></tr>
       <tr><th>Average Recurrence Interval (ARI)</th><td>{{ ari }}-year</td></tr>

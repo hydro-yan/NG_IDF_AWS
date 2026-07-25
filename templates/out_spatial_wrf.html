@@ -149,7 +149,7 @@
   <div class="section">
     <h2>Query Parameters</h2>
     <table class="meta-table">
-      <tr><th>Land Cover</th><td>{{ land_cover | capitalize }}</td></tr>
+      <tr><th>Land Cover</th><td>{{ 'Deciduous Forest' if land_cover | lower == 'deciduous' else 'Evergreen Forest' if land_cover | lower == 'evergreen' else land_cover | capitalize }}</td></tr>
       <tr><th>Scenario</th><td>{{ spatial_scenario_label }}</td></tr>
       <tr><th>Storm Duration</th><td>{{ duration }}-hour</td></tr>
       <tr><th>Average Recurrence Interval (ARI)</th><td>{{ ari }}-year</td></tr>
@@ -165,13 +165,7 @@
   </div>
   {% else %}
 
-  <div class="note-box">
-    Panels (b) and (c) show <strong>historical</strong> PREC-IDF and NG-IDF magnitudes (inches)
-    for the selected duration/ARI, sharing a common magnitude color scale. Panels (d)–(g) show the
-    percent change relative to historical under the <strong>Medium</strong> (moderately hotter and drier)
-    and <strong>High</strong> (severely hotter and drier) future scenarios, sharing a common percent-change
-    color scale.
-  </div>
+
 
   <div class="section plot-card">
     <h2>WRF Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
