@@ -16,7 +16,8 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
                          generate_cesm_ensemble_swe_plot)
-from gen_spatial_figures import generate_daymet_idf_figure, generate_daymet_alt_figure, generate_wrf_idf_figure
+from gen_spatial_figures import generate_daymet_idf_figure, generate_daymet_alt_figure, generate_wrf_idf_figure, generate_wrf_alt_figure
+
 
 
 
@@ -345,6 +346,17 @@ def NG_IDF():
                             land_cover, spatial_scenario, duration, ari, fig_file
                         )
 
+                        # Also generate the WRF Active Layer Thickness (ALT)
+                        # spatial map (historical mean + Medium/High future
+                        # change) for the same land cover, saved to its own
+                        # temp PNG and returned as a base64 data URI as well.
+                        fig_alt_file = os.path.join(
+                            td, f"wrf_alt_{land_cover}.png"
+                        )
+                        fig_alt_wrf = generate_wrf_alt_figure(
+                            land_cover, spatial_scenario, duration, ari, fig_alt_file
+                        )
+
                     return render_template(
                         "out_spatial_wrf.html",
                         land_cover=land_cover,
@@ -353,7 +365,9 @@ def NG_IDF():
                         duration=duration,
                         ari=ari,
                         fig_spatial_wrf=fig_spatial_wrf,
+                        fig_alt_wrf=fig_alt_wrf,
                     )
+
                 except (FileNotFoundError, ValueError) as exc:
                     print(f"ERROR: WRF spatial map data not found: {exc}", flush=True)
                     return render_template(

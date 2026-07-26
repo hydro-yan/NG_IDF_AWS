@@ -93,6 +93,15 @@
     border-radius: 6px;
   }
 
+  .plot-img-alt {
+  max-width: 750px;
+  width: 100%;
+  height: auto;
+  border: 1px solid #e2e6ea;
+  border-radius: 6px;
+}
+
+
   .note-box {
     background: #eef6ff;
     border: 1px solid #cfe3fb;
@@ -172,7 +181,15 @@
     <img class="plot-img" src="{{ fig_spatial_wrf }}" alt="WRF Spatial IDF Comparison Map">
   </div>
 
+  {% if fig_alt_wrf %}
+  <div class="section plot-card">
+    <h2>WRF Active Layer Thickness (ALT) Map (Historical Mean &amp; Future Change)</h2>
+    <img class="plot-img-alt" src="{{ fig_alt_wrf }}" alt="WRF Active Layer Thickness Map">
+  </div>
   {% endif %}
+
+  {% endif %}
+
 
 </div>
 
