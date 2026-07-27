@@ -498,7 +498,7 @@
   <script>
     var map = L.map('selectMap').setView([64.8378, -147.7164], 8);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 12,
+      maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
@@ -604,9 +604,9 @@
         Choose the predefined land cover type for the spatial map results.
       </p>
       <div class="land-cover-selector">
-        <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open</div>
-        <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest</div>
-        <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest</div>
+        <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open / Impervious / Bare Ground (Asphalt, Concrete, Bare Soil)</div>
+        <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest (e.g., Black Spruce, White Spruce)</div>
+        <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest (e.g., Paper Birch, Quaking Aspen, Balsam Poplar)</div>
       </div>
       <input type="hidden" id="landCoverInput" name="land_cover" value="open">
     </div>
@@ -620,25 +620,27 @@
 
 
       <div class="scenario-grid">
+
         <div class="scenario-card enabled" data-scenario="historical" onclick="selectSpatialScenario('historical')">
-          <div class="scenario-title">Historical Weather (Daymet)</div>
-          <div class="scenario-desc">Historical baseline built from Daymet gridded meteorological data.</div>
+          <div class="scenario-title">1. Historical Baseline (1990–2021): Daymet</div>
+          <div class="scenario-desc">Observed historical weather data used for existing infrastructure design.</div>
         </div>
-
+      
         <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectSpatialScenario('future_wrf')">
-          <div class="scenario-title">Future Scenario: WRF Mid Century</div>
-          <div class="scenario-desc">Mid Century (2034–2065) scenario based on WRF dynamical downscaling.</div>
+          <div class="scenario-title">2. Intensified Historical Storms (2034–2065): WRF</div>
+          <div class="scenario-desc">Evaluates how historical storm events scale and intensify under rising temperatures for the mid-century.</div>
         </div>
-
+      
         <div class="scenario-card enabled selected" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
-          <div class="scenario-title">Future Scenario: CESM Near Term</div>
-          <div class="scenario-desc">Near Term (2034–2049) scenario based on CESM2-LE ensemble members (SSP3-70).</div>
+          <div class="scenario-title">3. Future Storm Near-Term (2034–2049): CESM</div>
+          <div class="scenario-desc">Simulates projected storm variability and new patterns for the near future.</div>
         </div>
-
+      
         <div class="scenario-card enabled" data-scenario="future_cesm_mid" onclick="selectSpatialScenario('future_cesm_mid')">
-          <div class="scenario-title">Future Scenario: CESM Mid Century</div>
-          <div class="scenario-desc">Mid Century (2034–2065) scenario based on CESM2-LE ensemble members (SSP3-70).</div>
+          <div class="scenario-title">4. Future Storm Mid-Century (2034–2065): CESM</div>
+          <div class="scenario-desc">Simulates projected storm variability and new patterns for the mid-century.</div>
         </div>
+      
       </div>
 
 
