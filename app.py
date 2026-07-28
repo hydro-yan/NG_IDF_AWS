@@ -16,7 +16,9 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
                          generate_cesm_ensemble_swe_plot)
-from gen_spatial_figures import generate_daymet_idf_figure, generate_daymet_alt_figure, generate_wrf_idf_figure, generate_wrf_alt_figure
+from gen_spatial_figures import (generate_daymet_idf_figure, generate_daymet_alt_figure,
+                                  generate_wrf_idf_figure, generate_wrf_alt_figure,
+                                  generate_cesm_mid_century_idf_figure)
 
 
 
@@ -381,8 +383,48 @@ def NG_IDF():
                                f"{land_cover} land cover at {duration}-hour / "
                                f"{ari}-year for this scenario. ({exc})"),
                     )
+            elif spatial_scenario == "cesm_mid":
+                try:
+                    # Generate the 2x3 CESM mid-century ensemble-mean IDF
+                    # figure (historical magnitude + ensemble-mean future %
+                    # change) and save it to a temporary PNG file.
+                    # generate_cesm_mid_century_idf_figure() reads the PNG
+                    # back and returns it as a base64 data URI, which we pass
+                    # straight into the HTML template's <img> tag.
+                    with tempfile.TemporaryDirectory() as td:
+                        fig_file = os.path.join(
+                            td, f"cesm_spatial_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        fig_spatial_cesm = generate_cesm_mid_century_idf_figure(
+                            land_cover, spatial_scenario, duration, ari,
+                            fig_file=fig_file
+                        )
+
+                    return render_template(
+                        "out_spatial_cesm.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        fig_spatial_cesm=fig_spatial_cesm,
+                    )
+
+                except (FileNotFoundError, ValueError) as exc:
+                    print(f"ERROR: CESM spatial map data not found: {exc}", flush=True)
+                    return render_template(
+                        "out_spatial_cesm.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        error=(f"No precomputed CESM mid-century spatial map data "
+                               f"available for {land_cover} land cover at "
+                               f"{duration}-hour / {ari}-year for this scenario. ({exc})"),
+                    )
             else:
-                # CESM spatial maps not yet implemented
+                # CESM near-term spatial maps not yet implemented
                 return render_template(
                     "out_spatial.html",
                     land_cover=land_cover,
@@ -391,8 +433,9 @@ def NG_IDF():
                     duration=duration,
                     ari=ari,
                     error=("Spatial map figures for this scenario are not yet "
-                           "available. Currently Historical Weather (Daymet) and "
-                           "Future Weather (WRF) are supported."),
+                           "available. Currently Historical Weather (Daymet), "
+                           "Future Weather (WRF), and Future Weather "
+                           "(CESM Mid-Century) are supported."),
                 )
 
 

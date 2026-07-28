@@ -874,3 +874,411 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
     with open(fig_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
     return "data:image/png;base64," + encoded
+
+
+
+def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration, ari,
+                                         fig_file=None, lulc_file=None,
+                                         members=("LE2", "LE4", "LE7", "LE9"),
+                                         vmax_fixed=None, dlim_fixed=None,
+                                         member_fig_file=None,
+                                         dpi=150, save_pdf=False):
+    """
+    Generate the 2x3 CESM mid-century ensemble-mean IDF figure.
+
+    Row 1: (a) land cover / study domain | (b) PREC-IDF hist  | (c) NG-IDF hist
+    Row 2: [ensemble text]               | (d) PREC-IDF chg % | (e) NG-IDF chg %
+
+    (b)(c) share one magnitude colorbar (inches); (d)(e) share one change
+    colorbar (%). Members are inner-merged on (lat, lon) so every member
+    contributes the same cell population. The ensemble change is derived from
+    the ensemble-mean hist and ensemble-mean future -- NOT the average of the
+    per-member changes (those differ whenever members have different baselines).
+
+    Signature matches generate_wrf_idf_figure / generate_daymet_idf_figure:
+    the data path is built from land_cover, duration, and ari.
+
+        ./spatial_map/{land_cover}/CESM_{member}_Mid_Century/
+            ng_idf_return_{duration}h_ALL.csv
+
+    Parameters
+    ----------
+    land_cover : str
+        "open" | "evergreen" | "deciduous"
+    spatial_scenario : str
+        Scenario code (currently only "cesm_mid_century" is supported here;
+        kept for signature consistency with the other figure functions).
+    duration : str or int
+        Storm duration in hours, e.g. "24"
+    ari : str or int
+        Average recurrence interval in years, e.g. "25"
+    fig_file : str or None
+        Output path for the ensemble-mean figure. If None, defaults to
+        "./cesm_idf_ensmean_{land_cover}_{duration}h_{ari}yr.png".
+    lulc_file : str or None
+        Optional land cover raster for panel (a).
+    members : sequence of str
+        CESM ensemble member codes.
+    vmax_fixed : float or None
+        Upper limit of the magnitude colorbar, in inches. None autoscales to the
+        98th percentile. IDF magnitude scales strongly with duration, so a value
+        pinned for 24h will not suit 1h.
+    dlim_fixed : float or None
+        Symmetric limit of the change colorbar, in percent. None autoscales to
+        the 98th percentile of |change|. Percent change is dimensionless, so one
+        value can safely be shared across durations and ARIs.
+    member_fig_file : str or None
+        If given, also write the companion 2xN individual-member change figure
+        to this path, forced onto the same color scale. The return value is
+        always the ensemble-mean figure.
+    dpi : int
+        Raster resolution; 150 matches the WRF/Daymet figures, 300 for print.
+    save_pdf : bool
+        Also write a vector PDF next to each PNG.
+
+    Returns
+    -------
+    str
+        Base64-encoded PNG prefixed with "data:image/png;base64,".
+    """
+
+    MM_TO_IN = 1.0 / 25.4
+    LATLON_DEC = 5          # rounding used to build the merge key
+    EPS = 1e-6              # guard against divide-by-zero on the baseline
+
+    members = list(members)
+    ari = int(ari)
+    base_dir = f"./spatial_map/{land_cover}/"
+
+    # ---- Load data: one CSV per member, duration selects file, ari selects rows ----
+    frames = []
+    for m in members:
+        path = os.path.join(base_dir, "CESM_%s_Mid_Century" % m,
+                            "ng_idf_return_%sh_ALL.csv" % duration)
+        if not os.path.exists(path):
+            raise FileNotFoundError("CSV not found: %s" % os.path.abspath(path))
+
+        d = pd.read_csv(path)
+
+        need = ["lat", "lon", "return_period_yr",
+                "prec_idf_hist", "prec_idf_future",
+                "ng_idf_hist", "ng_idf_future"]
+        missing = [c for c in need if c not in d.columns]
+        if missing:
+            raise ValueError("%s is missing columns %s; found: %s"
+                             % (path, missing, list(d.columns)))
+
+        avail = sorted(d["return_period_yr"].unique())
+        if ari not in avail:
+            raise ValueError("ARI %d not in %s; available: %s" % (ari, path, avail))
+
+        d = d[d["return_period_yr"] == ari].copy()
+        if d.empty:
+            raise ValueError("No rows for ARI=%d in %s" % (ari, path))
+
+        d["lat"] = d["lat"].round(LATLON_DEC)
+        d["lon"] = d["lon"].round(LATLON_DEC)
+        d = d.drop_duplicates(subset=["lat", "lon"])
+
+        d = d.rename(columns={
+            "prec_idf_hist":   "prec_hist_%s" % m,
+            "prec_idf_future": "prec_fut_%s" % m,
+            "ng_idf_hist":     "ng_hist_%s" % m,
+            "ng_idf_future":   "ng_fut_%s" % m,
+        })
+        frames.append(d[["lat", "lon",
+                         "prec_hist_%s" % m, "prec_fut_%s" % m,
+                         "ng_hist_%s" % m, "ng_fut_%s" % m]])
+
+    df = frames[0]
+    for f in frames[1:]:
+        df = df.merge(f, on=["lat", "lon"], how="inner")
+    if df.empty:
+        raise ValueError("Inner merge across members produced zero cells. "
+                         "Check that all members share the same grid.")
+
+    # ---- per-member change, each against ITS OWN hist ----
+    prec_chg_cols, ng_chg_cols = [], []
+    for m in members:
+        base = df["prec_hist_%s" % m].where(df["prec_hist_%s" % m].abs() > EPS)
+        df["prec_chg_%s" % m] = (df["prec_fut_%s" % m] - base) / base * 100.0
+        base = df["ng_hist_%s" % m].where(df["ng_hist_%s" % m].abs() > EPS)
+        df["ng_chg_%s" % m] = (df["ng_fut_%s" % m] - base) / base * 100.0
+        prec_chg_cols.append("prec_chg_%s" % m)
+        ng_chg_cols.append("ng_chg_%s" % m)
+
+    # ---- ensemble mean of the fields (raw mm), then the ensemble change ----
+    prec_hist_mm = df[["prec_hist_%s" % m for m in members]].mean(axis=1)
+    prec_fut_mm = df[["prec_fut_%s" % m for m in members]].mean(axis=1)
+    ng_hist_mm = df[["ng_hist_%s" % m for m in members]].mean(axis=1)
+    ng_fut_mm = df[["ng_fut_%s" % m for m in members]].mean(axis=1)
+
+    prec_base = prec_hist_mm.where(prec_hist_mm.abs() > EPS)
+    ng_base = ng_hist_mm.where(ng_hist_mm.abs() > EPS)
+    df["prec_chg"] = (prec_fut_mm - prec_base) / prec_base * 100.0
+    df["ng_chg"] = (ng_fut_mm - ng_base) / ng_base * 100.0
+
+    # magnitudes for display, in inches
+    df["prec_hist_mean_in"] = prec_hist_mm * MM_TO_IN
+    df["ng_hist_mean_in"] = ng_hist_mm * MM_TO_IN
+
+    print("ensemble cells after inner merge: %d" % len(df))
+    print("domain-mean change (ensemble-mean based): PREC-IDF %+.2f %%, "
+          "NG-IDF %+.2f %%" % (np.nanmean(df["prec_chg"].values),
+                               np.nanmean(df["ng_chg"].values)))
+    for m in members:
+        print("  member %s own-baseline change: PREC-IDF %+.2f %%, NG-IDF %+.2f %%"
+              % (m, np.nanmean(df["prec_chg_%s" % m].values),
+                 np.nanmean(df["ng_chg_%s" % m].values)))
+
+    # ---- shared color limits ----
+    mag_vals = np.concatenate([df["prec_hist_mean_in"].values,
+                               df["ng_hist_mean_in"].values])
+    vmax = float(vmax_fixed) if vmax_fixed is not None \
+        else float(np.nanpercentile(mag_vals, 98))
+
+    chg_vals = np.concatenate([df["prec_chg"].values, df["ng_chg"].values])
+    dlim = float(dlim_fixed) if dlim_fixed is not None \
+        else float(np.nanpercentile(np.abs(chg_vals), 98))
+
+    data_crs = ccrs.PlateCarree()
+
+    # ---- interpolate onto regular grid ----
+    pad = 0.05
+    nx, ny = 400, 400
+    grid_lon = np.linspace(df["lon"].min() + pad, df["lon"].max() - pad, nx)
+    grid_lat = np.linspace(df["lat"].min() + pad, df["lat"].max() - pad, ny)
+    GX, GY = np.meshgrid(grid_lon, grid_lat)
+    pts = df[["lon", "lat"]].values
+
+    map_cols = ["prec_hist_mean_in", "ng_hist_mean_in", "prec_chg", "ng_chg"]
+    fields = {c: griddata(pts, df[c].values, (GX, GY), method="linear")
+              for c in map_cols}
+
+    # ---- basemap (same tiler / ZOOM / ALPHA as the WRF and Daymet figures) ----
+    tiler = cimgt.OSM()
+    proj = tiler.crs
+    ZOOM = 9
+    ALPHA = 0.55
+
+    extent = [df["lon"].min(), df["lon"].max(), df["lat"].min(), df["lat"].max()]
+    ext_pad = [extent[0] - 0.1, extent[1] + 0.1, extent[2] - 0.1, extent[3] + 0.1]
+
+    sites = [
+        ("Fort Wainwright", -147.6389, 64.8283),
+        ("North Pole",      -147.3494, 64.7511),
+        ("Delta Junction",  -145.7336, 64.0378),
+    ]
+
+    def add_sites(ax, fontsize=5, star=10):
+        for name, clon, clat in sites:
+            if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
+                ax.plot(clon, clat, marker="*", color="red", markersize=star,
+                        markeredgecolor="white", markeredgewidth=0.9,
+                        transform=data_crs, zorder=6)
+                # Move the "North Pole" label lower so it does not overlap
+                # with the nearby "Fort Wainwright" label.
+                text_dy = -0.09 if name == "North Pole" else 0.05
+                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
+                        color="black", weight="bold", transform=data_crs, zorder=7,
+                        bbox=dict(boxstyle="round,pad=0.16", fc="white",
+                                  ec="none", alpha=0.8))
+
+    def add_grid(ax, labelsize=8):
+        gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
+                          alpha=0.5, linestyle="--", zorder=4)
+        gl.top_labels = gl.right_labels = False
+        gl.xlocator = mticker.FixedLocator(np.arange(-149, -144, 1))
+        gl.ylocator = mticker.FixedLocator(np.arange(63, 66, 0.5))
+        gl.xlabel_style = {"size": labelsize}
+        gl.ylabel_style = {"size": labelsize}
+
+    def add_lulc(ax, legend_fontsize=8):
+        """Panel (a): basemap + optional land cover raster + domain outline."""
+        ax.set_extent(ext_pad, crs=data_crs)
+        ax.add_image(tiler, ZOOM)
+
+        lulc_mesh = None
+        if lulc_file is not None:
+            import rioxarray as rxr
+            from matplotlib.colors import ListedColormap, BoundaryNorm
+            lc = rxr.open_rasterio(lulc_file, masked=True).squeeze()
+            lc = lc.rio.reproject("EPSG:4326")
+            classes = [1, 2, 3]
+            names = ["Open", "Evergreen", "Deciduous"]
+            colors = ["#D9C89E", "#1B4D3E", "#7FBF3F"]
+            cmap_lc = ListedColormap(colors)
+            norm_lc = BoundaryNorm(np.array(classes + [classes[-1] + 1]) - 0.5,
+                                   cmap_lc.N)
+            lulc_mesh = ax.pcolormesh(lc.x.values, lc.y.values, lc.values,
+                                      cmap=cmap_lc, norm=norm_lc,
+                                      transform=data_crs, alpha=0.75,
+                                      shading="auto", zorder=2)
+            handles = [plt.Line2D([], [], marker="s", ls="", color=c, label=n)
+                       for c, n in zip(colors, names)]
+            ax.legend(handles=handles, loc="lower left",
+                      fontsize=legend_fontsize, framealpha=0.85)
+
+        ax.plot([extent[0], extent[1], extent[1], extent[0], extent[0]],
+                [extent[2], extent[2], extent[3], extent[3], extent[2]],
+                color="blue", linewidth=1.8, transform=data_crs, zorder=5,
+                label="Study domain")
+        add_sites(ax, fontsize=5, star=12)
+        add_grid(ax)
+        ax.set_title("(a) Land Cover / Study Domain", fontsize=9)
+        if lulc_mesh is None:
+            ax.legend(loc="lower left", fontsize=legend_fontsize, framealpha=0.85)
+
+    def blank_colorbar(fig, mesh, ax):
+        """Invisible colorbar so a text/context column matches the map columns."""
+        cbx = fig.colorbar(mesh, ax=ax, orientation="vertical",
+                           fraction=0.046, pad=0.01, aspect=20)
+        cbx.outline.set_visible(False)
+        cbx.ax.set_facecolor("none")
+        cbx.ax.tick_params(size=0, labelsize=0, colors="none")
+        for s in cbx.ax.spines.values():
+            s.set_visible(False)
+        cbx.solids.set_alpha(0.0)
+        return cbx
+
+    def save_and_encode(fig, path, default_name):
+        if path is None:
+            path = default_name
+        path = os.path.abspath(path)
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        fig.savefig(path, dpi=dpi, bbox_inches="tight", pad_inches=0.02)
+        if save_pdf:
+            fig.savefig(os.path.splitext(path)[0] + ".pdf",
+                        bbox_inches="tight", pad_inches=0.02)
+        plt.close(fig)
+        print("saved:", path, os.path.exists(path))
+        with open(path, "rb") as fh:
+            return "data:image/png;base64," + base64.b64encode(fh.read()).decode("utf-8")
+
+    # ================= 2x3 ensemble-mean figure =================
+    fig = plt.figure(figsize=(13.5, 8.4), layout="compressed")
+    gs = fig.add_gridspec(2, 3)
+    ax_lulc = fig.add_subplot(gs[0, 0], projection=proj)
+    ax_ph = fig.add_subplot(gs[0, 1], projection=proj)
+    ax_nh = fig.add_subplot(gs[0, 2], projection=proj)
+    ax_txt = fig.add_subplot(gs[1, 0])
+    ax_pc = fig.add_subplot(gs[1, 1], projection=proj)
+    ax_nc = fig.add_subplot(gs[1, 2], projection=proj)
+    fig.get_layout_engine().set(w_pad=0.01, h_pad=0.01, wspace=0.02, hspace=0.02)
+
+    add_lulc(ax_lulc)
+
+    def draw(ax, col, title, cmap, vmin_, vmax_):
+        ax.set_extent(ext_pad, crs=data_crs)
+        ax.add_image(tiler, ZOOM)
+        mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
+                             vmin=vmin_, vmax=vmax_, transform=data_crs,
+                             alpha=ALPHA, shading="auto", zorder=3,
+                             rasterized=True)
+        add_sites(ax)
+        add_grid(ax)
+        ax.set_title(title, fontsize=9)
+        return mesh
+
+    mag_mesh = draw(ax_ph, "prec_hist_mean_in",
+                    "(b) PREC-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+    draw(ax_nh, "ng_hist_mean_in",
+         "(c) NG-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+
+    chg_mesh = draw(ax_pc, "prec_chg",
+                    "(d) PREC-IDF Change (ensemble mean)", "RdBu_r", -dlim, dlim)
+    draw(ax_nc, "ng_chg",
+         "(e) NG-IDF Change (ensemble mean)", "RdBu_r", -dlim, dlim)
+
+    # ===== blank cell: ensemble description =====
+    ax_txt.set_axis_off()
+    ax_txt.text(0.5, 0.66, "Mid-Century Ensemble Mean",
+                ha="center", va="center", fontsize=9, weight="bold",
+                transform=ax_txt.transAxes)
+    ax_txt.text(0.5, 0.52, "Average of %d model simulations" % len(members),
+                ha="center", va="center", fontsize=9, transform=ax_txt.transAxes)
+    ax_txt.text(0.5, 0.40,
+                "Members 1-%d: %s" % (len(members),
+                                      ", ".join("CESM-%s" % m for m in members)),
+                ha="center", va="center", fontsize=9, transform=ax_txt.transAxes)
+
+    # ===== shared colorbars =====
+    cb1 = fig.colorbar(mag_mesh, ax=[ax_ph, ax_nh], orientation="vertical",
+                       fraction=0.046, pad=0.01, aspect=20)
+    cb1.set_label("%sh %s-yr Magnitude (in)" % (duration, ari), fontsize=9)
+    cb1.ax.tick_params(labelsize=8)
+    cb1.solids.set_alpha(1.0)
+
+    cb2 = fig.colorbar(chg_mesh, ax=[ax_pc, ax_nc], orientation="vertical",
+                       fraction=0.046, pad=0.01, aspect=20)
+    cb2.set_label("Change (%)", fontsize=9)
+    cb2.ax.tick_params(labelsize=8)
+    cb2.solids.set_alpha(1.0)
+
+    for ax_blank in (ax_lulc, ax_txt):
+        blank_colorbar(fig, mag_mesh, ax_blank)
+
+    encoded = save_and_encode(
+        fig, fig_file,
+        "./cesm_idf_ensmean_%s_%sh_%syr.png" % (land_cover, duration, ari))
+
+    # ================= optional 2xN individual-member figure =================
+    if member_fig_file is not None:
+        mx, my = 300, 300
+        mgrid_lon = np.linspace(df["lon"].min() + pad, df["lon"].max() - pad, mx)
+        mgrid_lat = np.linspace(df["lat"].min() + pad, df["lat"].max() - pad, my)
+        MGX, MGY = np.meshgrid(mgrid_lon, mgrid_lat)
+        mfields = {c: griddata(pts, df[c].values, (MGX, MGY), method="linear")
+                   for c in prec_chg_cols + ng_chg_cols}
+
+        ncols = len(members)
+        mfig = plt.figure(figsize=(4.5 * ncols, 10.0), layout="compressed")
+        mgs = mfig.add_gridspec(2, ncols)
+        maxes = [[mfig.add_subplot(mgs[i, j], projection=proj)
+                  for j in range(ncols)] for i in range(2)]
+        mfig.get_layout_engine().set(w_pad=0.02, h_pad=0.02,
+                                     wspace=0.02, hspace=0.02)
+
+        rows = (("PREC-IDF", prec_chg_cols), ("NG-IDF", ng_chg_cols))
+        letters = "abcdefghijklmnop"
+        mesh = None
+        for j, m in enumerate(members):
+            for i, (var, cols) in enumerate(rows):
+                ax = maxes[i][j]
+                ax.set_extent(ext_pad, crs=data_crs)
+                ax.add_image(tiler, ZOOM)
+                mesh = ax.pcolormesh(MGX, MGY, mfields[cols[j]], cmap="RdBu_r",
+                                     vmin=-dlim, vmax=dlim, transform=data_crs,
+                                     alpha=ALPHA, shading="auto", zorder=3,
+                                     rasterized=True)
+                add_sites(ax)
+                add_grid(ax)
+                ax.text(0.97, 0.04, "(%s)" % letters[i * ncols + j],
+                        transform=ax.transAxes, ha="right", va="bottom",
+                        fontsize=8, zorder=7,
+                        bbox=dict(boxstyle="round,pad=0.15", fc="white",
+                                  ec="none", alpha=0.7))
+                if i == 0:
+                    ax.set_title("Member %d (CESM-%s)" % (j + 1, m), fontsize=10)
+                if j == 0:
+                    ax.annotate(var, xy=(0.0, 0.5), xycoords="axes fraction",
+                                xytext=(-38, 0), textcoords="offset points",
+                                fontsize=10, ha="center", va="center", rotation=90)
+
+        cbm = mfig.colorbar(mesh, ax=[a for row in maxes for a in row],
+                            orientation="horizontal", location="bottom",
+                            fraction=0.035, pad=0.04, aspect=40, shrink=0.6)
+        cbm.set_label("Change (%)", fontsize=9)
+        cbm.ax.tick_params(labelsize=8)
+        cbm.solids.set_alpha(1.0)
+
+        mfig.suptitle("%sh, %s-yr return level: individual member change"
+                      % (duration, ari), fontsize=11)
+
+        save_and_encode(
+            mfig, member_fig_file,
+            "./cesm_idf_members_%s_%sh_%syr.png" % (land_cover, duration, ari))
+
+    return encoded
