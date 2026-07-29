@@ -18,7 +18,12 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_cesm_ensemble_swe_plot)
 from gen_spatial_figures import (generate_daymet_idf_figure, generate_daymet_alt_figure,
                                   generate_wrf_idf_figure, generate_wrf_alt_figure,
-                                  generate_cesm_mid_century_idf_figure)
+                                  generate_cesm_mid_century_idf_figure,
+                                  generate_cesm_near_term_idf_figure,
+                                  generate_cesm_mid_century_alt_figure,
+                                  generate_cesm_near_term_alt_figure)
+
+
 
 
 
@@ -403,6 +408,19 @@ def NG_IDF():
                             fig_file=fig_file, member_fig_file=member_fig_file
                         )
 
+                        # Also generate the CESM Mid-Century Active Layer
+                        # Thickness (ALT) spatial map (2x4 ensemble-mean +
+                        # individual-member change figure) for the same
+                        # land cover, saved to its own temp PNG and returned
+                        # as a base64 data URI as well.
+                        alt_fig_file = os.path.join(
+                            td, f"cesm_alt_{land_cover}.png"
+                        )
+                        fig_spatial_cesm_alt = generate_cesm_mid_century_alt_figure(
+                            land_cover, spatial_scenario, duration, ari,
+                            fig_file=alt_fig_file
+                        )
+
                     return render_template(
                         "out_spatial_cesm.html",
                         land_cover=land_cover,
@@ -412,7 +430,9 @@ def NG_IDF():
                         ari=ari,
                         fig_spatial_cesm=fig_spatial_cesm,
                         fig_spatial_cesm_members=fig_spatial_cesm_members,
+                        fig_spatial_cesm_alt=fig_spatial_cesm_alt,
                     )
+
 
 
                 except (FileNotFoundError, ValueError) as exc:
@@ -428,8 +448,67 @@ def NG_IDF():
                                f"available for {land_cover} land cover at "
                                f"{duration}-hour / {ari}-year for this scenario. ({exc})"),
                     )
+            elif spatial_scenario == "cesm_near":
+                try:
+                    # Generate the 2x3 CESM near-term ensemble-mean IDF
+                    # figure (historical magnitude + ensemble-mean future %
+                    # change) and save it to a temporary PNG file.
+                    # generate_cesm_near_term_idf_figure() reads the PNG
+                    # back and returns it as a base64 data URI, which we pass
+                    # straight into the HTML template's <img> tag.
+                    with tempfile.TemporaryDirectory() as td:
+                        fig_file = os.path.join(
+                            td, f"cesm_near_spatial_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        member_fig_file = os.path.join(
+                            td, f"cesm_near_members_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        fig_spatial_cesm_near, fig_spatial_cesm_near_members = generate_cesm_near_term_idf_figure(
+                            land_cover, spatial_scenario, duration, ari,
+                            fig_file=fig_file, member_fig_file=member_fig_file
+                        )
+
+                        # Also generate the CESM Near-Term Active Layer
+                        # Thickness (ALT) spatial map (2x4 ensemble-mean +
+                        # individual-member change figure) for the same
+                        # land cover, saved to its own temp PNG and returned
+                        # as a base64 data URI as well.
+                        alt_fig_file = os.path.join(
+                            td, f"cesm_near_alt_{land_cover}.png"
+                        )
+                        fig_spatial_cesm_near_alt = generate_cesm_near_term_alt_figure(
+                            land_cover, spatial_scenario, duration, ari,
+                            fig_file=alt_fig_file
+                        )
+
+                    return render_template(
+                        "out_spatial_cesm_near_term.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        fig_spatial_cesm_near=fig_spatial_cesm_near,
+                        fig_spatial_cesm_near_members=fig_spatial_cesm_near_members,
+                        fig_spatial_cesm_near_alt=fig_spatial_cesm_near_alt,
+                    )
+
+
+                except (FileNotFoundError, ValueError) as exc:
+                    print(f"ERROR: CESM near-term spatial map data not found: {exc}", flush=True)
+                    return render_template(
+                        "out_spatial_cesm_near_term.html",
+                        land_cover=land_cover,
+                        spatial_scenario=spatial_scenario,
+                        spatial_scenario_label=spatial_scenario_label,
+                        duration=duration,
+                        ari=ari,
+                        error=(f"No precomputed CESM near-term spatial map data "
+                               f"available for {land_cover} land cover at "
+                               f"{duration}-hour / {ari}-year for this scenario. ({exc})"),
+                    )
             else:
-                # CESM near-term spatial maps not yet implemented
+                # Unknown scenario code
                 return render_template(
                     "out_spatial.html",
                     land_cover=land_cover,
@@ -439,9 +518,11 @@ def NG_IDF():
                     ari=ari,
                     error=("Spatial map figures for this scenario are not yet "
                            "available. Currently Historical Weather (Daymet), "
-                           "Future Weather (WRF), and Future Weather "
+                           "Future Weather (WRF), Future Weather "
+                           "(CESM Near-Term), and Future Weather "
                            "(CESM Mid-Century) are supported."),
                 )
+
 
 
         # user input

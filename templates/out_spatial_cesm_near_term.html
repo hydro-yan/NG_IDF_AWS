@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>NG-IDF Spatial Map Results — CESM Mid-Century</title>
+<title>NG-IDF Spatial Map Results — CESM Near-Term</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
@@ -176,21 +176,21 @@
 
 
   <div class="section plot-card">
-    <h2>CESM Mid-Century Ensemble-Mean Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
-    <img class="plot-img" src="{{ fig_spatial_cesm }}" alt="CESM Mid-Century Spatial IDF Comparison Map">
+    <h2>CESM Near-Term Ensemble-Mean Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
+    <img class="plot-img" src="{{ fig_spatial_cesm_near }}" alt="CESM Near-Term Spatial IDF Comparison Map">
   </div>
 
-  {% if fig_spatial_cesm_members %}
+  {% if fig_spatial_cesm_near_members %}
   <div class="section plot-card">
-    <h2>CESM Mid-Century Individual Ensemble Member IDF Change Rate</h2>
-    <img class="plot-img" src="{{ fig_spatial_cesm_members }}" alt="CESM Individual Ensemble Member Change Rate Map">
+    <h2>CESM Near-Term Individual Ensemble Member IDF Change Rate</h2>
+    <img class="plot-img" src="{{ fig_spatial_cesm_near_members }}" alt="CESM Individual Ensemble Member Change Rate Map">
   </div>
   {% endif %}
 
-  {% if fig_spatial_cesm_alt %}
+  {% if fig_spatial_cesm_near_alt %}
   <div class="section plot-card">
-    <h2>CESM Mid-Century Active Layer Thickness (ALT) Comparison Map (Historical Magnitude &amp; Future Change)</h2>
-    <img class="plot-img" src="{{ fig_spatial_cesm_alt }}" alt="CESM Mid-Century Active Layer Thickness Change Map">
+    <h2>CESM Near-Term Active Layer Thickness (ALT) Comparison Map (Historical Magnitude &amp; Future Change)</h2>
+    <img class="plot-img" src="{{ fig_spatial_cesm_near_alt }}" alt="CESM Near-Term Active Layer Thickness Change Map">
   </div>
   {% endif %}
 
