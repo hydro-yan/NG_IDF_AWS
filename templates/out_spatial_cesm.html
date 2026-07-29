@@ -146,7 +146,7 @@
 
 <header>
   <div class="header-container">
-    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool — CESM Mid-Century Spatial Map Results</h1>
+    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool — Spatial Map Results</h1>
   </div>
 </header>
 
@@ -173,20 +173,22 @@
   </div>
   {% else %}
 
-  <div class="note-box">
-    Ensemble-mean results are derived from four CESM Mid-Century (2034&ndash;2065) ensemble
-    members (LE2, LE4, LE7, LE9). Grid cells are inner-merged across all four members, so
-    every panel reflects the same common cell population. The percent change panels are
-    computed from the ensemble-mean historical and ensemble-mean future values &mdash; not
-    from an average of each member's individual percent change.
-  </div>
+
 
   <div class="section plot-card">
     <h2>CESM Mid-Century Ensemble-Mean Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
     <img class="plot-img" src="{{ fig_spatial_cesm }}" alt="CESM Mid-Century Spatial IDF Comparison Map">
   </div>
 
+  {% if fig_spatial_cesm_members %}
+  <div class="section plot-card">
+    <h2>CESM Mid-Century Individual Ensemble Member IDF Change Rate</h2>
+    <img class="plot-img" src="{{ fig_spatial_cesm_members }}" alt="CESM Individual Ensemble Member Change Rate Map">
+  </div>
   {% endif %}
+
+  {% endif %}
+
 
 </div>
 

@@ -395,9 +395,12 @@ def NG_IDF():
                         fig_file = os.path.join(
                             td, f"cesm_spatial_{land_cover}_{duration}h_{ari}yr.png"
                         )
-                        fig_spatial_cesm = generate_cesm_mid_century_idf_figure(
+                        member_fig_file = os.path.join(
+                            td, f"cesm_members_{land_cover}_{duration}h_{ari}yr.png"
+                        )
+                        fig_spatial_cesm, fig_spatial_cesm_members = generate_cesm_mid_century_idf_figure(
                             land_cover, spatial_scenario, duration, ari,
-                            fig_file=fig_file
+                            fig_file=fig_file, member_fig_file=member_fig_file
                         )
 
                     return render_template(
@@ -408,7 +411,9 @@ def NG_IDF():
                         duration=duration,
                         ari=ari,
                         fig_spatial_cesm=fig_spatial_cesm,
+                        fig_spatial_cesm_members=fig_spatial_cesm_members,
                     )
+
 
                 except (FileNotFoundError, ValueError) as exc:
                     print(f"ERROR: CESM spatial map data not found: {exc}", flush=True)

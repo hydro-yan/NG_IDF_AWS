@@ -938,13 +938,17 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
 
     Returns
     -------
-    str
-        Base64-encoded PNG prefixed with "data:image/png;base64,".
+    tuple(str, str)
+        Two base64-encoded PNG strings, each prefixed with
+        "data:image/png;base64,": (1) the 2x3 ensemble-mean figure, and
+        (2) the companion 2xN figure showing each individual ensemble
+        member's own-baseline percent change (PREC-IDF row / NG-IDF row).
     """
 
     MM_TO_IN = 1.0 / 25.4
     LATLON_DEC = 5          # rounding used to build the merge key
     EPS = 1e-6              # guard against divide-by-zero on the baseline
+
 
     members = list(members)
     ari = int(ari)
@@ -1207,7 +1211,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
     # ===== shared colorbars =====
     cb1 = fig.colorbar(mag_mesh, ax=[ax_ph, ax_nh], orientation="vertical",
                        fraction=0.046, pad=0.01, aspect=20)
-    cb1.set_label("%sh %s-yr Magnitude (in)" % (duration, ari), fontsize=9)
+    cb1.set_label("%s-h %s-yr Magnitude (in)" % (duration, ari), fontsize=9)
     cb1.ax.tick_params(labelsize=8)
     cb1.solids.set_alpha(1.0)
 
@@ -1224,9 +1228,12 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
         fig, fig_file,
         "./cesm_idf_ensmean_%s_%sh_%syr.png" % (land_cover, duration, ari))
 
-    # ================= optional 2xN individual-member figure =================
-    if member_fig_file is not None:
+    # ================= 2xN individual-member change figure =================
+    # Always generated (not gated on member_fig_file being passed) so callers
+    # get both figures back from a single call.
+    if True:
         mx, my = 300, 300
+
         mgrid_lon = np.linspace(df["lon"].min() + pad, df["lon"].max() - pad, mx)
         mgrid_lat = np.linspace(df["lat"].min() + pad, df["lat"].max() - pad, my)
         MGX, MGY = np.meshgrid(mgrid_lon, mgrid_lat)
@@ -1241,7 +1248,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
         mfig.get_layout_engine().set(w_pad=0.02, h_pad=0.02,
                                      wspace=0.02, hspace=0.02)
 
-        rows = (("PREC-IDF", prec_chg_cols), ("NG-IDF", ng_chg_cols))
+        rows = (("PREC-IDF: %s-h %s-yr" %(duration, ari), prec_chg_cols), ("NG-IDF: %s-h %s-yr" %(duration, ari), ng_chg_cols))
         letters = "abcdefghijklmnop"
         mesh = None
         for j, m in enumerate(members):
@@ -1274,11 +1281,13 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
         cbm.ax.tick_params(labelsize=8)
         cbm.solids.set_alpha(1.0)
 
-        mfig.suptitle("%sh, %s-yr return level: individual member change"
-                      % (duration, ari), fontsize=11)
+        #mfig.suptitle("%s-h, %s-yr return level: individual member change"
+        #              % (duration, ari), fontsize=11)
 
-        save_and_encode(
+        member_encoded = save_and_encode(
             mfig, member_fig_file,
             "./cesm_idf_members_%s_%sh_%syr.png" % (land_cover, duration, ari))
 
-    return encoded
+    return encoded, member_encoded
+
+
