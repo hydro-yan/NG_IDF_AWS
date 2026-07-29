@@ -103,9 +103,10 @@
 
 
   .note-box {
-    background: #eef6ff;
-    border: 1px solid #cfe3fb;
-    color: #1a4a73;
+    background: #eef6ee;
+    border: 1px solid #cfe3cf;
+    border-left: 4px solid #2e7d32;
+    color: #1b4d3e;
     border-radius: 6px;
     padding: 12px 16px;
     font-size: 12.5px;
@@ -175,15 +176,43 @@
   {% else %}
 
 
+  <div class="note-box">
+    <strong>What you are looking at.</strong> This page asks a single question: if the storms
+    that actually happened here were to occur in a warmer weather, how much bigger would they
+    be? The WRF model re-runs the historical weather with warming added, so the baseline and
+    future panels contain the <em>same storms</em> under different weather conditions. This
+    makes it a controlled stress test rather than a real forecast.
+    <br><br>
+    <strong>Use the change, not the absolute values.</strong> The baseline panels are still a
+    model simulation, so the change from baseline to 2034&ndash;2065 is the transferable result.
+    Apply it to the observed values on the Daymet page:
+    <ul style="margin:6px 0 0 0; padding-left:20px;">
+      <li><strong>IDF &mdash; percent change.</strong> Multiply:
+        observed 2.0 in &times; (1 + 20/100) = 2.4 in.</li>
+      <li><strong>ALT &mdash; absolute change (ft).</strong> Add:
+        observed 3.0 ft + 0.5 ft = 3.5 ft.</li>
+    </ul>
+    <br>
+    <strong>Two scenarios.</strong> <em>Medium</em> (moderately hotter and drier) and
+    <em>High</em> (severely hotter and drier) apply different amounts of warming. Neither is
+    more likely; they bracket a plausible range. Use Medium as a central estimate and check
+    High for anything long-lived or costly to fail.
+  </div>
+
+
+
+
+
+
 
   <div class="section plot-card">
-    <h2>WRF Spatial IDF Comparison Map (Historical Magnitude &amp; Future Change)</h2>
+    <h2>WRF Spatial IDF Comparison Map (Baseline Simulation &amp; Future Change)</h2>
     <img class="plot-img" src="{{ fig_spatial_wrf }}" alt="WRF Spatial IDF Comparison Map">
   </div>
 
   {% if fig_alt_wrf %}
   <div class="section plot-card">
-    <h2>WRF Active Layer Thickness (ALT) Map (Historical Mean &amp; Future Change)</h2>
+    <h2>WRF Active Layer Thickness (ALT) Map (Baseline Simulation &amp; Future Change)</h2>
     <img class="plot-img-alt" src="{{ fig_alt_wrf }}" alt="WRF Active Layer Thickness Map">
   </div>
   {% endif %}

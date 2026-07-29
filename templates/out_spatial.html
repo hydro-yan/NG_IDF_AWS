@@ -102,6 +102,19 @@
     font-size: 13px;
   }
 
+  .note-box {
+    background: #eef6ee;
+    border: 1px solid #cfe3cf;
+    border-left: 4px solid #2e7d32;
+    color: #1b4d3e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12.5px;
+    margin-bottom: 16px;
+  }
+
+
+
   .back-link {
     display: inline-block;
     margin-bottom: 16px;
@@ -155,6 +168,22 @@
     </div>
   </div>
   {% else %}
+
+
+  <div class="note-box">
+    <strong>What you are looking at.</strong> These maps show current-weather design 
+    values based on <strong>gridded historical observations</strong> (Daymet, 1990–2021), 
+    derived from interpolated weather station records. 
+    <br><br>
+    Future scenario pages report <em>relative change</em> (deltas) from future 
+    simulations compared to their baseline simulations. To calculate a future design 
+    value, apply that delta/change to the historical value shown here.
+  </div>
+
+
+
+
+
   <div class="section plot-card">
     <h2>Spatial IDF Comparison Map</h2>
     <img class="plot-img" src="{{ fig_spatial }}" alt="Spatial IDF Comparison Map">

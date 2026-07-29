@@ -460,8 +460,8 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
 
     # (axes index in 3x3 grid, data column, panel label)
     mag_panels = [
-        (1, "prec_idf_hist_in", "(b) PREC-IDF Historical"),
-        (2, "ng_idf_hist_in",   "(c) NG-IDF Historical"),
+        (1, "prec_idf_hist_in", "(b) PREC-IDF Baseline Simulation"),
+        (2, "ng_idf_hist_in",   "(c) NG-IDF Baseline Simulation"),
     ]
     chg_panels = [
         (4, "prec_idf_chg_med",  "(d) PREC-IDF Change: Medium"),
@@ -690,7 +690,7 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
         chg_vmax = np.nanpercentile(chg_vals, 98)
 
     mag_panels = [
-        (1, "alt_hist_ft", "(b) Historical Mean ALT", None),
+        (1, "alt_hist_ft", "(b) Baseline Simulated Mean ALT", None),
     ]
     chg_panels = [
         (2, "alt_chg_med",  "(c) ALT Change: Medium", "medium"),
@@ -1187,9 +1187,9 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
         return mesh
 
     mag_mesh = draw(ax_ph, "prec_hist_mean_in",
-                    "(b) PREC-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+                    "(b) PREC-IDF Baseline (ensemble mean)", "viridis", 0.0, vmax)
     draw(ax_nh, "ng_hist_mean_in",
-         "(c) NG-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+         "(c) NG-IDF Baseline (ensemble mean)", "viridis", 0.0, vmax)
 
     chg_mesh = draw(ax_pc, "prec_chg",
                     "(d) PREC-IDF Change (ensemble mean)", "RdBu_r", -dlim, dlim)
@@ -1604,9 +1604,9 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
         return mesh
 
     mag_mesh = draw(ax_ph, "prec_hist_mean_in",
-                    "(b) PREC-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+                    "(b) PREC-IDF Baseline (ensemble mean)", "viridis", 0.0, vmax)
     draw(ax_nh, "ng_hist_mean_in",
-         "(c) NG-IDF Historical (ensemble mean)", "viridis", 0.0, vmax)
+         "(c) NG-IDF Baseline (ensemble mean)", "viridis", 0.0, vmax)
 
     chg_mesh = draw(ax_pc, "prec_chg",
                     "(d) PREC-IDF Change (ensemble mean)", "RdBu_r", -dlim, dlim)
@@ -2038,7 +2038,7 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
     # ===== Row 1 =====
     add_lulc(ax_lulc)
     mag_mesh = draw(ax_h, "alt_hist_mean",
-                    "(b) Historical ALT (ensemble mean)",
+                    "(b) Baseline ALT (ensemble mean)",
                     "YlGnBu", vmin_mag, vmax_mag)
     draw(ax_f, "alt_fut_mean",
          "(c) Near-Term ALT (ensemble mean)",
@@ -2437,7 +2437,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
     # ===== Row 1 =====
     add_lulc(ax_lulc)
     mag_mesh = draw(ax_h, "alt_hist_mean",
-                    "(b) Historical ALT (ensemble mean)",
+                    "(b) Baseline ALT (ensemble mean)",
                     "YlGnBu", vmin_mag, vmax_mag)
     draw(ax_f, "alt_fut_mean",
          "(c) Mid-Century ALT (ensemble mean)",
