@@ -623,23 +623,25 @@
       <div class="scenario-grid">
 
         <div class="scenario-card enabled" data-scenario="historical" onclick="selectSpatialScenario('historical')">
-          <div class="scenario-title">1. Historical Baseline (1990–2021): Daymet</div>
-          <div class="scenario-desc">Observed historical weather data used for existing infrastructure design.</div>
+          <div class="scenario-title">1. Historical Baseline (1990–2021)</div>
+          <div class="scenario-desc">Observed historical weather data used for standard replacement or baseline site evaluation.</div>
         </div>
-      
+        
         <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectSpatialScenario('future_wrf')">
-          <div class="scenario-title">2. Intensified Historical Storms (2034–2065): WRF</div>
-          <div class="scenario-desc">Evaluates how historical storm events scale and intensify under rising temperatures for the mid-century.</div>
+          <div class="scenario-title">2. Stress-Test Scenario: Historical Intensification (2034–2065)</div>
+          <div class="scenario-desc">Re-simulates past historical storm events under mid-century conditions to evaluate system failure thresholds 
+            and peak load capacity.</div>
         </div>
-      
+        
         <div class="scenario-card enabled selected" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
-          <div class="scenario-title">3. Future Storm Near-Term (2034–2049): CESM</div>
-          <div class="scenario-desc">Simulates projected storm variability and new patterns for the near future.</div>
+          <div class="scenario-title">3. Near-Term Design Lifespan (2034-2049)</div>
+          <div class="scenario-desc">Evaluates new storm variability and patterns for assets with near-term design lifespans or upcoming renewals</div>
         </div>
-      
+        
         <div class="scenario-card enabled" data-scenario="future_cesm_mid" onclick="selectSpatialScenario('future_cesm_mid')">
-          <div class="scenario-title">4. Future Storm Mid-Century (2034–2065): CESM</div>
-          <div class="scenario-desc">Simulates projected storm variability and new patterns for the mid-century.</div>
+          <div class="scenario-title">4. Mid-Century Design Lifespan (2034–2065)</div>
+          <div class="scenario-desc">Evaluates new storm variability patterns for critical civil infrastructure with 
+            extended multi-decade design lifespans.</div>
         </div>
       
       </div>

@@ -67,7 +67,7 @@
   .meta-table {
     border-collapse: collapse;
     width: 100%;
-    max-width: 600px;
+    max-width: 850px;
     margin: 0 auto 16px auto;
     font-size: 12.5px;
   }
@@ -153,8 +153,8 @@
   <div class="section">
     <h2>Query Parameters</h2>
     <table class="meta-table">
-      <tr><th>Land Cover</th><td>{{ 'Deciduous Forest' if land_cover | lower == 'deciduous' else 'Evergreen Forest' if land_cover | lower == 'evergreen' else land_cover | capitalize }}</td></tr>
-      <tr><th>Scenario</th><td>{{ spatial_scenario_label }}</td></tr>
+      <tr><th>Land Cover</th><td>{{ 'Open / Impervious / Bare Ground (Asphalt, Concrete, Bare Soil)' if land_cover | lower == 'open' else 'Deciduous Forest (e.g., Paper Birch, Quaking Aspen, Balsam Poplar)' if land_cover | lower == 'deciduous' else 'Evergreen Forest (e.g., Black Spruce, White Spruce)' if land_cover | lower == 'evergreen' else land_cover | capitalize }}</td></tr>
+      <tr><th>Scenario</th><td>{{ 'Historical Weather' if spatial_scenario_label == 'Historical Weather (Daymet)' else spatial_scenario_label }}</td></tr>
       <tr><th>Storm Duration</th><td>{{ duration }}-hour</td></tr>
       <tr><th>Average Recurrence Interval (ARI)</th><td>{{ ari }}-year</td></tr>
     </table>
@@ -169,17 +169,21 @@
   </div>
   {% else %}
 
-
   <div class="note-box">
-    <strong>What you are looking at.</strong> These maps show current-weather design 
+    <strong>What you are looking at:</strong> These maps show current-weather design 
     values based on <strong>gridded historical observations</strong> (Daymet, 1990–2021), 
-    derived from interpolated weather station records. 
+    derived from interpolated weather station records.
     <br><br>
-    Future scenario pages report <em>relative change</em> (deltas) from future 
-    simulations compared to their baseline simulations. To calculate a future design 
-    value, apply that delta/change to the historical value shown here.
+    <strong>Which value should I use?</strong>
+    <ul>
+      <li><strong>NG-IDF (New Method):</strong> Integrates cold-region hydrologic processes (snowmelt & runoff) for risk assessment.</li>
+      <li><strong>PREC-IDF (Standard Baseline):</strong> Traditional precipitation-only values, provided as a standard baseline to compare against NG-IDF.</li>
+      <li><strong>% Difference:</strong> Positive values suggest potential under-design if following the standard PREC-IDF method. E.g., 
+        a +20% difference suggests the NG-IDF value is 20% higher than the PREC-IDF value.</li>
+    </ul>
+    <strong>Future Scenario Calculations:</strong> Future scenario pages report relative/asbosulte <em>change</em> (deltas). To calculate a future design value,
+    apply that delta to the historical <strong>NG-IDF</strong> or <strong>ALT</strong> values shown here.
   </div>
-
 
 
 
