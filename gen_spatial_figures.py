@@ -100,7 +100,16 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     fields = {c: griddata(pts, df[c].values, (GX, GY), method="linear") for c, *_ in panels}
 
     # ---- basemap ----
+    # Keep OSM for the data panels. Panel (a) uses Esri's topographic tiles,
+    # which include terrain relief (hillshade) and natural land-cover context.
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/"
+            "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+        ),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55          # more transparent than before
@@ -114,20 +123,75 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         ("Delta Junction",  -145.7336, 64.0378),
     ]
 
-    def add_sites(ax, fontsize=7, star=10):
-        for name, clon, clat in sites:
+    # Panel (a) uses the locations requested for the study-area context map.
+    # Keep the original locations in the IDF data panels below.
+    context_sites = [
+        ("Fort Wainwright", -147.6389, 64.8283),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+    # Each entry has the training-area center and the end of its short callout
+    # leader. Yukon is called out above its area; Tanana and Donnelly below.
+    # training_area_labels = [
+    #     ("Yukon\nTraining Area", -146.85, 64.78, -146.85, 64.96),
+    #     ("Tanana Flats\nTraining Area", -147.10, 64.54, -147.10, 64.34),
+    #     ("Donnelly\nTraining Area", -145.75, 63.88, -145.75, 63.68),
+    # ]
+
+    training_area_labels = [
+        # Yukon: Line is perfectly HORIZONTAL pointing to the RIGHT (dy = 0.0)
+        ("Yukon\nTraining\nArea",        -146.35, 64.70,  0.45,  0.00, "left",   "center"),  
+        
+        # Tanana: Line is perfectly VERTICAL pointing DOWNWARD (dx = 0.0)
+        ("Tanana\nTraining\nArea",       -147.7, 64.5,  0.00, -0.25, "center", "top"),  
+        
+        # Donnelly: Line is perfectly VERTICAL pointing DOWNWARD (dx = 0.0)
+        ("Donnelly\nTraining\nArea",     -146.5, 63.85,  0.00, -0.22, "center", "top"),  
+    ]
+
+
+    def add_sites(ax, fontsize=7, star=10, locations=None):
+        for name, clon, clat in (sites if locations is None else locations):
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
-                ax.plot(clon, clat, marker="*", color="red", markersize=star,
-                        markeredgecolor="white", markeredgewidth=0.9,
+                ax.plot(clon, clat, marker="*", color="red", markersize=star,markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it doesn't overlap
-                # with the nearby "Fort Wainwright" label.
                 text_dy = -0.09 if name == "North Pole" else 0.05
                 ax.text(clon+0.05, clat+text_dy, name, fontsize=fontsize, color="black",
-                        weight="bold", transform=data_crs, zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.16", fc="white",
-                                ec="none", alpha=0.8))
+                        weight="bold", transform=data_crs, zorder=7)
 
+    # def add_training_area_labels(ax):
+    #     """Add short leader callouts for the online-basemap training areas."""
+    #     for name, clon, clat, label_lon, label_lat in training_area_labels:
+    #         ax.plot([clon, label_lon], [clat, label_lat], color="black",
+    #                 linewidth=0.8, transform=data_crs, zorder=8)
+    #         ax.text(label_lon, label_lat, name, fontsize=7, color="black",
+    #                 weight="bold", ha="center",
+    #                 va="bottom" if label_lat > clat else "top",
+    #                 transform=data_crs, zorder=8)
+    def add_training_area_labels(ax):
+        """Add clean text labels and angled leader lines without markers or background boxes."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            # Calculate label position
+            label_lon = clon + dx
+            label_lat = clat + dy
+            
+            # Draw annotation with callout line and clean text
+            ax.annotate(
+                name,
+                xy=(clon, clat),                      # Map location (target point)
+                xytext=(label_lon, label_lat),        # Label text position
+                xycoords=data_crs._as_mpl_transform(ax),
+                textcoords=data_crs._as_mpl_transform(ax),
+                fontsize=7,
+                color="black",
+                ha=ha_align,                          # Horizontal alignment (left/right)
+                va=va_align,                          # Vertical alignment
+                zorder=9,
+                arrowprops=dict(
+                    arrowstyle="-",                   # Clean leader line
+                    color="black", 
+                    lw=0.8
+                )
+            )
     def add_grid(ax):
         gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
                         alpha=0.5, linestyle="--", zorder=4)
@@ -150,7 +214,7 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     # ===== Panel (a): context map =====
     ax = axf[0]
     ax.set_extent(ext_pad, crs=data_crs)
-    ax.add_image(tiler, ZOOM)
+    ax.add_image(context_tiler, ZOOM)
 
     # ---- training-area boundaries (uncomment when shapefile available) ----
     # import cartopy.io.shapereader as shpreader
@@ -164,7 +228,8 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
             color="blue", linewidth=1.8, transform=data_crs, zorder=5,
             label="Study domain")
 
-    add_sites(ax, fontsize=8, star=12)
+    add_sites(ax, fontsize=7, star=10, locations=context_sites)
+    add_training_area_labels(ax)
     add_grid(ax)
     ax.set_title("(a) Study Area: Interior Alaska", fontsize=11)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.85)
