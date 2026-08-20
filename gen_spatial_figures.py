@@ -100,8 +100,8 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     fields = {c: griddata(pts, df[c].values, (GX, GY), method="linear") for c, *_ in panels}
 
     # ---- basemap ----
-    # Keep OSM for the data panels. Panel (a) uses Esri's topographic tiles,
-    # which include terrain relief (hillshade) and natural land-cover context.
+    # Use Esri's topographic tiles for every panel so the study-area context
+    # remains visually consistent behind the data overlays.
     tiler = cimgt.OSM()
     context_tiler = cimgt.GoogleTiles(
         desired_tile_form="RGB",
@@ -123,8 +123,7 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         ("Delta Junction",  -145.7336, 64.0378),
     ]
 
-    # Panel (a) uses the locations requested for the study-area context map.
-    # Keep the original locations in the IDF data panels below.
+    # Show only the two installation locations in every panel.
     context_sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
         ("Fort Greely",     -145.7350, 63.9710),
@@ -238,14 +237,14 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     mesh_ref = None
     for ax, (col, title, cmap, vmin, vmax, clabel) in zip(axf[1:], panels):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
 
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                             vmin=vmin, vmax=vmax, transform=data_crs,
                             alpha=ALPHA, shading="auto", zorder=2)
         mesh_ref = mesh
 
-        add_sites(ax)
+        add_sites(ax, locations=context_sites)
         add_grid(ax)
         ax.set_title(title, fontsize=11)
 
@@ -338,6 +337,13 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
 
     # ---- basemap ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/"
+            "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+        ),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55
@@ -345,26 +351,43 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
     extent = [df["lon"].min(), df["lon"].max(), df["lat"].min(), df["lat"].max()]
     ext_pad = [extent[0] - 0.1, extent[1] + 0.1, extent[2] - 0.1, extent[3] + 0.1]
 
-    sites = [
+    context_sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
     ]
 
 
-    def add_sites(ax, fontsize=7, star=10):
-        for name, clon, clat in sites:
+    def add_sites(ax, fontsize=7, star=10, locations=None):
+        for name, clon, clat in (context_sites if locations is None else locations):
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it doesn't overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
-                        color="black", weight="bold", transform=data_crs, zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.16", fc="white",
-                                ec="none", alpha=0.8))
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
+                        color="black", weight="bold", transform=data_crs, zorder=7)
+
+    def add_training_area_labels(ax):
+        """Add the training-area callouts to the study-area panel only."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(
+                name,
+                xy=(clon, clat),
+                xytext=(clon + dx, clat + dy),
+                xycoords=data_crs._as_mpl_transform(ax),
+                textcoords=data_crs._as_mpl_transform(ax),
+                fontsize=7,
+                color="black",
+                ha=ha_align,
+                va=va_align,
+                zorder=9,
+                arrowprops=dict(arrowstyle="-", color="black", lw=0.8),
+            )
 
 
     def add_grid(ax):
@@ -386,7 +409,7 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
     # ===== Panel (a): study domain =====
     ax = axes[0]
     ax.set_extent(ext_pad, crs=data_crs)
-    ax.add_image(tiler, ZOOM)
+    ax.add_image(context_tiler, ZOOM)
 
     # ---- training-area boundaries (uncomment when shapefile available) ----
     # import cartopy.io.shapereader as shpreader
@@ -400,7 +423,8 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
             color="blue", linewidth=1.8, transform=data_crs, zorder=5,
             label="Study domain")
 
-    add_sites(ax, fontsize=8, star=12)
+    add_sites(ax, fontsize=7, star=10)
+    add_training_area_labels(ax)
     add_grid(ax)
     ax.set_title("(a) Study Area: Interior Alaska", fontsize=11)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.85)
@@ -408,7 +432,7 @@ def generate_daymet_alt_figure(land_cover, spatial_scenario, duration, ari, fig_
     # ===== Panel (b): ALT =====
     ax = axes[1]
     ax.set_extent(ext_pad, crs=data_crs)
-    ax.add_image(tiler, ZOOM)
+    ax.add_image(context_tiler, ZOOM)
 
     mesh = ax.pcolormesh(GX, GY, ALT, cmap="YlOrRd", vmin=vmin, vmax=vmax,
                         transform=data_crs, alpha=ALPHA, shading="auto", zorder=2)
@@ -550,6 +574,13 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
 
     # ---- basemap ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/"
+            "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+        ),
+    )
     proj = tiler.crs
     ZOOM = 9   # match Daymet
     ALPHA = 0.55
@@ -557,25 +588,37 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
     extent = [df["lon"].min(), df["lon"].max(), df["lat"].min(), df["lat"].max()]
     ext_pad = [extent[0] - 0.1, extent[1] + 0.1, extent[2] - 0.1, extent[3] + 0.1]
 
-    sites = [
+    # Match the Daymet context map: display the two installations rather than
+    # the nearby towns used by the prior WRF figures.
+    context_sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+
+    # These callouts belong on the study-area overview only, as in Daymet.
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
     ]
 
     def add_sites(ax, fontsize=5, star=10):
-        for name, clon, clat in sites:
+        for name, clon, clat in context_sites:
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it doesn't overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
-                        color="black", weight="bold", transform=data_crs, zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.16", fc="white",
-                                  ec="none", alpha=0.8))
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
+                        color="black", weight="bold", transform=data_crs, zorder=7)
+
+    def add_training_area_labels(ax):
+        """Add Daymet-style training-area callouts to panel (a) only."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_grid(ax):
         gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
@@ -600,7 +643,7 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
     # ===== Panel (a): land cover =====
     ax = axf[0]
     ax.set_extent(ext_pad, crs=data_crs)
-    ax.add_image(tiler, ZOOM)
+    ax.add_image(context_tiler, ZOOM)
 
     lulc_mesh = None
     if lulc_file is not None:
@@ -626,6 +669,7 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
             label="Study domain")
 
     add_sites(ax, fontsize=5, star=12)
+    add_training_area_labels(ax)
     add_grid(ax)
     ax.set_title("(a) Land Cover / Study Domain", fontsize=9)
     if lulc_mesh is None:
@@ -634,7 +678,7 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
     # ===== magnitude / change panels =====
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3)
@@ -784,6 +828,13 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
 
     # ================= BASEMAP: identical to generate_wrf_idf_figure =========
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/"
+            "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+        ),
+    )
     proj = tiler.crs
     ZOOM = 9   # match Daymet
     ALPHA = 0.55
@@ -805,23 +856,35 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
               "Lower ZOOM or check the ALD CSV domain.")
     # ========================================================================
 
-    sites = [
+    # Use the same two installation markers as the Daymet spatial figures.
+    context_sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
     ]
 
     def add_sites(ax, fontsize=5, star=10):
-        for name, clon, clat in sites:
+        for name, clon, clat in context_sites:
             if extent[0] <= clon <= extent[1] and extent[2] <= clat <= extent[3]:
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
-                        color="black", weight="bold", transform=data_crs, zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.16", fc="white",
-                                  ec="none", alpha=0.8))
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
+                        color="black", weight="bold", transform=data_crs, zorder=7)
+
+    def add_training_area_labels(ax):
+        """Add Daymet-style training-area callouts to panel (a) only."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_grid(ax):
         gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
@@ -849,7 +912,7 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
     # ===== Panel (a): land cover =====
     ax = axf[0]
     ax.set_extent(ext_pad, crs=data_crs)
-    ax.add_image(tiler, ZOOM)
+    ax.add_image(context_tiler, ZOOM)
 
     lulc_mesh = None
     if lulc_file is not None:
@@ -875,6 +938,7 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
             label="Study domain")
 
     add_sites(ax, fontsize=5, star=10)
+    add_training_area_labels(ax)
     add_grid(ax)
     ax.set_title("(a) Land Cover / Study Domain", fontsize=7)
     if lulc_mesh is None:
@@ -883,7 +947,7 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
     # ===== magnitude / change panels (same draw() as the IDF figure) =====
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3)
