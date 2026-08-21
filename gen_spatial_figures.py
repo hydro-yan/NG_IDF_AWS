@@ -40,8 +40,8 @@ def fig_to_base64(fig):
 
 def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_file=None):
     """
-    Generate the 2x2 Daymet spatial IDF comparison figure (context map, PREC-IDF,
-    NG-IDF, and percent difference) for a given land cover / duration / ARI.
+    Generate the 2x3 Daymet spatial IDF comparison figure with Daymet PREC-IDF,
+    NOAA Atlas 14 PREC-IDF, NG-IDF, and comparisons to both references.
 
     Parameters
     ----------
@@ -66,26 +66,61 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     """
 
     idf_path = f"./spatial_map/{land_cover}/Daymet/ng_idf_return_{duration}h_{ari}yr.csv"
+    atlas_path = f"./spatial_map/atlas_14/atlas_14_return_{duration}h_{ari}yr.csv"
     
 
 
     # ---- Load data ----
     df = pd.read_csv(idf_path)
+    atlas_df = pd.read_csv(atlas_path)
+    df = df.merge(
+        atlas_df[["lat", "lon", "prec_idf_in"]],
+        on=["lat", "lon"],
+        how="left",
+        validate="one_to_one",
+    )
+    if df["prec_idf_in"].isna().any():
+        raise ValueError(
+            "NOAA Atlas 14 values could not be matched to all Daymet grid points "
+            f"for {duration}h/{ari}yr."
+        )
+
     MM_TO_IN = 1.0 / 25.4
     df["prec_idf_hist_in"] = df["prec_idf_hist"] * MM_TO_IN
     df["ng_idf_hist_in"]   = df["ng_idf_hist"]   * MM_TO_IN
-    df["diff_pct"] = (df["ng_idf_hist"] - df["prec_idf_hist"]) / df["prec_idf_hist"] * 100.0
+    df["diff_daymet_pct"] = (
+        (df["ng_idf_hist_in"] - df["prec_idf_hist_in"])
+        / df["prec_idf_hist_in"] * 100.0
+    )
+    df["diff_atlas_pct"] = (
+        (df["ng_idf_hist_in"] - df["prec_idf_in"])
+        / df["prec_idf_in"] * 100.0
+    )
 
     shared_vmin = np.nanpercentile(
-        np.concatenate([df["prec_idf_hist_in"].values, df["ng_idf_hist_in"].values]), 2)
+        np.concatenate([
+            df["prec_idf_hist_in"].values,
+            df["prec_idf_in"].values,
+            df["ng_idf_hist_in"].values,
+        ]), 2)
     shared_vmax = np.nanpercentile(
-        np.concatenate([df["prec_idf_hist_in"].values, df["ng_idf_hist_in"].values]), 98)
-    dlim = np.nanpercentile(np.abs(df["diff_pct"].values), 98)
+        np.concatenate([
+            df["prec_idf_hist_in"].values,
+            df["prec_idf_in"].values,
+            df["ng_idf_hist_in"].values,
+        ]), 98)
+    dlim = np.nanpercentile(
+        np.abs(np.concatenate([
+            df["diff_daymet_pct"].values,
+            df["diff_atlas_pct"].values,
+        ])), 98)
     mag_label = f"{duration}-h {ari}-yr Magnitude (in)"
     panels = [
-        ("prec_idf_hist_in", "(b) PREC-IDF", "viridis", shared_vmin, shared_vmax, mag_label),
-        ("ng_idf_hist_in",   "(c) NG-IDF",   "viridis", shared_vmin, shared_vmax, mag_label),
-        ("diff_pct", "(d) Difference (NG - PREC)", "RdBu_r", -dlim, dlim, "Difference (%)"),
+        ("prec_idf_hist_in", "(b) PREC-IDF (Daymet)", "viridis", shared_vmin, shared_vmax, mag_label),
+        ("prec_idf_in", "(c) PREC-IDF (NOAA Atlas 14)", "viridis", shared_vmin, shared_vmax, mag_label),
+        ("ng_idf_hist_in", "(d) NG-IDF", "viridis", shared_vmin, shared_vmax, mag_label),
+        ("diff_daymet_pct", "(e) Difference (NG-IDF vs Daymet PREC-IDF)", "RdBu_r", -dlim, dlim, "Difference (%)"),
+        ("diff_atlas_pct", "(f) Difference (NG-IDF vs Atlas 14 PREC-IDF)", "RdBu_r", -dlim, dlim, "Difference (%)"),
     ]
 
     data_crs = ccrs.PlateCarree()
@@ -200,8 +235,8 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         gl.xlabel_style = {"size": 8}
         gl.ylabel_style = {"size": 8}
 
-    # ---- 2x2 layout ----
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8.6),
+    # ---- 2x3 layout ----
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10.2),
                             subplot_kw={"projection": proj},
                             constrained_layout=True)
     axf = axes.flatten()
@@ -233,7 +268,7 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
     ax.set_title("(a) Study Area: Interior Alaska", fontsize=11)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.85)
 
-    # ===== Panels (b)(c)(d) =====
+    # ===== Panels (b)-(f) =====
     mesh_ref = None
     for ax, (col, title, cmap, vmin, vmax, clabel) in zip(axf[1:], panels):
         ax.set_extent(ext_pad, crs=data_crs)
@@ -254,9 +289,11 @@ def generate_daymet_idf_figure(land_cover, spatial_scenario, duration, ari, fig_
         cb.ax.tick_params(labelsize=8)
         cb.solids.set_alpha(1.0)
 
-    # ---- invisible colorbar on (a) so it aligns with (c) ----
+    # ---- invisible colorbar on (a) so it aligns with the map panels ----
+    # Reserve only a thin, invisible alignment strip for panel (a), rather
+    # than a full colorbar-width blank column between panels (a) and (b).
     cb_a = fig.colorbar(mesh_ref, ax=axf[0], orientation="vertical",
-                        fraction=0.046, pad=0.01)
+                        fraction=0.01, pad=0.0)
     cb_a.outline.set_visible(False)
     cb_a.ax.set_facecolor("none")
     cb_a.ax.tick_params(size=0, labelsize=0, colors="none")
