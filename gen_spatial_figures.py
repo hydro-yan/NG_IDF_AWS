@@ -1227,6 +1227,11 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
 
     # ---- basemap (same tiler / ZOOM / ALPHA as the WRF and Daymet figures) ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=("https://server.arcgisonline.com/ArcGIS/rest/services/"
+             "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55
@@ -1236,9 +1241,22 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
 
     sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
     ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
+    ]
+
+    def add_training_area_labels(ax):
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_sites(ax, fontsize=5, star=10):
         for name, clon, clat in sites:
@@ -1246,10 +1264,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it does not overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                   ec="none", alpha=0.8))
@@ -1266,7 +1281,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
     def add_lulc(ax, legend_fontsize=8):
         """Panel (a): basemap + optional land cover raster + domain outline."""
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
 
         lulc_mesh = None
         if lulc_file is not None:
@@ -1294,6 +1309,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
                 color="blue", linewidth=1.8, transform=data_crs, zorder=5,
                 label="Study domain")
         add_sites(ax, fontsize=5, star=12)
+        add_training_area_labels(ax)
         add_grid(ax)
         ax.set_title("(a) Land Cover / Study Domain", fontsize=9)
         if lulc_mesh is None:
@@ -1342,7 +1358,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
 
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3,
@@ -1421,7 +1437,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
             for i, (var, cols) in enumerate(rows):
                 ax = maxes[i][j]
                 ax.set_extent(ext_pad, crs=data_crs)
-                ax.add_image(tiler, ZOOM)
+                ax.add_image(context_tiler, ZOOM)
                 mesh = ax.pcolormesh(MGX, MGY, mfields[cols[j]], cmap="RdBu_r",
                                      vmin=-dlim, vmax=dlim, transform=data_crs,
                                      alpha=ALPHA, shading="auto", zorder=3,
@@ -1644,6 +1660,11 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
 
     # ---- basemap (same tiler / ZOOM / ALPHA as the WRF and Daymet figures) ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=("https://server.arcgisonline.com/ArcGIS/rest/services/"
+             "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55
@@ -1653,8 +1674,13 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
 
     sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
     ]
 
     def add_sites(ax, fontsize=5, star=10):
@@ -1663,13 +1689,19 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it does not overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                   ec="none", alpha=0.8))
+
+    def add_training_area_labels(ax):
+        """Add WRF-style training-area callouts to panel (a) only."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_grid(ax, labelsize=8):
         gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
@@ -1683,7 +1715,7 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
     def add_lulc(ax, legend_fontsize=8):
         """Panel (a): basemap + optional land cover raster + domain outline."""
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
 
         lulc_mesh = None
         if lulc_file is not None:
@@ -1711,6 +1743,7 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
                 color="blue", linewidth=1.8, transform=data_crs, zorder=5,
                 label="Study domain")
         add_sites(ax, fontsize=5, star=12)
+        add_training_area_labels(ax)
         add_grid(ax)
         ax.set_title("(a) Land Cover / Study Domain", fontsize=9)
         if lulc_mesh is None:
@@ -1759,7 +1792,7 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
 
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3,
@@ -1838,7 +1871,7 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
             for i, (var, cols) in enumerate(rows):
                 ax = maxes[i][j]
                 ax.set_extent(ext_pad, crs=data_crs)
-                ax.add_image(tiler, ZOOM)
+                ax.add_image(context_tiler, ZOOM)
                 mesh = ax.pcolormesh(MGX, MGY, mfields[cols[j]], cmap="RdBu_r",
                                      vmin=-dlim, vmax=dlim, transform=data_crs,
                                      alpha=ALPHA, shading="auto", zorder=3,
@@ -2075,6 +2108,11 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
 
     # ---- basemap (same tiler / ZOOM / ALPHA as the WRF and Daymet figures) ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=("https://server.arcgisonline.com/ArcGIS/rest/services/"
+             "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55
@@ -2085,8 +2123,13 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
 
     sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
+    ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
     ]
 
     def add_sites(ax, fontsize=5, star=10):
@@ -2095,13 +2138,19 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it does not overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                   ec="none", alpha=0.8))
+
+    def add_training_area_labels(ax):
+        """Add WRF-style training-area callouts to panel (a) only."""
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_grid(ax, labelsize=7):
         gl = ax.gridlines(draw_labels=True, linewidth=0.4, color="gray",
@@ -2115,7 +2164,7 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
     def add_lulc(ax, legend_fontsize=7):
         """Panel (a): basemap + optional land cover raster + domain outline."""
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
 
         lulc_mesh = None
         if lulc_file is not None:
@@ -2143,6 +2192,7 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
                 color="blue", linewidth=1.8, transform=data_crs, zorder=5,
                 label="Study domain")
         add_sites(ax, fontsize=5, star=12)
+        add_training_area_labels(ax)
         add_grid(ax)
         ax.set_title("(a) Land Cover / Study Domain", fontsize=8)
         if lulc_mesh is None:
@@ -2191,7 +2241,7 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
 
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3,
@@ -2262,7 +2312,7 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
         for j, m in enumerate(members):
             ax = mm_axes[j]
             ax.set_extent(ext_pad, crs=data_crs)
-            ax.add_image(tiler, ZOOM)
+            ax.add_image(context_tiler, ZOOM)
             mmesh = ax.pcolormesh(GX, GY, fields["alt_chg_%s" % m],
                                   cmap=chg_cmap, vmin=chg_vmin, vmax=chg_vmax,
                                   transform=data_crs, alpha=ALPHA,
@@ -2474,6 +2524,11 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
 
     # ---- basemap (same tiler / ZOOM / ALPHA as the WRF and Daymet figures) ----
     tiler = cimgt.OSM()
+    context_tiler = cimgt.GoogleTiles(
+        desired_tile_form="RGB",
+        url=("https://server.arcgisonline.com/ArcGIS/rest/services/"
+             "World_Topo_Map/MapServer/tile/{z}/{y}/{x}"),
+    )
     proj = tiler.crs
     ZOOM = 9
     ALPHA = 0.55
@@ -2484,9 +2539,22 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
 
     sites = [
         ("Fort Wainwright", -147.6389, 64.8283),
-        ("North Pole",      -147.3494, 64.7511),
-        ("Delta Junction",  -145.7336, 64.0378),
+        ("Fort Greely",     -145.7350, 63.9710),
     ]
+
+    training_area_labels = [
+        ("Yukon\nTraining\nArea", -146.35, 64.70, 0.45, 0.00, "left", "center"),
+        ("Tanana\nTraining\nArea", -147.7, 64.5, 0.00, -0.25, "center", "top"),
+        ("Donnelly\nTraining\nArea", -146.5, 63.85, 0.00, -0.22, "center", "top"),
+    ]
+
+    def add_training_area_labels(ax):
+        for name, clon, clat, dx, dy, ha_align, va_align in training_area_labels:
+            ax.annotate(name, xy=(clon, clat), xytext=(clon + dx, clat + dy),
+                        xycoords=data_crs._as_mpl_transform(ax),
+                        textcoords=data_crs._as_mpl_transform(ax), fontsize=7,
+                        color="black", ha=ha_align, va=va_align, zorder=9,
+                        arrowprops=dict(arrowstyle="-", color="black", lw=0.8))
 
     def add_sites(ax, fontsize=5, star=10):
         for name, clon, clat in sites:
@@ -2494,10 +2562,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
                 ax.plot(clon, clat, marker="*", color="red", markersize=star,
                         markeredgecolor="white", markeredgewidth=0.9,
                         transform=data_crs, zorder=6)
-                # Move the "North Pole" label lower so it does not overlap
-                # with the nearby "Fort Wainwright" label.
-                text_dy = -0.09 if name == "North Pole" else 0.05
-                ax.text(clon + 0.05, clat + text_dy, name, fontsize=fontsize,
+                ax.text(clon + 0.05, clat + 0.05, name, fontsize=fontsize,
                         color="black", weight="bold", transform=data_crs, zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white",
                                   ec="none", alpha=0.8))
@@ -2514,7 +2579,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
     def add_lulc(ax, legend_fontsize=7):
         """Panel (a): basemap + optional land cover raster + domain outline."""
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
 
         lulc_mesh = None
         if lulc_file is not None:
@@ -2542,6 +2607,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
                 color="blue", linewidth=1.8, transform=data_crs, zorder=5,
                 label="Study domain")
         add_sites(ax, fontsize=5, star=12)
+        add_training_area_labels(ax)
         add_grid(ax)
         ax.set_title("(a) Land Cover / Study Domain", fontsize=8)
         if lulc_mesh is None:
@@ -2590,7 +2656,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
 
     def draw(ax, col, title, cmap, vmin_, vmax_):
         ax.set_extent(ext_pad, crs=data_crs)
-        ax.add_image(tiler, ZOOM)
+        ax.add_image(context_tiler, ZOOM)
         mesh = ax.pcolormesh(GX, GY, fields[col], cmap=cmap,
                              vmin=vmin_, vmax=vmax_, transform=data_crs,
                              alpha=ALPHA, shading="auto", zorder=3,
@@ -2661,7 +2727,7 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
         for j, m in enumerate(members):
             ax = mm_axes[j]
             ax.set_extent(ext_pad, crs=data_crs)
-            ax.add_image(tiler, ZOOM)
+            ax.add_image(context_tiler, ZOOM)
             mmesh = ax.pcolormesh(GX, GY, fields["alt_chg_%s" % m],
                                   cmap=chg_cmap, vmin=chg_vmin, vmax=chg_vmax,
                                   transform=data_crs, alpha=ALPHA,

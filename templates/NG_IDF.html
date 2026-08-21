@@ -191,6 +191,32 @@
     text-decoration: underline;
   }
 
+  .references-panel {
+    margin-bottom: 20px;
+  }
+
+  .references-panel summary {
+    cursor: pointer;
+    list-style-position: inside;
+  }
+
+  .references-panel summary h2 {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .references-panel summary:hover h2 {
+    color: #a14300;
+  }
+
+  .references-panel[open] summary {
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 16px;
+    padding-bottom: 4px;
+  }
+
   .submit-section {
     text-align: center;
     margin: 40px 0 50px;
@@ -622,7 +648,7 @@
 
       <div class="scenario-grid">
 
-        <div class="scenario-card enabled" data-scenario="historical" onclick="selectSpatialScenario('historical')">
+        <div class="scenario-card enabled selected" data-scenario="historical" onclick="selectSpatialScenario('historical')">
           <div class="scenario-title">1. Historical Baseline (1990–2021)</div>
           <div class="scenario-desc">Observed historical weather data used for standard replacement or baseline site evaluation.</div>
         </div>
@@ -633,7 +659,7 @@
             and peak load capacity.</div>
         </div>
         
-        <div class="scenario-card enabled selected" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
+        <div class="scenario-card enabled" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
           <div class="scenario-title">3. Near-Term Design Lifespan (2034-2049)</div>
           <div class="scenario-desc">Evaluates new storm variability and patterns for assets with near-term design lifespans or upcoming renewals</div>
         </div>
@@ -647,7 +673,7 @@
       </div>
 
 
-      <input type="hidden" id="spatialScenarioInput" name="spatial_scenario" value="future_cesm_near">
+      <input type="hidden" id="spatialScenarioInput" name="spatial_scenario" value="historical">
     </div>
 
 
@@ -698,9 +724,8 @@
   </div><!-- /#spatialModeSection -->
 
 
-  <div class="card references">
-
-    <h2>Methods and References</h2>
+  <details class="card references references-panel">
+    <summary><h2>Methods and References</h2></summary>
   <!-- Section 1 -->
   <div style="margin-bottom: 25px;">
     <b>Methods used in the NG-IDF Tool:</b>
@@ -762,6 +787,24 @@
       <li><a href="https://doi.org/10.1002/2017WR021290" target="_blank">Yan et al. (2018)</a>. Next-generation intensity-duration-frequency curves for hydrologic design in snow-dominated environments. <i>Water Resources Research</i>, 54(2), 1093–1108.</li>
     </ol>
   </div>
+  </details>
+
+  <div class="card note">
+    <h2>U.S. Department of Energy / PNNL Disclaimer</h2>
+    <p>
+      This material was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor the United States Department of Energy, nor the Contractor, nor any of their employees, nor any jurisdiction or organization that has cooperated in the development of these materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, software, or process disclosed, or represents that its use would not infringe privately owned rights.
+    </p>
+    <p>
+      Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof, or Battelle Memorial Institute. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.
+    </p>
+    <p style="text-align:center; margin:16px 0 0; line-height:1.45;">
+      <strong>PACIFIC NORTHWEST NATIONAL LABORATORY</strong><br>
+      operated by<br>
+      <strong>BATTELLE</strong><br>
+      for the<br>
+      <strong>UNITED STATES DEPARTMENT OF ENERGY</strong><br>
+      under Contract DE-AC05-76RL01830
+    </p>
   </div>
 
 </main>
@@ -882,6 +925,11 @@ function viewSpatialMap() {
   document.getElementById("overlay").style.display = "flex";
   document.getElementById("spatialForm").submit();
 }
+
+// Synchronize duration availability with the initially selected scenario.
+document.addEventListener("DOMContentLoaded", function() {
+  updateDurationOptions(document.getElementById("spatialScenarioInput").value);
+});
 
 
 

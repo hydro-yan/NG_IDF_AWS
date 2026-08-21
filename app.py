@@ -283,8 +283,8 @@ def NG_IDF():
             scenario_label_map = {
                 "daymet": "Historical Weather (Daymet)",
                 "wrf": "Historical Intensification (2034–2065)",
-                "cesm_near": "Near-Term Design Lifespan (2034-2029)",
-                "cesm_mid": "Future Weather (CESM Mid-Century)",
+                "cesm_near": "Near-Term Design Lifespan (2034-2049)",
+                "cesm_mid": "Mid-Century Design Lifespan (2034–2065)",
             }
             spatial_scenario_label = scenario_label_map.get(spatial_scenario, spatial_scenario)
 
