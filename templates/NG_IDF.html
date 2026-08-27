@@ -165,9 +165,55 @@
     margin: 12px 0;
   }
 
-  .address-search input[type="text"] {
+  .address-search-field {
     flex: 1;
+    position: relative;
+  }
+
+  .address-search input[type="text"] {
     width: auto;
+  }
+
+  .address-search-field input[type="text"] {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .address-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 1000;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+  }
+
+  .address-suggestion {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    color: #333;
+    border: 0;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 0;
+    background: #fff;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    text-align: left;
+  }
+
+  .address-suggestion:last-child {
+    border-bottom: 0;
+  }
+
+  .address-suggestion:hover,
+  .address-suggestion:focus {
+    background: #fff7ef;
+    color: #333;
   }
 
   #addressSearchStatus {
@@ -576,9 +622,12 @@
 
   <div class="card">
     <h2>Select Location on Map</h2>
-    <p class="note">Search for an address or click on the map to automatically fill Latitude & Longitude.</p>
+    <p class="note">Search for an address or click on the map to automatically fill Site Input Parameters.</p>
     <div class="address-search">
-      <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name">
+      <div class="address-search-field">
+        <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name" aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false">
+        <div id="addressSuggestions" class="address-suggestions" role="listbox" aria-label="Address suggestions" hidden></div>
+      </div>
       <button type="button" id="addressSearchButton">Find address</button>
     </div>
     <p id="addressSearchStatus" class="note" role="status" aria-live="polite"></p>
@@ -596,6 +645,9 @@
     const addressInput = document.getElementById("addressSearchInput");
     const addressButton = document.getElementById("addressSearchButton");
     const addressStatus = document.getElementById("addressSearchStatus");
+    const addressSuggestions = document.getElementById("addressSuggestions");
+    let addressSearchTimer = null;
+    let addressSuggestionRequest = 0;
 
     function selectLocation(lat, lon, zoom) {
       lat = Number(lat).toFixed(5);
@@ -616,6 +668,57 @@
       selectLocation(e.latlng.lat, e.latlng.lng);
     });
 
+    function clearAddressSuggestions() {
+      addressSuggestions.replaceChildren();
+      addressSuggestions.hidden = true;
+      addressInput.setAttribute("aria-expanded", "false");
+    }
+
+    function selectAddressSuggestion(result) {
+      addressInput.value = result.display_name;
+      selectLocation(result.lat, result.lon, 13);
+      addressStatus.textContent = "Location selected: " + result.display_name;
+      clearAddressSuggestions();
+    }
+
+    function showAddressSuggestions(results) {
+      clearAddressSuggestions();
+      results.forEach(function(result) {
+        const suggestion = document.createElement("button");
+        suggestion.type = "button";
+        suggestion.className = "address-suggestion";
+        suggestion.setAttribute("role", "option");
+        suggestion.textContent = result.display_name;
+        suggestion.addEventListener("mousedown", function(event) {
+          event.preventDefault();
+          selectAddressSuggestion(result);
+        });
+        addressSuggestions.appendChild(suggestion);
+      });
+      addressSuggestions.hidden = results.length === 0;
+      addressInput.setAttribute("aria-expanded", String(results.length > 0));
+    }
+
+    async function findAddressSuggestions() {
+      const address = addressInput.value.trim();
+      const requestId = ++addressSuggestionRequest;
+      if (address.length < 3) {
+        clearAddressSuggestions();
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=4&q=" + encodeURIComponent(address),
+          { headers: { "Accept": "application/json" } }
+        );
+        if (!response.ok || requestId !== addressSuggestionRequest) return;
+        showAddressSuggestions(await response.json());
+      } catch (error) {
+        if (requestId === addressSuggestionRequest) clearAddressSuggestions();
+      }
+    }
+
     async function findAddress() {
       const address = addressInput.value.trim();
       if (!address) {
@@ -624,6 +727,9 @@
       }
 
       addressButton.disabled = true;
+      clearTimeout(addressSearchTimer);
+      addressSuggestionRequest += 1;
+      clearAddressSuggestions();
       addressStatus.textContent = "Finding address…";
       try {
         const response = await fetch(
@@ -651,11 +757,20 @@
     }
 
     addressButton.addEventListener("click", findAddress);
+    addressInput.addEventListener("input", function() {
+      clearTimeout(addressSearchTimer);
+      addressSearchTimer = setTimeout(findAddressSuggestions, 350);
+    });
     addressInput.addEventListener("keydown", function(event) {
       if (event.key === "Enter") {
         event.preventDefault();
         findAddress();
+      } else if (event.key === "Escape") {
+        clearAddressSuggestions();
       }
+    });
+    document.addEventListener("click", function(event) {
+      if (!event.target.closest(".address-search-field")) clearAddressSuggestions();
     });
   </script>
 
@@ -666,7 +781,6 @@
         <tr><td>Longitude (°):</td><td><input type="text" name="Value2" placeholder="e.g. -147.22"></td></tr>
         <tr><td>Leaf Area Index (LAI):</td><td><input type="text" name="Value3" placeholder="0 for open land"></td></tr>
         <tr><td>Canopy Height (m):</td><td><input type="text" name="Value4" placeholder="0 for open land"></td></tr>
-        <tr><td>Land Cover Fraction (0–1):</td><td><input type="text" name="Value5"></td></tr>
         <tr><td>Land Cover Type (1–9):</td><td><input type="text" name="Value6"></td></tr>
       </table>
 
@@ -685,6 +799,7 @@
           Default DHSVM parameters are recommended unless local calibration data are available.
         </p>
         <table>
+      <tr><td>Land Cover Fraction (0–1):</td><td><input type="text" name="Value5" value="1"></td></tr>
           <tr><td>Rain LAI Multiplier:</td><td><input type="text" name="Value7" value="0.001"></td></tr>
           <tr><td>Snow LAI Multiplier:</td><td><input type="text" name="Value8" value="0.005"></td></tr>
           <tr><td>Max Snow Interception Capacity (m):</td><td><input type="text" name="Value9" value="0.02"></td></tr>
