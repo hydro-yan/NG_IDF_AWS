@@ -158,6 +158,14 @@
     line-height: 1.4;
   }
 
+  #spatialStudyMap {
+    width: 100%;
+    height: 350px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
   .address-search {
     display: flex;
     gap: 8px;
@@ -679,7 +687,7 @@
 
   <div class="card">
     <h2>Select Location on Map</h2>
-    <p class="note">Search for an address, click on the map, or enter coordinates below. Locations must be within the supported Interior Alaska boundary; valid selections automatically fill the current land cover, LAI, and canopy height.</p>
+    <p class="note">Search for an address, click on the map, or enter parameters below. Locations must be within the supported Interior Alaska boundary; valid selections automatically fill the current land cover, LAI, and canopy height.</p>
     <div class="address-search">
       <div class="address-search-field">
         <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name" aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false">
@@ -957,20 +965,6 @@
     <input type="hidden" name="mode" value="spatial">
 
     <div class="card">
-      <h2>Select Land Cover Type</h2>
-      <p class="note">
-        Choose the predefined land cover type for the spatial map results.
-      </p>
-      <div class="land-cover-selector">
-        <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open / Impervious / Bare Ground (Asphalt, Concrete, Bare Soil)</div>
-        <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest (e.g., Black Spruce, White Spruce)</div>
-        <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest (e.g., Paper Birch, Quaking Aspen, Balsam Poplar)</div>
-      </div>
-      <input type="hidden" id="landCoverInput" name="land_cover" value="open">
-    </div>
-
-
-    <div class="card">
       <h2>Select Scenario</h2>
       <p class="note">
         Choose a scenario for the spatial map.
@@ -1005,6 +999,26 @@
 
 
       <input type="hidden" id="spatialScenarioInput" name="spatial_scenario" value="historical">
+    </div>
+
+
+    <div class="card">
+      <h2>Spatial Map Study Area</h2>
+      <p class="note">This map shows the geographic extent of the precomputed spatial-map grid.</p>
+      <div id="spatialStudyMap" aria-label="Spatial map study area"></div>
+    </div>
+
+    <div class="card">
+      <h2>Select Land Cover Type</h2>
+      <p class="note">
+        Choose the predefined land cover type for the spatial map results.
+      </p>
+      <div class="land-cover-selector">
+        <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open / Impervious / Bare Ground (Asphalt, Concrete, Bare Soil)</div>
+        <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest (e.g., Black Spruce, White Spruce)</div>
+        <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest (e.g., Paper Birch, Quaking Aspen, Balsam Poplar)</div>
+      </div>
+      <input type="hidden" id="landCoverInput" name="land_cover" value="open">
     </div>
 
 
@@ -1200,6 +1214,13 @@ function setToolMode(mode) {
     spatialSection.style.display = "block";
     modeOptionPoint.classList.remove("selected");
     modeOptionSpatial.classList.add("selected");
+    if (window.spatialStudyMap) {
+      window.spatialStudyMap.invalidateSize();
+      window.spatialStudyMap.fitBounds(window.spatialStudyBounds, {
+        padding: [20, 20],
+        maxZoom: 10
+      });
+    }
   }
 }
 
@@ -1288,6 +1309,7 @@ function viewSpatialMap() {
 // Synchronize duration availability with the initially selected scenario.
 document.addEventListener("DOMContentLoaded", function() {
   updateDurationOptions(document.getElementById("spatialScenarioInput").value);
+  initializeSpatialStudyMap();
 
   // Validate coordinates typed directly into the site input table.
   const latitudeInput = document.querySelector('input[name="Value1"]');
@@ -1314,6 +1336,35 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+// Reference-only map for Spatial Map Mode. This uses the same OpenStreetMap
+// layer as the point-selection map and only shows the spatial study extent.
+function initializeSpatialStudyMap() {
+  const mapElement = document.getElementById("spatialStudyMap");
+  if (!mapElement || !window.L) return;
+
+  try {
+    const boundary = {{ spatial_study_bounds|tojson }};
+    const bounds = [[boundary.south, boundary.west], [boundary.north, boundary.east]];
+    const studyMap = L.map("spatialStudyMap");
+    window.spatialStudyMap = studyMap;
+    window.spatialStudyBounds = bounds;
+
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(studyMap);
+    L.rectangle(bounds, {
+      color: "#b34b00",
+      weight: 2,
+      fill: false,
+      interactive: false
+    }).addTo(studyMap);
+    studyMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 10 });
+  } catch (error) {
+    mapElement.textContent = "Study-area map is unavailable.";
+    mapElement.classList.add("spatial-map-error");
+  }
+}
 
 </script>
 

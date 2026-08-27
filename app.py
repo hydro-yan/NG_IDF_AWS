@@ -1,9 +1,6 @@
 from flask import *
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
-import io
-import base64
 import subprocess
 import os
 import os.path
@@ -200,7 +197,20 @@ app = Flask(__name__)
 LULC_GRID_PATH = os.path.join(app.root_path, "static", "gridcell_current_lulc.csv")
 LULC_GRID = pd.read_csv(LULC_GRID_PATH)
 LULC_GRID_COORDS = LULC_GRID[["latitude", "longitude"]].to_numpy(dtype=float)
+SPATIAL_STUDY_BOUNDS = {
+    "north": float(LULC_GRID["latitude"].max()),
+    "south": float(LULC_GRID["latitude"].min()),
+    "west": float(LULC_GRID["longitude"].min()),
+    "east": float(LULC_GRID["longitude"].max()),
+}
 MAX_GRIDCELL_DISTANCE_KM = 1.5
+
+
+@app.context_processor
+def inject_spatial_study_bounds():
+    """Make the spatial-map study extent available to the input page."""
+    return {"spatial_study_bounds": SPATIAL_STUDY_BOUNDS}
+
 
 LULC_TO_DHSVM_CODE = {
     "open": "1",
@@ -278,6 +288,12 @@ def gridcell_lulc():
         distance_to_grid_km=round(distance_km, 2),
     )
 
+
+@app.get("/api/spatial-study-boundary")
+def spatial_study_boundary():
+    """Return the bounding extent of the precomputed spatial-map grid."""
+    return jsonify(SPATIAL_STUDY_BOUNDS)
+
 # Access control token for external collaborators
 SHARED_TOKEN = os.environ.get("SHARED_TOKEN", "pnnl_collab_secure")
 
@@ -305,7 +321,12 @@ def add_security_headers(response):
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     
     # Content Security Policy - adjust as needed for your application
-    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; img-src 'self' data:; style-src 'self' 'unsafe-inline';"
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval' data:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "img-src 'self' data: https://tile.openstreetmap.org;"
+    )
     
     # Permissions Policy (formerly Feature-Policy)
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
