@@ -158,6 +158,30 @@
     line-height: 1.4;
   }
 
+  .address-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 12px 0;
+  }
+
+  .address-search input[type="text"] {
+    flex: 1;
+    width: auto;
+  }
+
+  #addressSearchStatus {
+    min-height: 1.2em;
+    margin: 0 0 8px;
+  }
+
+  @media (max-width: 500px) {
+    .address-search {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+
   #displaytable {
     display: none;
     margin-top: 12px;
@@ -376,6 +400,7 @@
   }
 
   .scenario-card {
+    display: block;
     border: 2px solid #e2e8f0;
     border-radius: 8px;
     padding: 12px 14px;
@@ -513,12 +538,50 @@
   <!-- ============================== -->
   <div id="pointModeSection">
 
+  <form id="idfForm" method="post">
+
+
+    <div class="card">
+      <h2>Select Scenario</h2>
+      <p class="note">
+        Choose a scenario for the site-specific NG-IDF analysis.
+      </p>
+
+      <div class="scenario-grid" id="pointScenarioGrid">
+        <div class="scenario-card enabled selected" data-scenario="historical" onclick="selectPointScenario('historical')">
+          <div class="scenario-title">1. Historical Baseline (1990–2021)</div>
+          <div class="scenario-desc">Observed historical weather data used for standard replacement or baseline site evaluation.</div>
+        </div>
+
+        <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectPointScenario('future_wrf')">
+          <div class="scenario-title">2. Stress-Test Scenario: Historical Intensification (2034–2065)</div>
+          <div class="scenario-desc">Re-simulates past historical storm events under mid-century conditions to evaluate system failure thresholds and peak load capacity.</div>
+        </div>
+
+        <div class="scenario-card enabled" data-scenario="future_cesm_near" onclick="selectPointScenario('future_cesm_near')">
+          <div class="scenario-title">3. Near-Term Design Lifespan (2034–2049)</div>
+          <div class="scenario-desc">Evaluates new storm variability and patterns for assets with near-term design lifespans or upcoming renewals.</div>
+        </div>
+
+        <div class="scenario-card enabled" data-scenario="future_cesm" onclick="selectPointScenario('future_cesm')">
+          <div class="scenario-title">4. Mid-Century Design Lifespan (2034–2065)</div>
+          <div class="scenario-desc">Evaluates new storm variability patterns for critical civil infrastructure with extended multi-decade design lifespans.</div>
+        </div>
+      </div>
+      <input type="hidden" id="pointScenarioInput" name="scenario" value="historical">
+    </div>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <div class="card">
     <h2>Select Location on Map</h2>
-    <p class="note">Click on the map to automatically fill Latitude & Longitude.</p>
+    <p class="note">Search for an address or click on the map to automatically fill Latitude & Longitude.</p>
+    <div class="address-search">
+      <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name">
+      <button type="button" id="addressSearchButton">Find address</button>
+    </div>
+    <p id="addressSearchStatus" class="note" role="status" aria-live="polite"></p>
     <div id="selectMap" style="height: 350px; width:100%; border-radius:8px; border:1px solid #ddd;"></div>
   </div>
 
@@ -530,9 +593,13 @@
     }).addTo(map);
 
     var marker = null;
-    map.on("click", function(e) {
-      const lat = e.latlng.lat.toFixed(5);
-      const lon = e.latlng.lng.toFixed(5);
+    const addressInput = document.getElementById("addressSearchInput");
+    const addressButton = document.getElementById("addressSearchButton");
+    const addressStatus = document.getElementById("addressSearchStatus");
+
+    function selectLocation(lat, lon, zoom) {
+      lat = Number(lat).toFixed(5);
+      lon = Number(lon).toFixed(5);
       document.querySelector('input[name="Value1"]').value = lat;
       document.querySelector('input[name="Value2"]').value = lon;
       if (marker === null) {
@@ -540,40 +607,57 @@
       } else {
         marker.setLatLng([lat, lon]);
       }
+      if (zoom) {
+        map.setView([lat, lon], zoom);
+      }
+    }
+
+    map.on("click", function(e) {
+      selectLocation(e.latlng.lat, e.latlng.lng);
+    });
+
+    async function findAddress() {
+      const address = addressInput.value.trim();
+      if (!address) {
+        addressStatus.textContent = "Enter an address or place name to search.";
+        return;
+      }
+
+      addressButton.disabled = true;
+      addressStatus.textContent = "Finding address…";
+      try {
+        const response = await fetch(
+          "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(address),
+          { headers: { "Accept": "application/json" } }
+        );
+        if (!response.ok) {
+          throw new Error("Address search failed.");
+        }
+
+        const results = await response.json();
+        if (!results.length) {
+          addressStatus.textContent = "No location was found. Please refine the address and try again.";
+          return;
+        }
+
+        const result = results[0];
+        selectLocation(result.lat, result.lon, 13);
+        addressStatus.textContent = "Location found: " + result.display_name;
+      } catch (error) {
+        addressStatus.textContent = "Unable to look up that address. Check your connection and try again.";
+      } finally {
+        addressButton.disabled = false;
+      }
+    }
+
+    addressButton.addEventListener("click", findAddress);
+    addressInput.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        findAddress();
+      }
     });
   </script>
-
-  <form id="idfForm" method="post">
-
-
-    <div class="card">
-      <h2>Scenario Selection</h2>
-      <p class="note">
-        Choose whether to run the NG-IDF tool using historical weather data (Daymet)
-        or future scenarios (WRF or CESM-LE scenarios).
-      </p>
-
-      <label style="font-size:0.95rem;">
-        <input type="radio" name="scenario" value="historical" checked>
-        Historical Weather (Daymet)
-      </label><br/><br/>
-
-      <label style="font-size:0.95rem;">
-        <input type="radio" name="scenario" value="future_cesm_near">
-        Future Scenarios #1: Near Term from 2034 to 2049 (CESM2-LE: 4 historical references + 4 future ensemble members, SSP3-70)
-      </label><br/><br/>
-
-      <label style="font-size:0.95rem;">
-        <input type="radio" name="scenario" value="future_cesm">
-        Future Scenarios #2: Mid Century from 2034 to 2065 (CESM2-LE: 4 historical references + 4 future ensemble members, SSP3-70)
-      </label><br/><br/>
-
-      <label style="font-size:0.95rem;">
-        <input type="radio" name="scenario" value="future_wrf">
-        Future Scenarios #3: Mid Century from 2034 to 2065 (WRF: historical baseline + medium scenario + high scenario, SSP2-45)
-      </label>
-
-    </div>
 
     <div class="card">
       <h2>Site Input Parameters</h2>
@@ -819,6 +903,13 @@ function myfunction(){
   const adv=document.getElementById("displaytable");
   adv.style.display=(adv.style.display==="none"||adv.style.display==="")?"block":"none";
 }
+
+function selectPointScenario(scenario) {
+  document.querySelectorAll("#pointScenarioGrid .scenario-card.enabled").forEach(function(card) {
+    card.classList.toggle("selected", card.getAttribute("data-scenario") === scenario);
+  });
+  document.getElementById("pointScenarioInput").value = scenario;
+}
 </script>
 
 <script>
@@ -859,7 +950,7 @@ function selectLandCover(lc) {
 // Spatial Map Mode: Scenario Selection (only enabled cards)
 // ============================================================
 function selectSpatialScenario(scenario) {
-  document.querySelectorAll(".scenario-card.enabled").forEach(function(el) {
+  document.querySelectorAll("#spatialModeSection .scenario-card.enabled").forEach(function(el) {
     el.classList.toggle("selected", el.getAttribute("data-scenario") === scenario);
   });
   document.getElementById("spatialScenarioInput").value = scenario;
