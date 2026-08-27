@@ -193,6 +193,91 @@ def structure_results(results):
 # ----------------------------------------------------------------------------------------------------------------------------
 app = Flask(__name__)
 
+# Grid-cell vegetation data define the supported Interior Alaska analysis area.
+# The source grid is approximately 1 km, so locations farther than 1.5 km from
+# a grid-cell centre are outside the model domain rather than being assigned an
+# arbitrary vegetation class.
+LULC_GRID_PATH = os.path.join(app.root_path, "static", "gridcell_current_lulc.csv")
+LULC_GRID = pd.read_csv(LULC_GRID_PATH)
+LULC_GRID_COORDS = LULC_GRID[["latitude", "longitude"]].to_numpy(dtype=float)
+MAX_GRIDCELL_DISTANCE_KM = 1.5
+
+LULC_TO_DHSVM_CODE = {
+    "open": "1",
+    "evergreen": "2",
+    "deciduous": "3",
+    "mixed": "4",
+    "crop": "5",
+    "grass": "6",
+    "shrub": "7",
+    "pasture": "8",
+    "wetland": "9",
+}
+
+
+def lookup_gridcell_lulc(latitude, longitude):
+    """Return the nearest supported grid-cell and its vegetation attributes.
+
+    Distances use an equirectangular approximation, which is accurate at the
+    sub-kilometre scale of the Interior Alaska grid and avoids a GIS dependency.
+    """
+    latitude = float(latitude)
+    longitude = float(longitude)
+    lat_scale_km = 111.32
+    lon_scale_km = 111.32 * np.cos(np.deg2rad(latitude))
+    delta_lat = (LULC_GRID_COORDS[:, 0] - latitude) * lat_scale_km
+    delta_lon = (LULC_GRID_COORDS[:, 1] - longitude) * lon_scale_km
+    nearest_index = int(np.argmin(delta_lat ** 2 + delta_lon ** 2))
+    distance_km = float(np.hypot(delta_lat[nearest_index], delta_lon[nearest_index]))
+
+    if distance_km > MAX_GRIDCELL_DISTANCE_KM:
+        return None, distance_km
+    return LULC_GRID.iloc[nearest_index], distance_km
+
+
+@app.get("/api/gridcell-lulc")
+def gridcell_lulc():
+    """Validate a point against the Interior Alaska grid and return its defaults."""
+    try:
+        latitude = float(request.args["lat"])
+        longitude = float(request.args["lon"])
+    except (KeyError, TypeError, ValueError):
+        return jsonify(error="Valid latitude and longitude are required."), 400
+
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return jsonify(error="Latitude or longitude is outside its valid range."), 400
+
+    gridcell, distance_km = lookup_gridcell_lulc(latitude, longitude)
+    if gridcell is None:
+        return jsonify(
+            inside_boundary=False,
+            message="This location is outside the supported Interior Alaska boundary.",
+            distance_to_grid_km=round(distance_km, 2),
+        )
+
+    land_cover = str(gridcell["dominant_LULC"]).strip().lower()
+    lai = float(gridcell["max_LAI"])
+    height = float(gridcell["mean_height_m"])
+
+    # Missing vegetation data represent Open land cover, regardless of the
+    # LULC label in the source CSV. Open always uses zero vegetation values.
+    if not np.isfinite(lai) or not np.isfinite(height):
+        land_cover = "open"
+    if land_cover == "open":
+        lai = 0.0
+        height = 0.0
+
+    return jsonify(
+        inside_boundary=True,
+        latitude=round(float(gridcell["latitude"]), 5),
+        longitude=round(float(gridcell["longitude"]), 5),
+        land_cover=land_cover,
+        dhsvm_land_cover=LULC_TO_DHSVM_CODE[land_cover],
+        lai=round(lai, 2),
+        height=round(height, 2),
+        distance_to_grid_km=round(distance_km, 2),
+    )
+
 # Access control token for external collaborators
 SHARED_TOKEN = os.environ.get("SHARED_TOKEN", "pnnl_collab_secure")
 
@@ -527,13 +612,31 @@ def NG_IDF():
 
         # user input
 
-        for i in range(1, 11):
-            key = f"Value{i}"
-            input_data[f"value{i}"] = float(request.form[key])
+        try:
+            for i in range(1, 11):
+                key = f"Value{i}"
+                input_data[f"value{i}"] = float(request.form[key])
+        except (KeyError, TypeError, ValueError):
+            return render_template(
+                "NG_IDF.html",
+                location_error=(
+                    "Complete all site input parameters with numeric values "
+                    "before submitting."
+                ),
+            )
 
         lat = input_data['value1']
         lon = input_data['value2']
         scenario = request.form.get("scenario", "historical")
+
+        # Also enforce the model boundary server-side so a manually crafted
+        # form request cannot run an unsupported location.
+        gridcell, _ = lookup_gridcell_lulc(lat, lon)
+        if gridcell is None:
+            return render_template(
+                "NG_IDF.html",
+                location_error="This location is outside the supported Interior Alaska boundary. Please select a location inside the displayed study area.",
+            )
 
 
         # Debug: Print scenario value with quotes to see exact string

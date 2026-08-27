@@ -221,6 +221,11 @@
     margin: 0 0 8px;
   }
 
+  .location-status-error {
+    color: #b42318;
+    font-weight: 600;
+  }
+
   @media (max-width: 500px) {
     .address-search {
       align-items: stretch;
@@ -674,7 +679,7 @@
 
   <div class="card">
     <h2>Select Location on Map</h2>
-    <p class="note">Search for an address or click on the map to automatically fill Site Input Parameters.</p>
+    <p class="note">Search for an address, click on the map, or enter coordinates below. Locations must be within the supported Interior Alaska boundary; valid selections automatically fill the current land cover, LAI, and canopy height.</p>
     <div class="address-search">
       <div class="address-search-field">
         <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name" aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false">
@@ -682,7 +687,7 @@
       </div>
       <button type="button" id="addressSearchButton">Find address</button>
     </div>
-    <p id="addressSearchStatus" class="note" role="status" aria-live="polite"></p>
+    <p id="addressSearchStatus" class="note{% if location_error %} location-status-error{% endif %}" role="status" aria-live="polite">{{ location_error or '' }}</p>
     <div id="selectMap" style="height: 350px; width:100%; border-radius:8px; border:1px solid #ddd;"></div>
   </div>
 
@@ -701,6 +706,72 @@
     let addressSearchTimer = null;
     let addressSuggestionRequest = 0;
 
+    let locationLookupRequest = 0;
+
+    function setLocationStatus(message, isError) {
+      addressStatus.textContent = message;
+      addressStatus.classList.toggle("location-status-error", Boolean(isError));
+    }
+
+    function applyGridcellDefaults(gridcell) {
+      document.querySelector('input[name="Value3"]').value = gridcell.lai;
+      document.querySelector('input[name="Value4"]').value = gridcell.height;
+      const advancedDefaults = {
+        Value5: "1",
+        Value7: "0.001",
+        Value8: "0.005",
+        Value9: "0.02",
+        Value10: "0.6"
+      };
+      Object.entries(advancedDefaults).forEach(function(entry) {
+        const input = document.querySelector('input[name="' + entry[0] + '"]');
+        if (!input.value.trim()) input.value = entry[1];
+      });
+      selectSiteLandCover(gridcell.land_cover, gridcell.dhsvm_land_cover);
+    }
+
+  function clearSiteInputParameters() {
+    document.querySelectorAll('#pointModeSection input[name^="Value"]').forEach(function(input) {
+      input.value = "";
+    });
+    document.querySelectorAll("#siteLandCoverGrid .site-land-cover-card").forEach(function(card) {
+      card.classList.remove("selected");
+    });
+  }
+
+    async function validateAndPopulateLocation(lat, lon) {
+      const requestId = ++locationLookupRequest;
+      try {
+        const response = await fetch(
+          "/api/gridcell-lulc?lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon),
+          { headers: { "Accept": "application/json" } }
+        );
+        const result = await response.json();
+        if (requestId !== locationLookupRequest) return false;
+
+      if (!response.ok || !result.inside_boundary) {
+        if (result.inside_boundary === false) {
+          clearSiteInputParameters();
+        }
+          setLocationStatus(result.message || "This location is outside the supported Interior Alaska boundary.", true);
+          return false;
+        }
+
+        applyGridcellDefaults(result);
+        setLocationStatus(
+          "Location is inside the Interior Alaska boundary. Current " + result.land_cover +
+          " land cover, LAI, and canopy height have been filled from the nearest grid cell.",
+          false
+        );
+        return true;
+      } catch (error) {
+        if (requestId === locationLookupRequest) {
+          setLocationStatus("Unable to validate this location. Please try again.", true);
+        }
+        return false;
+      }
+    }
+
     function selectLocation(lat, lon, zoom) {
       lat = Number(lat).toFixed(5);
       lon = Number(lon).toFixed(5);
@@ -714,6 +785,7 @@
       if (zoom) {
         map.setView([lat, lon], zoom);
       }
+      validateAndPopulateLocation(lat, lon);
     }
 
     map.on("click", function(e) {
@@ -729,7 +801,6 @@
     function selectAddressSuggestion(result) {
       addressInput.value = result.display_name;
       selectLocation(result.lat, result.lon, 13);
-      addressStatus.textContent = "Location selected: " + result.display_name;
       clearAddressSuggestions();
     }
 
@@ -774,7 +845,7 @@
     async function findAddress() {
       const address = addressInput.value.trim();
       if (!address) {
-        addressStatus.textContent = "Enter an address or place name to search.";
+        setLocationStatus("Enter an address or place name to search.", true);
         return;
       }
 
@@ -782,7 +853,7 @@
       clearTimeout(addressSearchTimer);
       addressSuggestionRequest += 1;
       clearAddressSuggestions();
-      addressStatus.textContent = "Finding address…";
+      setLocationStatus("Finding address…", false);
       try {
         const response = await fetch(
           "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" + encodeURIComponent(address),
@@ -794,15 +865,14 @@
 
         const results = await response.json();
         if (!results.length) {
-          addressStatus.textContent = "No location was found. Please refine the address and try again.";
+          setLocationStatus("No location was found. Please refine the address and try again.", true);
           return;
         }
 
         const result = results[0];
         selectLocation(result.lat, result.lon, 13);
-        addressStatus.textContent = "Location found: " + result.display_name;
       } catch (error) {
-        addressStatus.textContent = "Unable to look up that address. Check your connection and try again.";
+        setLocationStatus("Unable to look up that address. Check your connection and try again.", true);
       } finally {
         addressButton.disabled = false;
       }
@@ -828,7 +898,7 @@
 
     <div class="card">
       <h2>Site Input Parameters</h2>
-      <p class="note">Use automatically filled parameters based on the current land cover, or enter your local site information or land-use projection data.</p>
+      <p class="note">Valid map/address/coordinate selections automatically use values from the current grid cell. You may edit values for a local land-use projection. Selecting <b>Open</b> always sets LAI and canopy height to 0.</p>
       <table>
         <tr><td>Latitude (°):</td><td><input type="text" name="Value1" placeholder="e.g. 64.76"></td></tr>
         <tr><td>Longitude (°):</td><td><input type="text" name="Value2" placeholder="e.g. -147.22"></td></tr>
@@ -1089,10 +1159,24 @@ function selectPointScenario(scenario) {
 }
 
 function selectSiteLandCover(landCover, dhsvmCode) {
+  // Grid lookups use descriptive LULC names, while the point-mode cards use
+  // DHSVM numeric codes. Normalize lookup names to the card identifier.
+  const landCoverCode = {
+    open: "1", evergreen: "2", deciduous: "3", mixed: "4", crop: "5",
+    grass: "6", shrub: "7", pasture: "8", wetland: "9"
+  };
+  const normalizedLandCover = String(landCover).trim().toLowerCase();
+  const selectedCard = landCoverCode[normalizedLandCover] || normalizedLandCover;
+  const selectedCode = dhsvmCode || landCoverCode[normalizedLandCover] || landCover;
+
   document.querySelectorAll("#siteLandCoverGrid .site-land-cover-card").forEach(function(card) {
-    card.classList.toggle("selected", card.getAttribute("data-land-cover") === landCover);
+    card.classList.toggle("selected", card.getAttribute("data-land-cover") === selectedCard);
   });
-  document.getElementById("siteLandCoverInput").value = dhsvmCode || landCover;
+  document.getElementById("siteLandCoverInput").value = selectedCode;
+  if (selectedCard === "1") {
+    document.querySelector('input[name="Value3"]').value = "0";
+    document.querySelector('input[name="Value4"]').value = "0";
+  }
 }
 </script>
 
@@ -1204,6 +1288,29 @@ function viewSpatialMap() {
 // Synchronize duration availability with the initially selected scenario.
 document.addEventListener("DOMContentLoaded", function() {
   updateDurationOptions(document.getElementById("spatialScenarioInput").value);
+
+  // Validate coordinates typed directly into the site input table.
+  const latitudeInput = document.querySelector('input[name="Value1"]');
+  const longitudeInput = document.querySelector('input[name="Value2"]');
+  let coordinateInputTimer = null;
+  function validateTypedCoordinates() {
+    const latitudeValue = latitudeInput.value.trim();
+    const longitudeValue = longitudeInput.value.trim();
+    if (!latitudeValue || !longitudeValue) return;
+
+    const lat = Number(latitudeValue);
+    const lon = Number(longitudeValue);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      selectLocation(lat, lon);
+    }
+  }
+  [latitudeInput, longitudeInput].forEach(function(input) {
+    input.addEventListener("change", validateTypedCoordinates);
+    input.addEventListener("input", function() {
+      clearTimeout(coordinateInputTimer);
+      coordinateInputTimer = setTimeout(validateTypedCoordinates, 600);
+    });
+  });
 });
 
 
@@ -1219,8 +1326,16 @@ document.addEventListener("DOMContentLoaded", function() {
 </div>
 
 <script>
-document.getElementById("idfForm").addEventListener("submit", function() {
+document.getElementById("idfForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const lat = document.querySelector('input[name="Value1"]').value;
+    const lon = document.querySelector('input[name="Value2"]').value;
+    if (!lat || !lon || !(await validateAndPopulateLocation(lat, lon))) {
+      setLocationStatus("Select a location inside the supported Interior Alaska boundary before submitting.", true);
+      return;
+    }
     document.getElementById("overlay").style.display = "flex";
+    event.target.submit();
 });
 </script>
 
