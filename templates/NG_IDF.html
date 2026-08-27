@@ -705,6 +705,17 @@
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
+    // Show the supported study area without intercepting point selections.
+    const pointStudyBoundary = {{ spatial_study_bounds|tojson }};
+    L.rectangle([
+      [pointStudyBoundary.south, pointStudyBoundary.west],
+      [pointStudyBoundary.north, pointStudyBoundary.east]
+    ], {
+      color: "#b34b00",
+      weight: 2,
+      fill: false,
+      interactive: false
+    }).addTo(map);
 
     var marker = null;
     const addressInput = document.getElementById("addressSearchInput");
@@ -766,11 +777,7 @@
         }
 
         applyGridcellDefaults(result);
-        setLocationStatus(
-          "Location is inside the Interior Alaska boundary. Current " + result.land_cover +
-          " land cover, LAI, and canopy height have been filled from the nearest grid cell.",
-          false
-        );
+        setLocationStatus("", false);
         return true;
       } catch (error) {
         if (requestId === locationLookupRequest) {
@@ -906,7 +913,7 @@
 
     <div class="card">
       <h2>Site Input Parameters</h2>
-      <p class="note">Valid map/address/coordinate selections automatically use values from the current grid cell. You may edit values for a local land-use projection. Selecting <b>Open</b> always sets LAI and canopy height to 0.</p>
+      <p class="note">Valid map/address/coordinate selections automatically use values from the current land cover. You can edit values from a local measurement or land-use projection.</p>
       <table>
         <tr><td>Latitude (°):</td><td><input type="text" name="Value1" placeholder="e.g. 64.76"></td></tr>
         <tr><td>Longitude (°):</td><td><input type="text" name="Value2" placeholder="e.g. -147.22"></td></tr>
