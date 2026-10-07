@@ -357,7 +357,7 @@ def NG_IDF():
 
         if tool_mode == "spatial":
             # Spatial Map Mode inputs (predefined land cover, precomputed spatial maps)
-            # land_cover: "open" | "evergreen" | "deciduous"
+            # land_cover: "open" | "evergreen" | "deciduous" | "current"
             land_cover = request.form.get("land_cover", "open")
 
             # The HTML form submits long-form scenario names; normalize them to

@@ -413,7 +413,7 @@
 
   .land-cover-selector {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-top: 10px;
   }
@@ -687,7 +687,7 @@
 
   <div class="card">
     <h2>Select Location on Map</h2>
-    <p class="note">Search for an address, click on the map, or enter parameters below. Locations must be within the supported Interior Alaska boundary; valid selections automatically fill the current land cover, LAI, and canopy height.</p>
+    <p class="note">Search for an address or click on the map, or enter parameters below. Locations must be within the supported Interior Alaska boundary; valid selections automatically fill the current land cover, LAI, and canopy height.</p>
     <div class="address-search">
       <div class="address-search-field">
         <input type="text" id="addressSearchInput" placeholder="Enter an address or place name" autocomplete="street-address" aria-label="Address or place name" aria-autocomplete="list" aria-controls="addressSuggestions" aria-expanded="false">
@@ -1020,10 +1020,12 @@
       <p class="note">
         Choose the predefined land cover type for the spatial map results.
       </p>
+      <p class="note"><i><strong>Uniform land-cover scenarios:</strong> Open, Evergreen Forest, and Deciduous Forest apply the selected land-cover type to every grid cell in the map domain. <strong>Current Land Cover</strong> preserves the existing land-cover type for each grid cell, so land cover varies across the domain.</i></p>
       <div class="land-cover-selector">
         <div class="lc-option selected" data-lc="open" onclick="selectLandCover('open')">Open / Impervious / Bare Ground (Asphalt, Concrete, Bare Soil)</div>
         <div class="lc-option" data-lc="evergreen" onclick="selectLandCover('evergreen')">Evergreen Forest (e.g., Black Spruce, White Spruce)</div>
         <div class="lc-option" data-lc="deciduous" onclick="selectLandCover('deciduous')">Deciduous Forest (e.g., Paper Birch, Quaking Aspen, Balsam Poplar)</div>
+        <div class="lc-option" data-lc="current" onclick="selectLandCover('current')">Current Land Cover (Grid-Cell Specific)</div>
       </div>
       <input type="hidden" id="landCoverInput" name="land_cover" value="open">
     </div>
