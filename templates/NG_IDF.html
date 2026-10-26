@@ -566,6 +566,12 @@
     margin-top: 4px;
     line-height: 1.3;
   }
+
+  .scenario-card .scenario-metric {
+    margin-top: 8px;
+    color: #b34b00;
+    font-size: 0.82rem;
+  }
 </style>
 </head>
 <body>
@@ -653,30 +659,34 @@
 
 
     <div class="card">
-      <h2>Select Scenario</h2>
+      <h2>Scenario Selection &amp; Uncertainty Guidance</h2>
       <p class="note">
-        Choose a scenario for the site-specific NG-IDF analysis.
+        Future scenarios represent physical stress tests rather than predictive forecasts, evaluating infrastructure sensitivity to specific temperature shifts relative to the 1990–2021 baseline. To capture modeling uncertainty, Scenario 2 brackets moderate and severe intensification cases (2 runs), while Scenarios 3 and 4 incorporate 4 ensemble simulations to account for storm variability.
       </p>
 
       <div class="scenario-grid" id="pointScenarioGrid">
         <div class="scenario-card enabled selected" data-scenario="historical" onclick="selectPointScenario('historical')">
           <div class="scenario-title">1. Historical Baseline (1990–2021)</div>
           <div class="scenario-desc">Observed historical weather data used for standard replacement or baseline site evaluation.</div>
+          <div class="scenario-metric"><em>+0.0°C (1990–2021 Ref.)</em></div>
         </div>
 
         <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectPointScenario('future_wrf')">
-          <div class="scenario-title">2. Stress-Test Scenario: Historical Intensification (2034–2065)</div>
-          <div class="scenario-desc">Re-simulates past historical storm events under mid-century conditions to evaluate system failure thresholds and peak load capacity.</div>
+          <div class="scenario-title">2. Intensified Historical Storms: Event Stress Test</div>
+          <div class="scenario-desc">Re-simulates observed historical storms under mid-century temperature shifts to test peak load capacity and failure thresholds.</div>
+          <div class="scenario-metric"><em>+1.72°C to +2.36°C (2 Bracketed Runs)</em></div>
         </div>
 
         <div class="scenario-card enabled" data-scenario="future_cesm_near" onclick="selectPointScenario('future_cesm_near')">
-          <div class="scenario-title">3. Near-Term Design Lifespan (2034–2049)</div>
-          <div class="scenario-desc">Evaluates new storm variability and patterns for assets with near-term design lifespans or upcoming renewals.</div>
+          <div class="scenario-title">3. Near-Term Sensitivity Stress Test (2034–2049)</div>
+          <div class="scenario-desc">Evaluates system sensitivity to shifting storm variability and snow-to-rain transitions for assets with near-term service lives or upcoming renewals.</div>
+          <div class="scenario-metric"><em>+1.51°C to +2.45°C (4 Runs, mean +1.86°C)</em></div>
         </div>
 
         <div class="scenario-card enabled" data-scenario="future_cesm" onclick="selectPointScenario('future_cesm')">
-          <div class="scenario-title">4. Mid-Century Design Lifespan (2034–2065)</div>
-          <div class="scenario-desc">Evaluates new storm variability patterns for critical civil infrastructure with extended multi-decade design lifespans.</div>
+          <div class="scenario-title">4. Mid-Century Sensitivity Stress Test (2034–2065)</div>
+          <div class="scenario-desc">Evaluates low-probability, high-consequence flood extremes across extended multi-decade horizons to identify failure thresholds for critical civil infrastructure.</div>
+          <div class="scenario-metric"><em>+1.61°C to +2.61°C (4 Runs, mean +2.05°C)</em></div>
         </div>
       </div>
       <input type="hidden" id="pointScenarioInput" name="scenario" value="historical">
@@ -938,12 +948,12 @@
       <input type="hidden" id="siteLandCoverInput" name="Value6" value="">
 
       <div style="margin-top:20px;">
-        <input type="button" value="Advanced Settings (Optional)" onclick="myfunction()">
+        <input type="button" value="Advanced DHSVM Settings (Expert Use Only)" onclick="myfunction()">
       </div>
 
       <div id="displaytable">
         <p class="note" style="margin-top:12px;">
-          Default DHSVM parameters are recommended unless local calibration data are available.
+          These parameters are intended for DHSVM calibration and expert use. For most site assessments, retain the default values. Change these values only when site-specific calibration data or expert judgment are available.
         </p>
         <table>
       <tr><td>Land Cover Fraction (0–1):</td><td><input type="text" name="Value5" value="1"></td></tr>
@@ -972,9 +982,9 @@
     <input type="hidden" name="mode" value="spatial">
 
     <div class="card">
-      <h2>Select Scenario</h2>
+      <h2>Scenario Selection &amp; Uncertainty Guidance</h2>
       <p class="note">
-        Choose a scenario for the spatial map.
+        Future scenarios represent physical stress tests rather than predictive forecasts, evaluating infrastructure sensitivity to specific temperature shifts relative to the 1990–2021 baseline. To capture modeling uncertainty, Scenario 2 brackets moderate and severe intensification cases (2 runs), while Scenarios 3 and 4 incorporate 4 ensemble simulations to account for storm variability.
       </p>
 
 
@@ -983,23 +993,25 @@
         <div class="scenario-card enabled selected" data-scenario="historical" onclick="selectSpatialScenario('historical')">
           <div class="scenario-title">1. Historical Baseline (1990–2021)</div>
           <div class="scenario-desc">Observed historical weather data used for standard replacement or baseline site evaluation.</div>
+          <div class="scenario-metric"><em>+0.0°C (1990–2021 Ref.)</em></div>
         </div>
         
-        <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectSpatialScenario('future_wrf')">
-          <div class="scenario-title">2. Stress-Test Scenario: Historical Intensification (2034–2065)</div>
-          <div class="scenario-desc">Re-simulates past historical storm events under mid-century conditions to evaluate system failure thresholds 
-            and peak load capacity.</div>
+        <div class="scenario-card enabled" data-scenario="future_wrf" onclick="selectPointScenario('future_wrf')">
+          <div class="scenario-title">2. Intensified Historical Storms: Event Stress Test</div>
+          <div class="scenario-desc">Re-simulates observed historical storms under mid-century temperature shifts to test peak load capacity and failure thresholds.</div>
+          <div class="scenario-metric"><em>+1.72°C to +2.36°C (2 Bracketed Runs)</em></div>
         </div>
         
         <div class="scenario-card enabled" data-scenario="future_cesm_near" onclick="selectSpatialScenario('future_cesm_near')">
-          <div class="scenario-title">3. Near-Term Design Lifespan (2034-2049)</div>
-          <div class="scenario-desc">Evaluates new storm variability and patterns for assets with near-term design lifespans or upcoming renewals</div>
+          <div class="scenario-title">3. Near-Term Sensitivity Stress Test (2034–2049)</div>
+          <div class="scenario-desc">Evaluates system sensitivity to shifting storm variability and snow-to-rain transitions for assets with near-term service lives or upcoming renewals.</div>
+          <div class="scenario-metric"><em>+1.51°C to +2.45°C (4 Runs, mean +1.86°C)</em></div>
         </div>
         
         <div class="scenario-card enabled" data-scenario="future_cesm_mid" onclick="selectSpatialScenario('future_cesm_mid')">
-          <div class="scenario-title">4. Mid-Century Design Lifespan (2034–2065)</div>
-          <div class="scenario-desc">Evaluates new storm variability patterns for critical civil infrastructure with 
-            extended multi-decade design lifespans.</div>
+          <div class="scenario-title">4. Mid-Century Sensitivity Stress Test (2034–2065)</div>
+          <div class="scenario-desc">Evaluates low-probability, high-consequence flood extremes across extended multi-decade horizons to identify failure thresholds for critical civil infrastructure..</div>
+          <div class="scenario-metric"><em>+1.61°C to +2.61°C (4 Runs, mean +2.05°C)</em></div>
         </div>
       
       </div>
@@ -1086,9 +1098,11 @@
     <ul style="margin-top:10px; margin-bottom:0; padding-left:20px;">
       <li>Historical weather: Daymet gridded meteorological data (1989/06/01–2021/09/30, 1-km grid, 24-hour resolution) (<a href="https://www.nature.com/articles/s41597-021-00973-0" target="_blank">Thornton et al., 2021</a>).</li>
 
-      <li>Future scenarios #1: Direct downscaling of four CESM2-Large Ensemble (CESM2-LE) members (30-year reference [1989/06/01–2021/09/30] and 30-year future periods [2033/06/01–2065/09/30], 4-km grid, 1-hour resolution). These simulations utilize the SSP3-70 scenario. While PGW intensifies known historical events, these direct downscaling runs capture the full range of natural weather variability, providing a robust look at how entirely new, unrecorded weather patterns might emerge in a changing future.</li>
+      <li>Land use and land cover: National Land Cover Database (NLCD) 2016 Land Cover (Alaska) (<a href="https://www.mrlc.gov/data/nlcd-2016-land-cover-alaska" target="_blank">MRLC, 2020</a>).</li>
 
-      <li>Future scenarios #2: WRF baseline forced with ERA5 (1989/06/01–2021/09/30, 4-km grid,1-hour resolution) and two pseudo-global warming (PGW) scenarios (medium and high, 2033/06/01–2065/09/30, 4 km grid, 1-hour resolution). Perturbations follow ensemble mean changes from two sets of CMIP6 GCM ensembles focused on SSP2-45 (<a href="https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2024JD041185" target="_blank">Cheng et al., 2025</a>). WRF simulations act as a high-definition lens that first reconstructs the 'ground truth' of historical weather with local precision and then projects how those exact events would intensify in a future, warmer weather.</li>
+      <li>Future scenarios #1: Weather Research and Forecasting (WRF) baseline forced with ERA5 (1989/06/01–2021/09/30, 4-km grid, 1-hour resolution) and two pseudo-global warming (PGW) scenarios (medium and high, 2033/06/01–2065/09/30, 4-km grid, 1-hour resolution). Perturbations follow ensemble mean changes from two sets of CMIP6 GCM ensembles focused on SSP2-45 (<a href="https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2024JD041185" target="_blank">Cheng et al., 2025</a>). WRF simulations act as a high-definition lens that first reconstructs the 'ground truth' of historical weather with local precision and then projects how those exact events would intensify in a future, warmer weather.</li>
+
+      <li>Future scenarios #2: Direct downscaling of four Community Earth System Model version 2 (CESM2) Large Ensemble (CESM2-LE) members (30-year reference [1989/06/01–2021/09/30] and 30-year future periods [2033/06/01–2065/09/30], 4-km grid, 1-hour resolution). These simulations utilize the SSP3-70 scenario (<a href="https://doi.org/10.1175/BAMS-D-24-0131.1" target="_blank">Newman et al., 2026</a>). While PGW intensifies known historical events, these direct downscaling runs capture the full range of natural weather variability, providing a robust look at how entirely new, unrecorded weather patterns might emerge in a changing future.</li>
 
       <li>Snow model: Calibrated DHSVM snow model (<a href="https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2018JD030140" target="_blank">Sun et al., 2019</a>, <a href="https://www.nature.com/articles/s41597-022-01221-9" target="_blank">Sun et al., 2022</a>).Snow parameters have been further tuned specifically for the Alask to enhance predictive accuracy, particularly in Southern Alaska where winter temperatures frequently fluctuate near the freezing point.</li>
 
@@ -1108,7 +1122,7 @@
     <b>Selected Media Highlights:</b>
     <ol reversed style="margin-top:10px; margin-bottom:0; padding-left:20px;">
       <li><a href="https://doi.org/10.1061/JHYEFF.HEENG-6418" target="_blank">Milhous (2025)</a>. Discussion of "Observation-based evaluation of flood estimation techniques for a small snow-dominated basin in the Washington Cascade Mountains". <i>Journal of Hydrologic Engineering</i>, 30(2), 07024004.</li>
-      <li><a href="https://www.pnnl.gov/news-media/adding-snow-estimates-spring-flooding" target="_blank">PNNL Research Highlights (2023)</a>. Adding snow to estimates of spring flooding.</li>
+      <li><a href="https://phys.org/news/2023-07-adding.html" target="_blank">Phys.org (2023)</a>. Adding snow to estimates of spring flooding.</li>
       <li><a href="https://www.tri-cityherald.com/news/local/pacific-northwest-national-lab/article227815014.html" target="_blank">Tri-City Herald (2019)</a>. How to withstand extreme weather? Science is coming up with these solutions.</li>
       <li><a href="https://doi.org/10.1029/2018WR023123" target="_blank">Hamlet (2018)</a>. New observed data sets for the validation of hydrology and land surface models in cold climates. <i>Water Resources Research</i>, 54(8), 5190–5197.</li>
       <li><a href="https://www.pnnl.gov/news-media/building-infrastructure-resiliency-extreme-snowmelt-events" target="_blank">PNNL Research Highlights (2018)</a>. Building infrastructure resiliency to extreme snowmelt events.</li>
@@ -1121,6 +1135,7 @@
   <div style="margin-bottom: 25px;">
     <b>NG-IDF–Related Journal Articles:</b>
     <ol reversed style="margin-top:10px; margin-bottom:0; padding-left:20px;">
+      <li><a href="https://doi.org/10.1088/2515-7620/ae53ae" target="_blank">Yan et al. (2026)</a>. Flood estimation under snowmelt and rain-on-snow processes in Alaska: a military installation perspective. <i>Environmental Research Communications</i>, 8(3), 031009.</li>
       <li><a href="https://doi.org/10.1029/2024EF005619" target="_blank">Yan et al. (2025)</a>. How flood hazards in a warming climate could be amplified by changes in spatiotemporal patterns and mechanisms of water available for runoff. <i>Earth’s Future</i>, 13(3), e2024EF005619.</li>
       <li><a href="https://doi.org/10.1061/JHYEFF.HEENG-6463" target="_blank">Yan et al. (2025)</a>. Closure to "Observation-based evaluation of flood estimation techniques for a small snow-dominated basin in the Washington Cascade Mountains". <i>Journal of Hydrologic Engineering</i>, 30(2), 07024005.</li>
 
