@@ -590,10 +590,10 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
         (2, "ng_idf_hist_in",   "(c) NG-IDF Baseline Simulation"),
     ]
     chg_panels = [
-        (4, "prec_idf_chg_med",  "(d) PREC-IDF Change: Medium"),
-        (5, "ng_idf_chg_med",    "(e) NG-IDF Change: Medium"),
-        (7, "prec_idf_chg_high", "(f) PREC-IDF Change: High"),
-        (8, "ng_idf_chg_high",   "(g) NG-IDF Change: High"),
+        (4, "prec_idf_chg_med",  "(d) PREC-IDF Change: Moderate"),
+        (5, "ng_idf_chg_med",    "(e) NG-IDF Change: Moderate"),
+        (7, "prec_idf_chg_high", "(f) PREC-IDF Change: Severe"),
+        (8, "ng_idf_chg_high",   "(g) NG-IDF Change: Severe"),
     ]
     all_cols = [c for _, c, _ in mag_panels + chg_panels]
 
@@ -761,12 +761,12 @@ def generate_wrf_idf_figure(land_cover, spatial_scenario, duration, ari,
         return bbox.x0 + bbox.width / 2, bbox.y0 + bbox.height / 2
 
     xm, ym = cell_center(axf[3])
-    fig.text(xm, ym, "Medium Scenario (2033-2065):\nModerately Hotter and Drier",
+    fig.text(xm, ym, "Moderate Scenario (+1.72°C)",
              ha="center", va="center", fontsize=8, weight="bold",
              color="black", wrap=True)
 
     xh, yh = cell_center(axf[6])
-    fig.text(xh, yh, "High Scenario (2033-2065):\nSeverely Hotter and Drier",
+    fig.text(xh, yh, "Severe Scenario (+2.36°C)",
              ha="center", va="center", fontsize=8, weight="bold",
              color="black", wrap=True)
 
@@ -839,14 +839,14 @@ def generate_wrf_alt_figure(land_cover, spatial_scenario, duration, ari,
         (1, "alt_hist_ft", "(b) Baseline Simulated Mean ALT", None),
     ]
     chg_panels = [
-        (2, "alt_chg_med",  "(c) ALT Change: Medium", "medium"),
-        (3, "alt_chg_high", "(d) ALT Change: High",   "high"),
+        (2, "alt_chg_med",  "(c) ALT Change: Moderate", "medium"),
+        (3, "alt_chg_high", "(d) ALT Change: Severe",   "high"),
     ]
     all_cols = [c for _, c, _, _ in mag_panels + chg_panels]
 
     scen_text = {
-        "medium": "Medium Scenario (2033-2065):\nModerately Hotter and Drier",
-        "high":   "High Scenario (2033-2065):\nSeverely Hotter and Drier",
+        "medium": "Moderate Scenario (+1.72°C)",
+        "high":   "Severe Scenario (+2.36°C)",
     }
 
     data_crs = ccrs.PlateCarree()
@@ -1120,6 +1120,15 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
     ari = int(ari)
     base_dir = f"./spatial_map/{land_cover}/"
 
+    # Mid-century domain-mean annual air-temperature change (ΔMAAT, °C) for
+    # the four CESM-LE members used by this scenario.
+    member_dmaat = {
+        "LE2": 1.89,
+        "LE4": 2.11,
+        "LE7": 1.61,
+        "LE9": 2.61,
+    }
+
     # ---- Load data: one CSV per member, duration selects file, ari selects rows ----
     frames = []
     for m in members:
@@ -1383,7 +1392,7 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
     ax_txt.text(0.5, 0.66, "Mid-Century Ensemble Mean",
                 ha="center", va="center", fontsize=9, weight="bold",
                 transform=ax_txt.transAxes)
-    ax_txt.text(0.5, 0.52, "Average of %d model simulations" % len(members),
+    ax_txt.text(0.5, 0.52, "Average of %d model simulations (+2.05°C)" % len(members),
                 ha="center", va="center", fontsize=9, transform=ax_txt.transAxes)
     ax_txt.text(0.5, 0.40,
                 "Members 1-%d: %s" % (len(members),
@@ -1450,7 +1459,11 @@ def generate_cesm_mid_century_idf_figure(land_cover, spatial_scenario, duration,
                         bbox=dict(boxstyle="round,pad=0.15", fc="white",
                                   ec="none", alpha=0.7))
                 if i == 0:
-                    ax.set_title("Member %d (CESM-%s)" % (j + 1, m), fontsize=10)
+                    dmaat = member_dmaat.get(m)
+                    title = "Member %d (CESM-%s" % (j + 1, m)
+                    if dmaat is not None:
+                        title += ", %+.2f°C" % dmaat
+                    ax.set_title(title + ")", fontsize=10)
                 if j == 0:
                     ax.annotate(var, xy=(0.0, 0.5), xycoords="axes fraction",
                                 xytext=(-38, 0), textcoords="offset points",
@@ -1550,6 +1563,14 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
 
 
     members = list(members)
+    # Near-term domain-mean annual air-temperature change (ΔMAAT, °C) for
+    # the four CESM-LE members used by this scenario.
+    member_dmaat = {
+        "LE2": 1.89,
+        "LE4": 2.11,
+        "LE7": 1.61,
+        "LE9": 2.61,
+    }
     ari = int(ari)
     base_dir = f"./spatial_map/{land_cover}/"
 
@@ -1817,7 +1838,7 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
     ax_txt.text(0.5, 0.66, "Near-Term Ensemble Mean",
                 ha="center", va="center", fontsize=9, weight="bold",
                 transform=ax_txt.transAxes)
-    ax_txt.text(0.5, 0.52, "Average of %d model simulations" % len(members),
+    ax_txt.text(0.5, 0.52, "Average of %d model simulations (+1.86°C)" % len(members),
                 ha="center", va="center", fontsize=9, transform=ax_txt.transAxes)
     ax_txt.text(0.5, 0.40,
                 "Members 1-%d: %s" % (len(members),
@@ -1884,7 +1905,11 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
                         bbox=dict(boxstyle="round,pad=0.15", fc="white",
                                   ec="none", alpha=0.7))
                 if i == 0:
-                    ax.set_title("Member %d (CESM-%s)" % (j + 1, m), fontsize=10)
+                    dmaat = member_dmaat.get(m)
+                    title = "Member %d (CESM-%s" % (j + 1, m)
+                    if dmaat is not None:
+                        title += ", %+.2f°C" % dmaat
+                    ax.set_title(title + ")", fontsize=10)
                 if j == 0:
                     ax.annotate(var, xy=(0.0, 0.5), xycoords="axes fraction",
                                 xytext=(-38, 0), textcoords="offset points",
@@ -1994,6 +2019,14 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
     LATLON_DEC = 5          # rounding used to build the merge key
 
     members = list(members)
+    # Near-term domain-mean annual air-temperature change (ΔMAAT, °C) for
+    # the four CESM-LE members used by this scenario.
+    member_dmaat = {
+        "LE2": 1.89,
+        "LE4": 2.11,
+        "LE7": 1.61,
+        "LE9": 2.61,
+    }
     base_dir = f"./spatial_map/{land_cover}/"
 
     # ---- Load data: one ALD CSV per member ----
@@ -2267,8 +2300,11 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
     letters = "abcdefghijklmnop"
     for j, m in enumerate(members):
         ax = maxes[j]
-        draw(ax, "alt_chg_%s" % m,
-             "(%s) Member %d (CESM-%s) Change" % (letters[4 + j], j + 1, m),
+        dmaat = member_dmaat.get(m)
+        title = "(%s) Member %d (CESM-%s" % (letters[4 + j], j + 1, m)
+        if dmaat is not None:
+            title += ", %+.2f°C" % dmaat
+        draw(ax, "alt_chg_%s" % m, title + ") Change",
              chg_cmap, chg_vmin, chg_vmax)
         ax.text(0.97, 0.04, "own baseline", transform=ax.transAxes,
                 ha="right", va="bottom", fontsize=6, zorder=7,
@@ -2319,8 +2355,11 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
                                   shading="auto", zorder=3, rasterized=True)
             add_sites(ax)
             add_grid(ax)
-            ax.set_title("(%s) Member %d (CESM-%s) Change"
-                         % (letters[j], j + 1, m), fontsize=8)
+            dmaat = member_dmaat.get(m)
+            title = "(%s) Member %d (CESM-%s" % (letters[j], j + 1, m)
+            if dmaat is not None:
+                title += ", %+.2f°C" % dmaat
+            ax.set_title(title + ") Change", fontsize=8)
 
         cbm = mfig.colorbar(mmesh, ax=mm_axes, orientation="horizontal",
                             location="bottom", fraction=0.035, pad=0.04,
@@ -2411,6 +2450,15 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
 
     members = list(members)
     base_dir = f"./spatial_map/{land_cover}/"
+
+    # Mid-century domain-mean annual air-temperature change (ΔMAAT, °C) for
+    # the four CESM-LE members used by this scenario.
+    member_dmaat = {
+        "LE2": 1.89,
+        "LE4": 2.11,
+        "LE7": 1.61,
+        "LE9": 2.61,
+    }
 
     # ---- Load data: one ALD CSV per member ----
     frames = []
@@ -2682,8 +2730,12 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
     letters = "abcdefghijklmnop"
     for j, m in enumerate(members):
         ax = maxes[j]
+        dmaat = member_dmaat.get(m)
+        title = "(%s) Member %d (CESM-%s" % (letters[4 + j], j + 1, m)
+        if dmaat is not None:
+            title += ", %+.2f°C" % dmaat
         draw(ax, "alt_chg_%s" % m,
-             "(%s) Member %d (CESM-%s) Change" % (letters[4 + j], j + 1, m),
+             title + ") Change",
              chg_cmap, chg_vmin, chg_vmax)
         ax.text(0.97, 0.04, "own baseline", transform=ax.transAxes,
                 ha="right", va="bottom", fontsize=6, zorder=7,
@@ -2734,8 +2786,11 @@ def generate_cesm_mid_century_alt_figure(land_cover, spatial_scenario, duration,
                                   shading="auto", zorder=3, rasterized=True)
             add_sites(ax)
             add_grid(ax)
-            ax.set_title("(%s) Member %d (CESM-%s) Change"
-                         % (letters[j], j + 1, m), fontsize=8)
+            dmaat = member_dmaat.get(m)
+            title = "(%s) Member %d (CESM-%s" % (letters[j], j + 1, m)
+            if dmaat is not None:
+                title += ", %+.2f°C" % dmaat
+            ax.set_title(title + ") Change", fontsize=8)
 
         cbm = mfig.colorbar(mmesh, ax=mm_axes, orientation="horizontal",
                             location="bottom", fraction=0.035, pad=0.04,

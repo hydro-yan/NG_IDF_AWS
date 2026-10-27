@@ -388,9 +388,9 @@ def NG_IDF():
             # Human-readable label for the scenario, shown in the results page
             scenario_label_map = {
                 "daymet": "Historical Weather (Daymet)",
-                "wrf": "Historical Intensification (2034–2065)",
-                "cesm_near": "Near-Term Design Lifespan (2034-2049)",
-                "cesm_mid": "Mid-Century Design Lifespan (2034–2065)",
+                "wrf": "Intensified Historical Storms [Mid-Century Stress Test]. Baseline Shift: +1.72°C to +2.36°C (2 Bounding Runs)",
+                "cesm_near": "Near-Term Sensitivity Stress Test (2034–2049). Ensemble Shift: +1.51°C to +2.45°C (Mean: +1.86°C · 4 Simulations)",
+                "cesm_mid": "Mid-Century Sensitivity Stress Test (2034–2065). Ensemble Shift: +1.61°C to +2.61°C (Mean: +2.05°C · 4 Simulations)",
             }
             spatial_scenario_label = scenario_label_map.get(spatial_scenario, spatial_scenario)
 
