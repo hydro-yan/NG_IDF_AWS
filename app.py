@@ -26,6 +26,7 @@ from gen_spatial_figures import (generate_daymet_idf_figure, generate_daymet_alt
 
 
 from concurrent.futures import ProcessPoolExecutor
+from functools import lru_cache
 import time
 
 
@@ -204,6 +205,53 @@ SPATIAL_STUDY_BOUNDS = {
     "east": float(LULC_GRID["longitude"].max()),
 }
 MAX_GRIDCELL_DISTANCE_KM = 1.5
+ATLAS14_RETURN_PERIODS = (2, 5, 10, 25, 50, 100, 500)
+
+
+@lru_cache(maxsize=1)
+def load_atlas14_data():
+    """Load the NOAA Atlas 14 point grid and all available IDF values in inches."""
+    atlas_directory = os.path.join(app.root_path, "spatial_map", "atlas_14")
+    atlas_data = {}
+    coordinates = None
+
+    for duration in (24, 48, 72):
+        duration_values = []
+        for return_period in ATLAS14_RETURN_PERIODS:
+            atlas_path = os.path.join(
+                atlas_directory,
+                f"atlas_14_return_{duration}h_{return_period}yr.csv",
+            )
+            atlas_frame = pd.read_csv(atlas_path)
+            current_coordinates = atlas_frame[["lat", "lon"]].to_numpy(dtype=float)
+            if coordinates is None:
+                coordinates = current_coordinates
+            elif not np.array_equal(coordinates, current_coordinates):
+                raise ValueError("NOAA Atlas 14 files do not share a common coordinate grid.")
+            duration_values.append(atlas_frame["prec_idf_in"].to_numpy(dtype=float))
+        atlas_data[f"{duration}h"] = np.asarray(duration_values, dtype=float)
+
+    return coordinates, atlas_data
+
+
+def lookup_atlas14_idf(latitude, longitude):
+    """Return NOAA Atlas 14 values at the nearest Atlas grid point for a site."""
+    latitude = float(latitude)
+    longitude = float(longitude)
+    coordinates, atlas_data = load_atlas14_data()
+
+    # Use the same latitude-adjusted distance approximation as the point-mode
+    # grid-cell lookup so the nearest reference location is geographically valid.
+    lat_scale_km = 111.32
+    lon_scale_km = 111.32 * np.cos(np.deg2rad(latitude))
+    delta_lat = (coordinates[:, 0] - latitude) * lat_scale_km
+    delta_lon = (coordinates[:, 1] - longitude) * lon_scale_km
+    nearest_index = int(np.argmin(delta_lat ** 2 + delta_lon ** 2))
+
+    return {
+        duration: values[:, nearest_index].copy()
+        for duration, values in atlas_data.items()
+    }
 
 
 @app.context_processor
@@ -648,6 +696,9 @@ def NG_IDF():
 
         lat = input_data['value1']
         lon = input_data['value2']
+        # The point-mode form displays canopy height in feet. Convert it back
+        # to metres before passing the input data to any DHSVM workflow.
+        input_data['value4'] *= 0.3048
         scenario = request.form.get("scenario", "historical")
 
         # Also enforce the model boundary server-side so a manually crafted
@@ -700,7 +751,12 @@ def NG_IDF():
             }
 
             # Run historical Daymet workflow
-            results = get_NG_IDF(input_data, forcing_type="Daymet")
+            atlas14_idf = lookup_atlas14_idf(lat, lon)
+            results = get_NG_IDF(
+                input_data,
+                forcing_type="Daymet",
+                atlas14_idf=atlas14_idf,
+            )
 
             data = structure_results(results)
             
@@ -716,13 +772,15 @@ def NG_IDF():
                     results['am_results'], 
                     durations, 
                     fig_am_p_file, 
-                    fig_am_w_file
+                    fig_am_w_file,
+                    display_inches=True,
                 )
                 
                 # Generate SWE time series plot
                 fig_swe = generate_swe_timeseries_plot(
                     results['am_results']['swe'],
-                    fig_swe_file
+                    fig_swe_file,
+                    display_inches=True,
                 )
                 
                 # Add time series figures to data
@@ -735,6 +793,7 @@ def NG_IDF():
                                    lat=lat,
                                    lon=lon,
                                    query_parameters=query_parameters,
+                                   atlas14_idf=atlas14_idf,
                                    **data) # Unpack all keys in data to template variables
 
         elif scenario == "future_wrf":
@@ -1227,7 +1286,7 @@ def NG_IDF():
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # read the values and start processing 
-def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None):
+def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=None):
     """
     Generate NG-IDF curves for a given location and forcing type.
     
@@ -1240,6 +1299,9 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None):
     year_range : tuple or None
         Optional (start_year, end_year) to filter data. If None, uses full range.
         Example: (2006, 2021) for 16-year historical period
+    atlas14_idf : dict or None
+        NOAA Atlas 14 values in inches, keyed by duration (e.g., ``"24h"``).
+        This optional input is used only for the historical point-mode figures.
     
     Returns:
     --------
@@ -1481,7 +1543,13 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None):
         for dur in durations:
             fig_files_dict[f'fig_{dur}'] = os.path.join(td, f'fig_{dur}.png')
         
-        fig_codes = generate_figs_multiple(idf_data, fig_files_dict, durations)
+        fig_codes = generate_figs_multiple(
+            idf_data,
+            fig_files_dict,
+            durations,
+            atlas14_idf=atlas14_idf,
+            display_inches=atlas14_idf is not None,
+        )
         
         # Return dictionary with all data
         return {

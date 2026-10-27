@@ -32,7 +32,8 @@ def fig_to_base64(fig):
     return base64.b64encode(img.getvalue())
 
 
-def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label):
+def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label,
+                        atlas14_values=None, display_inches=False):
     """
     Generate a single IDF figure for a given duration
     
@@ -46,6 +47,12 @@ def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label):
         Output file path
     duration_label : str
         Label for the duration (e.g., "24-hour", "1-hour")
+    atlas14_values : np.array or None
+        Seven NOAA Atlas 14 magnitudes in inches at 2, 5, 10, 25, 50, 100,
+        and 500-year return periods. When provided, they are overlaid as a
+        reference series.
+    display_inches : bool
+        Convert P-IDF and NG-IDF curves from millimetres to inches for display.
     
     Returns:
     --------
@@ -59,13 +66,22 @@ def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label):
     ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
     ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
     
-    # P-IDF first row is estimate only (no CI)
-    P_curve = P_IDF[0, :]
-    NG_curve = NG_IDF[0, :]
+    # P-IDF first row is estimate only (no CI).
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    unit_label = "in" if display_inches else "mm"
+    P_curve = P_IDF[0, :] * unit_factor
+    NG_curve = NG_IDF[0, :] * unit_factor
+    atlas14_values = (
+        np.asarray(atlas14_values, dtype=float)
+        if atlas14_values is not None else None
+    )
     
     # y-limits across both curves
-    ymin = min(np.nanmin(P_curve), np.nanmin(NG_curve))
-    ymax = max(np.nanmax(P_curve), np.nanmax(NG_curve))
+    plotted_values = [P_curve, NG_curve]
+    if atlas14_values is not None:
+        plotted_values.append(atlas14_values)
+    ymin = min(np.nanmin(values) for values in plotted_values)
+    ymax = max(np.nanmax(values) for values in plotted_values)
     margin = 0.05 * (ymax - ymin)
     ymin -= margin
     ymax += margin
@@ -73,13 +89,17 @@ def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label):
     plt.figure(figsize=(6, 5))
     
     # Plot using probabilities but log-scale defined by ARI ticks
-    plt.semilogx(1.0 / (1.0 - probs), P_curve, color='blue', lw=2, label='PREC-IDF')
+    plt.semilogx(1.0 / (1.0 - probs), P_curve, color='blue', lw=2,
+                 label='PREC-IDF (Daymet)')
     plt.semilogx(1.0 / (1.0 - probs), NG_curve, color='pink', lw=2, label='NG-IDF')
+    if atlas14_values is not None:
+        plt.semilogx(ari_ticks, atlas14_values, color='#d95f02', lw=1.5,
+                     marker='o', markersize=4, label='PREC-IDF (Atlas 14)')
     
     # Set x-ticks to ARI values
     plt.xticks(ari_ticks, ari_tick_labels)
     plt.xlabel('Average Recurrence Interval (years)', fontsize=10, fontweight='bold')
-    plt.ylabel(f'Magnitude (mm) - {duration_label}', fontsize=10, fontweight='bold')
+    plt.ylabel(f'Magnitude ({unit_label}) - {duration_label}', fontsize=10, fontweight='bold')
     plt.grid(True, which='both', linestyle='--', alpha=0.5)
     plt.ylim(ymin, ymax)
     plt.legend(loc='upper left')
@@ -108,7 +128,8 @@ def generate_fig(P_IDF_24h, P_IDF_48h, P_IDF_72h,
     return fig24_code, fig48_code, fig72_code
 
 
-def generate_figs_multiple(idf_data_dict, fig_files_dict, durations):
+def generate_figs_multiple(idf_data_dict, fig_files_dict, durations,
+                           atlas14_idf=None, display_inches=False):
     """
     Generate multiple IDF figures for different durations
     
@@ -120,6 +141,10 @@ def generate_figs_multiple(idf_data_dict, fig_files_dict, durations):
         Dictionary with keys like 'fig_1h', 'fig_3h', etc.
     durations : list
         List of duration strings like ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
+    atlas14_idf : dict or None
+        Optional NOAA Atlas 14 values in inches keyed by duration.
+    display_inches : bool
+        Whether to display the P-IDF and NG-IDF curves in inches.
     
     Returns:
     --------
@@ -138,14 +163,17 @@ def generate_figs_multiple(idf_data_dict, fig_files_dict, durations):
                 idf_data_dict[P_key],
                 idf_data_dict[NG_key],
                 fig_files_dict[fig_key],
-                f"{dur.replace('h', '-hour')}"
+                f"{dur.replace('h', '-hour')}",
+                atlas14_values=(atlas14_idf or {}).get(dur),
+                display_inches=display_inches,
             )
             fig_codes[fig_key] = fig_code
     
     return fig_codes
 
 
-def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_file_w):
+def generate_am_timeseries_plots(am_results, durations, fig_file_combined,
+                                 fig_file_w, display_inches=False):
     """
     Generate combined time series plot for Annual Maximum P and W
     
@@ -159,6 +187,9 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_f
         Output file path for combined P and W time series
     fig_file_w : str
         Not used (kept for backward compatibility)
+    display_inches : bool
+        Convert annual maximum precipitation and runoff values from millimetres
+        to inches for display.
     
     Returns:
     --------
@@ -175,10 +206,12 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_f
         am_w = am_results[dur]['W_veg']
         
         years_p = am_p[:, 0].astype(int)
-        values_p = am_p[:, 3]
+        unit_factor = 1.0 / 25.4 if display_inches else 1.0
+        unit_label = "in" if display_inches else "mm"
+        values_p = am_p[:, 3] * unit_factor
         
         years_w = am_w[:, 0].astype(int)
-        values_w = am_w[:, 3]
+        values_w = am_w[:, 3] * unit_factor
         
         # Plot P in blue (same as PREC-IDF)
         axes[idx].plot(years_p, values_p, 'o-', color='blue', linewidth=2, markersize=4, label='AM P')
@@ -186,7 +219,7 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_f
         # Plot W in pink (same as NG-IDF)
         axes[idx].plot(years_w, values_w, 's-', color='pink', linewidth=2, markersize=4, label='AM W')
         axes[idx].set_xlabel('Water Year', fontsize=10, fontweight='bold')
-        axes[idx].set_ylabel(f'Magnitude (mm) - {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+        axes[idx].set_ylabel(f'Magnitude ({unit_label}) - {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         #axes[idx].set_title(f'{dur.replace("h", "-hour")} Duration', fontsize=11, fontweight='bold')
         axes[idx].grid(True, alpha=0.3)
         axes[idx].tick_params(axis='x', rotation=45)
@@ -203,7 +236,7 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined, fig_f
     return encoded, encoded
 
 
-def generate_swe_timeseries_plot(am_swe, fig_file):
+def generate_swe_timeseries_plot(am_swe, fig_file, display_inches=False):
     """
     Generate time series plot for Annual Maximum SWE
     
@@ -213,6 +246,9 @@ def generate_swe_timeseries_plot(am_swe, fig_file):
         Array with shape (N, 4) containing [year, month, day, swe_value]
     fig_file : str
         Output file path
+    display_inches : bool
+        Convert annual maximum snow water equivalent values from millimetres to
+        inches for display.
     
     Returns:
     --------
@@ -220,12 +256,14 @@ def generate_swe_timeseries_plot(am_swe, fig_file):
     """
     
     years = am_swe[:, 0].astype(int)
-    values = am_swe[:, 3]
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    unit_label = "in" if display_inches else "mm"
+    values = am_swe[:, 3] * unit_factor
     
     plt.figure(figsize=(10, 4))
     plt.plot(years, values, 'o-', color='purple', linewidth=2, markersize=5)
     plt.xlabel('Water Year', fontsize=10, fontweight='bold')
-    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=10, fontweight='bold')
+    plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=10, fontweight='bold')
     #plt.title('Annual Maximum SWE Time Series', fontsize=12, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)

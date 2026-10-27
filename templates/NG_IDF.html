@@ -744,7 +744,7 @@
 
     function applyGridcellDefaults(gridcell) {
       document.querySelector('input[name="Value3"]').value = gridcell.lai;
-      document.querySelector('input[name="Value4"]').value = gridcell.height;
+      document.querySelector('input[name="Value4"]').value = (gridcell.height * 3.28084).toFixed(2);
       const advancedDefaults = {
         Value5: "1",
         Value7: "0.001",
@@ -928,7 +928,7 @@
         <tr><td>Latitude (°):</td><td><input type="text" name="Value1" placeholder="e.g. 64.76"></td></tr>
         <tr><td>Longitude (°):</td><td><input type="text" name="Value2" placeholder="e.g. -147.22"></td></tr>
         <tr><td>Leaf Area Index (LAI):</td><td><input type="text" name="Value3" placeholder="0 for open land"></td></tr>
-        <tr><td>Canopy Height (m):</td><td><input type="text" name="Value4" placeholder="0 for open land"></td></tr>
+        <tr><td>Canopy Height (ft):</td><td><input type="text" name="Value4" placeholder="0 for open land"></td></tr>
       </table>
 
       <h3 style="margin:18px 0 4px; color:#b34b00; font-size:1rem;">Land Cover Type</h3>
