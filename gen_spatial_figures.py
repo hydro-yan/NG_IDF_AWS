@@ -1566,10 +1566,10 @@ def generate_cesm_near_term_idf_figure(land_cover, spatial_scenario, duration, a
     # Near-term domain-mean annual air-temperature change (ΔMAAT, °C) for
     # the four CESM-LE members used by this scenario.
     member_dmaat = {
-        "LE2": 1.89,
-        "LE4": 2.11,
-        "LE7": 1.61,
-        "LE9": 2.61,
+        "LE2": 1.51,
+        "LE4": 1.81,
+        "LE7": 1.69,
+        "LE9": 2.45,
     }
     ari = int(ari)
     base_dir = f"./spatial_map/{land_cover}/"
@@ -2022,10 +2022,10 @@ def generate_cesm_near_term_alt_figure(land_cover, spatial_scenario, duration, a
     # Near-term domain-mean annual air-temperature change (ΔMAAT, °C) for
     # the four CESM-LE members used by this scenario.
     member_dmaat = {
-        "LE2": 1.89,
-        "LE4": 2.11,
-        "LE7": 1.61,
-        "LE9": 2.61,
+        "LE2": 1.51,
+        "LE4": 1.81,
+        "LE7": 1.69,
+        "LE9": 2.45,
     }
     base_dir = f"./spatial_map/{land_cover}/"
 
