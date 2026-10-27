@@ -675,6 +675,30 @@ def NG_IDF():
 
         if scenario == "historical":
 
+            land_cover_labels = {
+                "1": "Open",
+                "2": "Evergreen Forest",
+                "3": "Deciduous Forest",
+                "4": "Mixed Forest",
+                "5": "Crop",
+                "6": "Grassland",
+                "7": "Shrub",
+                "8": "Pasture",
+                "9": "Wetland",
+                "10": "Moss",
+            }
+            # Preserve the exact point-mode values submitted by the user for the
+            # results summary. These are intentionally separate from input_data,
+            # which is used and may be transformed by the model workflow.
+            query_parameters = {
+                "land_cover": land_cover_labels.get(
+                    request.form.get("Value6", "").strip(),
+                    "Unspecified",
+                ),
+                "lai": request.form.get("Value3", "").strip(),
+                "tree_height": request.form.get("Value4", "").strip(),
+            }
+
             # Run historical Daymet workflow
             results = get_NG_IDF(input_data, forcing_type="Daymet")
 
@@ -708,7 +732,9 @@ def NG_IDF():
 
             # Render historical results using existing out.html
             return render_template("out.html",
-                                   lat=lat, lon=lon,
+                                   lat=lat,
+                                   lon=lon,
+                                   query_parameters=query_parameters,
                                    **data) # Unpack all keys in data to template variables
 
         elif scenario == "future_wrf":

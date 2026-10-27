@@ -24,7 +24,7 @@
 
   /* Header Banner */
   header {
-    background: linear-gradient(90deg, #f68b1f, #c46000);
+    background: linear-gradient(90deg, #2e7d32, #1b4d3e);
     color: white;
     padding: 10px 20px;
   }
@@ -51,7 +51,7 @@
   }
 
   h2 {
-    color: #b34b00;
+    color: #1b4d3e;
     font-size: 13px;
     border-bottom: 2px solid #e3eaf5;
     padding-bottom: 4px;
@@ -81,12 +81,12 @@
     white-space: nowrap;
   }
   th {
-    background-color: #f68b1f;
+    background-color: #2e7d32;
     color: white;
     font-weight: 600;
   }
   tr:nth-child(even) { background-color: #f8fafc; }
-  tr:hover { background-color: #fff1e0; }
+  tr:hover { background-color: #eef6ee; }
 
   .plots {
     display: flex;
@@ -200,14 +200,126 @@
     padding: 10px;
   }
 
+  .results-intro {
+    max-width: 1200px;
+    margin: 20px auto 0 auto;
+    padding: 0 20px;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #1b4d3e;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .back-link:hover { text-decoration: underline; }
+
+  .query-parameters {
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .summary-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .query-parameters {
+    flex: 0 1 430px;
+  }
+
+  .site-location-map {
+    flex: 1 1 550px;
+    max-width: 650px;
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  #map {
+    height: 245px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .query-parameters h2 {
+    margin-top: 0;
+  }
+
+  .site-location-map h2 {
+    margin-top: 0;
+  }
+
+  .meta-table {
+    max-width: 850px;
+    margin: 0 auto;
+    font-size: 12px;
+  }
+
+  .meta-table th, .meta-table td {
+    text-align: left;
+    padding: 6px 10px;
+  }
+
+  .meta-table th {
+    background: #eef6ee;
+    color: #1b4d3e;
+    width: 40%;
+  }
+
+  @media (max-width: 800px) {
+    .summary-row {
+      flex-direction: column;
+    }
+
+    .query-parameters,
+    .site-location-map {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .note-box {
+    background: #eef6ee;
+    border: 1px solid #cfe3cf;
+    border-left: 4px solid #2e7d32;
+    color: #1b4d3e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .note-box p {
+    margin: 0 0 8px 0;
+  }
+
+  .note-box ul {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+  }
+
   .divider {
-    border-top: 3px solid #f68b1f;
+    border-top: 3px solid #2e7d32;
     margin: 30px 0 20px 0;
   }
 
   .section-title {
     text-align: center;
-    color: #b34b00;
+    color: #1b4d3e;
     font-size: 16px;
     font-weight: 700;
     margin: 20px 0 15px 0;
@@ -241,19 +353,42 @@
   </div>
 </header>
 
+<div class="results-intro">
+  <a class="back-link" href="/NG_IDF{% if request.args.get('auth_token') %}?auth_token={{ request.args.get('auth_token') }}{% endif %}">&larr; Back to NG-IDF Tool</a>
+  <div class="summary-row">
+    <div class="query-parameters">
+      <h2>Query Parameters</h2>
+      <table class="meta-table">
+        <tr><th>Scenario</th><td>Historical weather condition (Daymet): 1990-2021</td></tr>
+        <tr><th>Latitude</th><td>{{ '%.5f'|format(lat) }}&deg;</td></tr>
+        <tr><th>Longitude</th><td>{{ '%.5f'|format(lon) }}&deg;</td></tr>
+        <tr><th>Land Cover</th><td>{{ query_parameters.land_cover }}</td></tr>
+        <tr><th>Leaf Area Index (LAI)</th><td>{{ query_parameters.lai }}</td></tr>
+        <tr><th>Canopy Height</th><td>{{ query_parameters.tree_height }} m</td></tr>
+      </table>
+    </div>
+    <div class="site-location-map">
+      <h2>Site Location Map</h2>
+      <div id="map"></div>
+    </div>
+  </div>
+  <div class="note-box">
+    <p><strong>Historical Weather Results:</strong> These site-specific design values are derived from the historical Daymet weather record selected for this analysis. The figures summarize the fitted frequency curves and the annual events used to develop them; the tables below provide the corresponding numerical values.</p>
+    <strong>How to use these outputs:</strong>
+    <ul>
+      <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
+      <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
+      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+    </ul>
+  </div>
+</div>
+
 <!-- ========================================== -->
 <!-- SECTION 1: FIGURES -->
 <!-- ========================================== -->
 
 <div class="section-title">📊 Visualization Results</div>
-
-<!-- Site Location Map -->
-<div class="am-tables">
-  <div class="section am-table">
-    <h2>Site Location Map</h2>
-    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
-  </div>
-</div>
 
 <!-- NG-IDF Curve Plots (3 durations) -->
 <div class="plots">
@@ -493,8 +628,6 @@
     </table>
   </div>
 </div>
-
-<p class="note">Generated by NG-IDF Tool | Daymet Historical Weather Data (1989-2021)</p>
 
 <footer>
   <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory">
