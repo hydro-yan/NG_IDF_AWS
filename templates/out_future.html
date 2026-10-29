@@ -474,10 +474,15 @@
     <ul>
       <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
-      <li><strong>Impact Summary</strong> compares the medium and high emissions NG-IDF values with the historical baseline (difference in inches and percent change).</li>
+      <li><strong>Impact Summary</strong> compares the Moderate (+1.72°C) and Severe (+2.36°C) scenarios NG-IDF values with the historical baseline (difference in inches and percent change).</li>
       <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
+    <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline simulation is still a model result, so the change from the historical baseline to the warmer scenario is the transferable result. Apply that change to the observed values on the Historical Weather (Daymet) page:</p>
+    <ul>
+      <li><strong>IDF &mdash; percent change</strong> (e.g., +20%) &rarr; Multiply: if the Historical Weather (Daymet) NG-IDF value is 2.0 in, then 2.0 in &times; (1 + 20%) = 2.4 in. For example, if the Moderate (+1.72°C) scenario NG-IDF is 20% higher than the historical baseline NG-IDF, multiply the Daymet NG-IDF value by 1.20.</li>
+    </ul>
+    <p style="margin-top:10px;"><strong>Two stress tests.</strong> <em>Moderate</em> (+1.72°C) and <em>Severe</em> (+2.36°C) apply different amounts of warming. Neither is more likely; they bracket a plausible range. Use <em>Moderate</em> as a central estimate and check <em>Severe</em> for anything long-lived or costly to fail.</p>
   </div>
 </div>
 
@@ -489,13 +494,13 @@
 
 <!-- PREC-IDF Multi-Scenario Comparison -->
 <div class="multi-plot">
-  <h2>PREC-IDF Curves: Scenario Comparison (Historical vs Medium vs High)</h2>
+  <h2>PREC-IDF Curves: Scenario Comparison (Historical vs Moderate (+1.72°C) vs Severe (+2.36°C))</h2>
   <img class="plot-img" src="{{ fig_prec_comp }}" alt="PREC-IDF Multi-Scenario Comparison">
 </div>
 
 <!-- NG-IDF Multi-Scenario Comparison -->
 <div class="multi-plot">
-  <h2>NG-IDF Curves: Scenario Comparison (Historical vs Medium vs High)</h2>
+  <h2>NG-IDF Curves: Scenario Comparison (Historical vs Moderate (+1.72°C) vs Severe (+2.36°C))</h2>
   <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Multi-Scenario Comparison">
 </div>
 
@@ -538,8 +543,8 @@
           <tr>
             <th>ARI (yrs)</th>
             <th>Historical</th>
-            <th colspan="3">Medium Emissions</th>
-            <th colspan="3">High Emissions</th>
+            <th colspan="3">Moderate (+1.72°C)</th>
+            <th colspan="3">Severe (+2.36°C)</th>
           </tr>
           <tr>
             <th></th>
@@ -598,8 +603,8 @@
 <div class="tab-container">
   <div class="tabs">
     <button class="tab-btn active" onclick="openTab(event, 'Historical')">Historical Baseline</button>
-    <button class="tab-btn" onclick="openTab(event, 'Medium')">Future Medium Emissions</button>
-    <button class="tab-btn" onclick="openTab(event, 'High')">Future High Emissions</button>
+    <button class="tab-btn" onclick="openTab(event, 'Medium')">Moderate (+1.72°C)</button>
+    <button class="tab-btn" onclick="openTab(event, 'High')">Severe (+2.36°C)</button>
   </div>
 
   <!-- Historical Tab -->

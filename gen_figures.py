@@ -12,6 +12,14 @@ def npnan(x,y):
     array_2d[:] = np.nan
     return array_2d
 
+def style_grid(ax, minor=False):
+    """Draw a clearly visible dashed grid behind the data on the given axes."""
+    ax.set_axisbelow(True)
+    ax.grid(True, which='major', color='#6e6e6e', linestyle='--', linewidth=0.8, alpha=0.75)
+    if minor:
+        ax.grid(True, which='minor', color='#a0a0a0', linestyle=':', linewidth=0.5, alpha=0.6)
+
+
 def read_idf(file, data):
     # file is the IDF path
     # data is a np array (3x51)
@@ -100,7 +108,7 @@ def generate_fig_single(P_IDF, NG_IDF, fig_file, duration_label,
     plt.xticks(ari_ticks, ari_tick_labels)
     plt.xlabel('Average Recurrence Interval (years)', fontsize=10, fontweight='bold')
     plt.ylabel(f'Magnitude ({unit_label}) - {duration_label}', fontsize=10, fontweight='bold')
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    style_grid(plt.gca(), minor=True)
     plt.ylim(ymin, ymax)
     plt.legend(loc='upper left')
     #plt.title(f'IDF Curves - {duration_label}')
@@ -221,7 +229,7 @@ def generate_am_timeseries_plots(am_results, durations, fig_file_combined,
         axes[idx].set_xlabel('Water Year', fontsize=10, fontweight='bold')
         axes[idx].set_ylabel(f'Magnitude ({unit_label}) - {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         #axes[idx].set_title(f'{dur.replace("h", "-hour")} Duration', fontsize=11, fontweight='bold')
-        axes[idx].grid(True, alpha=0.3)
+        style_grid(axes[idx])
         axes[idx].tick_params(axis='x', rotation=45)
         axes[idx].legend(loc='best', fontsize=9)
     
@@ -265,7 +273,7 @@ def generate_swe_timeseries_plot(am_swe, fig_file, display_inches=False):
     plt.xlabel('Water Year', fontsize=10, fontweight='bold')
     plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=10, fontweight='bold')
     #plt.title('Annual Maximum SWE Time Series', fontsize=12, fontweight='bold')
-    plt.grid(True, alpha=0.3)
+    style_grid(plt.gca())
     plt.xticks(rotation=45)
     plt.tight_layout()
     
@@ -286,9 +294,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     hist_data : dict
         Historical scenario IDF data
     med_data : dict
-        Medium emissions scenario IDF data
+        Moderate (+1.72 C) scenario IDF data
     high_data : dict
-        High emissions scenario IDF data
+        Severe (+2.36 C) scenario IDF data
     durations : list
         List of duration strings like ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
     fig_file_prec : str
@@ -325,15 +333,15 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         high_curve = high_data[f'P_{dur}'][0, :] * unit_factor
         
         axes_prec[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_prec[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_prec[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='High')
+        axes_prec[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
+        axes_prec[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
         axes_prec[idx].set_xticks(ari_ticks)
         axes_prec[idx].set_xticklabels(ari_tick_labels)
         axes_prec[idx].set_xlabel('ARI (years)', fontsize=9)
         axes_prec[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_prec[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_prec[idx].grid(True, alpha=0.3)
+        style_grid(axes_prec[idx])
         axes_prec[idx].legend(loc='best', fontsize=8)
     
     # Hide the last subplot if we have 7 durations
@@ -364,15 +372,15 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         high_curve = high_data[f'NG_{dur}'][0, :] * unit_factor
         
         axes_ng[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_ng[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_ng[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='High')
+        axes_ng[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
+        axes_ng[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
         axes_ng[idx].set_xticks(ari_ticks)
         axes_ng[idx].set_xticklabels(ari_tick_labels)
         axes_ng[idx].set_xlabel('ARI (years)', fontsize=9)
         axes_ng[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_ng[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_ng[idx].grid(True, alpha=0.3)
+        style_grid(axes_ng[idx])
         axes_ng[idx].legend(loc='best', fontsize=8)
     
     # Hide the last subplot if we have 7 durations
@@ -624,9 +632,9 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
     hist_am : dict
         Historical AM results
     med_am : dict
-        Medium emissions AM results
+        Moderate (+1.72 C) scenario AM results
     high_am : dict
-        High emissions AM results
+        Severe (+2.36 C) scenario AM results
     durations : list
         List of duration strings
     fig_file_p : str
@@ -655,13 +663,13 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         high_p = high_am[dur]['P']
         
         axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='High')
+        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
+        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
         axes_p[idx].set_xlabel('Water Year', fontsize=9)
         axes_p[idx].set_ylabel(f'AM Precipitation ({unit_label})', fontsize=9)
         axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_p[idx].grid(True, alpha=0.3)
+        style_grid(axes_p[idx])
         axes_p[idx].tick_params(axis='x', rotation=45)
         axes_p[idx].legend(loc='best', fontsize=8)
     
@@ -693,13 +701,13 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         high_w = high_am[dur]['W_veg']
         
         axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='High')
+        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
+        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
         axes_w[idx].set_xlabel('Water Year', fontsize=9)
         axes_w[idx].set_ylabel(f'AM Water for Runoff ({unit_label})', fontsize=9)
         axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_w[idx].grid(True, alpha=0.3)
+        style_grid(axes_w[idx])
         axes_w[idx].tick_params(axis='x', rotation=45)
         axes_w[idx].legend(loc='best', fontsize=8)
     
@@ -733,9 +741,9 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file, disp
     hist_swe : np.array
         Historical SWE data
     med_swe : np.array
-        Medium emissions SWE data
+        Moderate (+1.72 C) scenario SWE data
     high_swe : np.array
-        High emissions SWE data
+        Severe (+2.36 C) scenario SWE data
     fig_file : str
         Output file path
     
@@ -750,13 +758,13 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file, disp
     plt.figure(figsize=(8, 4))
     
     plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=4, label='Historical')
-    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=4, label='Medium')
-    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=4, label='High')
+    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=4, label='Moderate (+1.72\u00b0C)')
+    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=4, label='Severe (+2.36\u00b0C)')
     
     plt.xlabel('Water Year', fontsize=11)
     plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=11)
     #plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
-    plt.grid(True, alpha=0.3)
+    style_grid(plt.gca())
     plt.xticks(rotation=45)
     plt.legend(loc='best', fontsize=10)
     plt.tight_layout()
