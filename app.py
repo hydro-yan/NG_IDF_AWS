@@ -32,9 +32,15 @@ from functools import lru_cache
 import time
 
 
+# Master diagnostic switch. Keep False in normal use; set True (or set the
+# NG_IDF_KEEP_DEBUG environment variable to 1/true/yes) to retain DHSVM run
+# artifacts in ./debug_runs and print extra Pixel.CENTER diagnostics.
+DEBUG = os.environ.get("NG_IDF_KEEP_DEBUG", "").lower() in {"1", "true", "yes"}
+
+
 def preserve_dhsvm_debug_artifacts(temp_dir, config_file, dhsvm_proc):
-    """Persist point-run inputs and outputs when NG_IDF_KEEP_DEBUG is enabled."""
-    if os.environ.get("NG_IDF_KEEP_DEBUG", "").lower() not in {"1", "true", "yes"}:
+    """Persist point-run inputs and outputs when DEBUG is enabled."""
+    if not DEBUG:
         return None
 
     debug_root = os.path.abspath("./debug_runs")
@@ -1582,19 +1588,20 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
             print("DHSVM may have failed; inspect the captured stderr above or debug_runs if enabled.")
             raise FileNotFoundError(f"DHSVM did not create Pixel.CENTER file. Check DHSVM configuration and met data paths.")
 
-        if forcing_type == "Daymet":
+        if DEBUG and forcing_type == "Daymet":
             print_daymet_precip_comparison(config_file, pixel_file)
 
         # Preview Pixel.CENTER (first and last 3 lines) for debugging
-        with open(pixel_file, 'r', errors='replace') as pf:
-            pix_lines = pf.readlines()
-        n_pix = len(pix_lines)
-        print(f"Pixel.CENTER ({n_pix} lines) — first 20 lines of {pixel_file}:")
-        for row in pix_lines[:3]:
-            print(row.rstrip('\n\r'))
-        print(f"Pixel.CENTER — last 20 lines of {pixel_file}:")
-        for row in pix_lines[-3:]:
-            print(row.rstrip('\n\r'))
+        if DEBUG:
+            with open(pixel_file, 'r', errors='replace') as pf:
+                pix_lines = pf.readlines()
+            n_pix = len(pix_lines)
+            print(f"Pixel.CENTER ({n_pix} lines) — first 3 lines of {pixel_file}:")
+            for row in pix_lines[:3]:
+                print(row.rstrip('\n\r'))
+            print(f"Pixel.CENTER — last 3 lines of {pixel_file}:")
+            for row in pix_lines[-3:]:
+                print(row.rstrip('\n\r'))
 
 
 
@@ -1612,8 +1619,9 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
             am_files_dict[f'am_{dur}_P'] = os.path.join(td, f'am_{dur}_P')
         
         # List files in temp directory
-        print(f"Files in temp directory after DHSVM:")
-        os.system('ls -lh ' + td)
+        if DEBUG:
+            print(f"Files in temp directory after DHSVM:")
+            os.system('ls -lh ' + td)
 
         # Extract AM data with optional year range filtering
         am_results = extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type, year_range)
