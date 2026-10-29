@@ -90,36 +90,48 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
         durations = [1, 3, 6, 12, 24, 48, 72]  # hours
     
     #----------------------------------------------------------------------------------------------------------
-    # 1. read time-step Pixel.CENTER output
-    lines = [line.rstrip('\n') for line in open(pixel_file)]
-    lines = lines[2:]  # remove the first 2 header lines
+    # 1. Read time-step Pixel.CENTER output.
+    #
+    # Pixel.CENTER has one text header followed by timestamped records.  Do
+    # not discard a fixed number of lines and synthesize the timestamps: that
+    # drops the first valid record when there is only one header and shifts
+    # every forcing value by one timestep.  In particular, a 24-hour Daymet
+    # total then contains seven event timesteps and one timestep from the
+    # following day.  Parse the DHSVM timestamps instead, and retain only the
+    # configured simulation period (DHSVM writes one trailing boundary record).
+    records = []
+    for line in open(pixel_file):
+        item = line.split()
+        if not item:
+            continue
+        try:
+            timestamp = datetime.datetime.strptime(item[0], '%m/%d/%Y-%H:%M:%S')
+        except ValueError:
+            # Header line (or any non-data line)
+            continue
+        if s_date <= timestamp <= e_date:
+            records.append((timestamp, item))
 
-    num_steps = len(lines)
+    if not records:
+        raise ValueError(
+            f'No Pixel.CENTER records in expected range {s_date} to {e_date}: {pixel_file}'
+        )
+
+    num_steps = len(records)
     # year, mon, day, hour,  W_veg (mm), P (mm), P_int (mm), SWE (mm), deltaSWE (m)
     output_timestep = npnan(num_steps, 9)
 
-    # fill the date
-    for t in range(num_steps):
-        temp_date = s_date + datetime.timedelta(hours=t*time_step)
-        output_timestep[t, 0] = float(temp_date.year)
-        output_timestep[t, 1] = float(temp_date.month)
-        output_timestep[t, 2] = float(temp_date.day)
-        output_timestep[t, 3] = float(temp_date.hour)
-
-    # print(output_timestep[:3, :], flush=True)
-    # print(output_timestep[-3:, :], flush=True)
-
-
     # load the timestep data
-    count = 0
-    for line in lines:
-        item = line.split()
+    for count, (timestamp, item) in enumerate(records):
+        output_timestep[count, 0] = float(timestamp.year)
+        output_timestep[count, 1] = float(timestamp.month)
+        output_timestep[count, 2] = float(timestamp.day)
+        output_timestep[count, 3] = float(timestamp.hour)
         output_timestep[count, 4] = float(item[2])        # W_veg  (mm)
         output_timestep[count, 5] = float(item[3]) * 1000 # Precip (mm)
         output_timestep[count, 6] = float(item[5]) * 1000 # P_int (mm)
         output_timestep[count, 7] = float(item[13]) * 1000# SWE (mm)
         output_timestep[count, 8] = float(item[6]) * 1000# deltaSWE (m)
-        count += 1
 
     # post-processing: no negatives
     for k in range(4, 8):

@@ -4,6 +4,8 @@ import numpy as np
 import subprocess
 import os
 import os.path
+import re
+from datetime import datetime
 from dhsvm_idf import generate_ng_idf
 from extract_AM import extract_AM_data
 import tempfile
@@ -28,6 +30,120 @@ from gen_spatial_figures import (generate_daymet_idf_figure, generate_daymet_alt
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
 import time
+
+
+def preserve_dhsvm_debug_artifacts(temp_dir, config_file, dhsvm_proc):
+    """Persist point-run inputs and outputs when NG_IDF_KEEP_DEBUG is enabled."""
+    if os.environ.get("NG_IDF_KEEP_DEBUG", "").lower() not in {"1", "true", "yes"}:
+        return None
+
+    debug_root = os.path.abspath("./debug_runs")
+    run_name = datetime.now().strftime("%Y%m%dT%H%M%S_%f") + f"_pid{os.getpid()}"
+    debug_dir = os.path.join(debug_root, run_name)
+    os.makedirs(debug_root, exist_ok=True)
+    shutil.copytree(temp_dir, debug_dir)
+
+    shutil.copy2(config_file, os.path.join(debug_dir, "Input.Snotel.T4"))
+    with open(os.path.join(debug_dir, "dhsvm.stdout.log"), "w") as log_file:
+        log_file.write(dhsvm_proc.stdout or "")
+    with open(os.path.join(debug_dir, "dhsvm.stderr.log"), "w") as log_file:
+        log_file.write(dhsvm_proc.stderr or "")
+
+    station_file = None
+    with open(config_file, "r", errors="replace") as config:
+        for line in config:
+            match = re.match(r"\s*Station File 1\s*=\s*(\S+)", line, re.IGNORECASE)
+            if match:
+                station_file = match.group(1)
+                break
+    if station_file and os.path.isfile(station_file):
+        shutil.copy2(station_file, os.path.join(debug_dir, "forcing_input"))
+
+    with open(os.path.join(debug_dir, "README.txt"), "w") as readme:
+        readme.write(
+            "This directory was retained because NG_IDF_KEEP_DEBUG is enabled.\n"
+            f"DHSVM exit code: {dhsvm_proc.returncode}\n"
+            f"Station file requested by generated config: {station_file}\n\n"
+            "For the 1991-09-11 Daymet event, compare the fourth Pixel.CENTER "
+            "field (Precip(m)) with forcing_input field 7 (precipitation in m).\n"
+            "Expected daily total: sum eight 3-hour records (00 through 21).\n"
+        )
+    return debug_dir
+
+
+def print_daymet_precip_comparison(config_file, pixel_file):
+    """Print a raw-forcing versus Pixel.CENTER precipitation diagnostic to logs."""
+    station_file = None
+    with open(config_file, "r", errors="replace") as config:
+        for line in config:
+            match = re.match(r"\s*Station File 1\s*=\s*(\S+)", line, re.IGNORECASE)
+            if match:
+                station_file = match.group(1)
+                break
+
+    if not station_file or not os.path.isfile(station_file):
+        print(f"PRECIP DEBUG: cannot read Station File 1: {station_file}", flush=True)
+        return
+
+    raw_precip = {}
+    with open(station_file, "r", errors="replace") as forcing:
+        for line in forcing:
+            fields = line.split()
+            if len(fields) >= 7:
+                try:
+                    raw_precip[fields[0]] = float(fields[6])
+                except ValueError:
+                    continue
+
+    pixel_precip = {}
+    with open(pixel_file, "r", errors="replace") as pixel:
+        for line in pixel:
+            fields = line.split()
+            timestamp = re.match(r"^(\d{2}/\d{2}/\d{4}-\d{2})(?::\d{2}:\d{2})?$", fields[0]) if fields else None
+            if len(fields) >= 4 and timestamp:
+                try:
+                    # DHSVM writes MM/DD/YYYY-HH:MM:SS; forcing uses MM/DD/YYYY-HH.
+                    pixel_precip[timestamp.group(1)] = float(fields[3])
+                except ValueError:
+                    continue
+
+    common_times = sorted(set(raw_precip) & set(pixel_precip))
+    differences = [
+        (timestamp, pixel_precip[timestamp] - raw_precip[timestamp])
+        for timestamp in common_times
+        if abs(pixel_precip[timestamp] - raw_precip[timestamp]) > 1.e-9
+    ]
+    print(
+        "PRECIP DEBUG: "
+        f"station_file={station_file}; raw_records={len(raw_precip)}; "
+        f"pixel_records={len(pixel_precip)}; matched={len(common_times)}; "
+        f"different={len(differences)}",
+        flush=True,
+    )
+
+    event_prefix = "09/11/1991"
+    event_times = [f"{event_prefix}-{hour:02d}" for hour in range(0, 24, 3)]
+    print("PRECIP DEBUG: 1991-09-11 (timestamp raw_m pixel_m difference_m)", flush=True)
+    for timestamp in event_times:
+        raw_value = raw_precip.get(timestamp)
+        pixel_value = pixel_precip.get(timestamp)
+        difference = None if raw_value is None or pixel_value is None else pixel_value - raw_value
+        print(
+            f"PRECIP DEBUG: {timestamp} {raw_value!r} {pixel_value!r} {difference!r}",
+            flush=True,
+        )
+
+    raw_total = sum(raw_precip[t] for t in event_times if t in raw_precip)
+    pixel_total = sum(pixel_precip[t] for t in event_times if t in pixel_precip)
+    print(
+        "PRECIP DEBUG: 1991-09-11 totals: "
+        f"raw={raw_total:.6f} m ({raw_total * 1000:.3f} mm, {raw_total * 1000 / 25.4:.5f} in); "
+        f"pixel={pixel_total:.6f} m ({pixel_total * 1000:.3f} mm, {pixel_total * 1000 / 25.4:.5f} in); "
+        f"pixel-minus-raw={pixel_total - raw_total:.6f} m",
+        flush=True,
+    )
+    for timestamp, difference in differences[:10]:
+        print(f"PRECIP DEBUG: mismatch {timestamp}: pixel-minus-raw={difference:.9g} m", flush=True)
 
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -1425,12 +1541,6 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
         print(f"Forcing type: {forcing_type}")
         print(f"Temp directory: {td}")
     
-        # copy the config file to the local folder for debug
-        debug_config_path = "./debug_config.txt"
-        shutil.copy2(config_file, debug_config_path)
-        print(f"DEBUG: Config file copied to {debug_config_path} for inspection")
-
-
         # Check if config file exists
         if not os.path.exists(config_file):
             raise FileNotFoundError(f"Config file not created: {config_file}")
@@ -1441,8 +1551,8 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
         print("Running DHSVM...")
         dhsvm_proc = subprocess.run(
             ['./dhsvm/no_sat_dump/DHSVM3.2', config_file],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
         )
 
         # debug mode to run DHSVM with per-timestep output to the terminal
@@ -1452,6 +1562,11 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
 
         dhsvm_result = dhsvm_proc.returncode
         print(f"DHSVM exit code: {dhsvm_result}")
+        if dhsvm_result != 0:
+            print(f"DHSVM stderr:\n{dhsvm_proc.stderr}")
+        debug_dir = preserve_dhsvm_debug_artifacts(td, config_file, dhsvm_proc)
+        if debug_dir:
+            print(f"DHSVM diagnostic artifacts retained at: {debug_dir}")
         
         # create r file in the temp folder and copy the lines into the new temp r file
         r_file = os.path.join(td, 'get_IDF.R')
@@ -1464,8 +1579,11 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
         # Check if Pixel.CENTER was created
         if not os.path.exists(pixel_file):
             print(f"ERROR: Pixel.CENTER not found at {pixel_file}")
-            print("DHSVM may have failed (model stdout/stderr are suppressed during the run).")
+            print("DHSVM may have failed; inspect the captured stderr above or debug_runs if enabled.")
             raise FileNotFoundError(f"DHSVM did not create Pixel.CENTER file. Check DHSVM configuration and met data paths.")
+
+        if forcing_type == "Daymet":
+            print_daymet_precip_comparison(config_file, pixel_file)
 
         # Preview Pixel.CENTER (first and last 3 lines) for debugging
         with open(pixel_file, 'r', errors='replace') as pf:
@@ -1556,7 +1674,8 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
             'durations': durations,
             'idf_data': idf_data,
             'fig_codes': fig_codes,
-            'am_results': am_results
+            'am_results': am_results,
+            'debug_dir': debug_dir,
         }
 
 
