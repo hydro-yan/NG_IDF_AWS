@@ -920,6 +920,22 @@ def NG_IDF():
 
         elif scenario == "future_wrf":
 
+            # Preserve the point-mode values submitted by the user so the
+            # results page can show them in the Query Parameters table.
+            wrf_land_cover_labels = {
+                "1": "Open", "2": "Evergreen Forest", "3": "Deciduous Forest",
+                "4": "Mixed Forest", "5": "Crop", "6": "Grassland",
+                "7": "Shrub", "8": "Pasture", "9": "Wetland", "10": "Moss",
+            }
+            query_parameters = {
+                "land_cover": wrf_land_cover_labels.get(
+                    request.form.get("Value6", "").strip(),
+                    "Unspecified",
+                ),
+                "lai": request.form.get("Value3", "").strip(),
+                "tree_height": request.form.get("Value4", "").strip(),
+            }
+
             # Run WRF Multi-Scenario Workflow IN PARALLEL (3 processors)
             print("Starting WRF parallel processing with 3 scenarios...", flush=True)
             start_time = time.time()
@@ -964,20 +980,24 @@ def NG_IDF():
             durations = hist_data['durations']  # ['1h', '3h', '6h', '12h', '24h', '48h', '72h']
             
             # Generate plots directly without temp files (plots return base64 strings)
+            # Figures are displayed in inches (data are stored in mm)
             fig_prec_comp, fig_ng_comp = generate_multi_scenario_idf_plots(
-                hist_data, med_data, high_data, durations, None, None
+                hist_data, med_data, high_data, durations, None, None,
+                display_inches=True,
             )
             
             fig_am_p_comp, fig_am_w_comp = generate_multi_scenario_am_plots(
                 res_hist['am_results'], res_med['am_results'], res_high['am_results'],
-                durations, None, None
+                durations, None, None,
+                display_inches=True,
             )
             
             fig_swe_comp = generate_multi_scenario_swe_plot(
                 res_hist['am_results']['swe'],
                 res_med['am_results']['swe'],
                 res_high['am_results']['swe'],
-                None
+                None,
+                display_inches=True,
             )
 
             # 5. Build Comprehensive Summary Table
@@ -996,10 +1016,10 @@ def NG_IDF():
                 high_arr = high_data[key]
 
                 for ari, idx in zip(aris, indices):
-                    # Values (Row 0 is magnitude)
-                    val_hist = base_arr[0, idx]
-                    val_med = med_arr[0, idx]
-                    val_high = high_arr[0, idx]
+                    # Values (Row 0 is magnitude), converted from mm to inches
+                    val_hist = base_arr[0, idx] / 25.4
+                    val_med = med_arr[0, idx] / 25.4
+                    val_high = high_arr[0, idx] / 25.4
 
                     # Diffs
                     diff_med = val_med - val_hist
@@ -1023,6 +1043,7 @@ def NG_IDF():
 
             return render_template("out_future.html",
                                    lat=lat, lon=lon,
+                                   query_parameters=query_parameters,
                                    hist=hist_data,
                                    med=med_data,
                                    high=high_data,

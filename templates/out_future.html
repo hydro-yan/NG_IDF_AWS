@@ -23,7 +23,7 @@
 
   /* Header Banner */
   header {
-    background: linear-gradient(90deg, #f68b1f, #c46000);
+    background: linear-gradient(90deg, #2e7d32, #1b4d3e);
     color: white;
     padding: 10px 20px;
   }
@@ -50,7 +50,7 @@
   }
 
   h2 {
-    color: #b34b00;
+    color: #1b4d3e;
     font-size: 13px;
     border-bottom: 2px solid #e3eaf5;
     padding-bottom: 4px;
@@ -70,7 +70,7 @@
   /* Section Titles */
   .section-title {
     text-align: center;
-    color: #b34b00;
+    color: #1b4d3e;
     font-size: 16px;
     font-weight: 700;
     margin: 20px 0 15px 0;
@@ -79,7 +79,7 @@
   }
 
   .divider {
-    border-top: 3px solid #f68b1f;
+    border-top: 3px solid #2e7d32;
     margin: 30px 0 20px 0;
   }
 
@@ -168,7 +168,7 @@
   }
 
   .tab-btn.active {
-    background: #b34b00;
+    background: #1b4d3e;
     color: white;
   }
 
@@ -201,7 +201,7 @@
   }
 
   th {
-    background-color: #f68b1f;
+    background-color: #2e7d32;
     color: white;
     font-weight: 600;
   }
@@ -211,7 +211,7 @@
   }
 
   tr:hover {
-    background-color: #fff1e0;
+    background-color: #eef6ee;
   }
 
   .idf-tables {
@@ -275,7 +275,7 @@
   }
 
   .summary-table th {
-    background: #f68b1f;
+    background: #2e7d32;
     color: white;
     font-weight: 600;
   }
@@ -321,6 +321,111 @@
     margin-bottom: 10px;
   }
 
+  .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #1b4d3e;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .results-intro {
+    max-width: 1200px;
+    margin: 20px auto 0 auto;
+    padding: 0 20px;
+  }
+
+  .summary-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .query-parameters {
+    flex: 0 1 430px;
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .site-location-map {
+    flex: 1 1 550px;
+    max-width: 650px;
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  #map {
+    height: 245px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .query-parameters h2,
+  .site-location-map h2 {
+    margin-top: 0;
+  }
+
+  .meta-table {
+    max-width: 850px;
+    margin: 0 auto;
+    font-size: 12px;
+  }
+
+  .meta-table th, .meta-table td {
+    text-align: left;
+    padding: 6px 10px;
+  }
+
+  .meta-table th {
+    background: #eef6ee;
+    color: #1b4d3e;
+    width: 40%;
+  }
+
+  .note-box {
+    background: #eef6ee;
+    border: 1px solid #cfe3cf;
+    border-left: 4px solid #2e7d32;
+    color: #1b4d3e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .note-box p {
+    margin: 0 0 8px 0;
+  }
+
+  .note-box ul {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+  }
+
+  @media (max-width: 800px) {
+    .summary-row {
+      flex-direction: column;
+    }
+
+    .query-parameters,
+    .site-location-map {
+      box-sizing: border-box;
+      width: 100%;
+      max-width: none;
+    }
+  }
+
   @media(max-width:900px) {
     .idf-table {
       width: 100%;
@@ -343,19 +448,44 @@
   </div>
 </header>
 
+<div class="results-intro">
+  <a class="back-link" href="/NG_IDF{% if request.args.get('auth_token') %}?auth_token={{ request.args.get('auth_token') }}{% endif %}">&larr; Back to NG-IDF Tool</a>
+  <div class="summary-row">
+    <div class="query-parameters">
+      <h2>Query Parameters</h2>
+      <table class="meta-table">
+        <tr><th>Scenario</th><td>Intensified Historical Storms [Mid-Century Stress Test]. Baseline Shift: +1.72°C to +2.36°C (2 Bounding Runs)</td></tr>
+        <tr><th>Latitude</th><td>{{ '%.5f'|format(lat) }}&deg;</td></tr>
+        <tr><th>Longitude</th><td>{{ '%.5f'|format(lon) }}&deg;</td></tr>
+        <tr><th>Land Cover</th><td>{{ query_parameters.land_cover }}</td></tr>
+        <tr><th>Leaf Area Index (LAI)</th><td>{{ query_parameters.lai }}</td></tr>
+        <tr><th>Canopy Height</th><td>{{ query_parameters.tree_height }} ft</td></tr>
+      </table>
+    </div>
+    <div class="site-location-map">
+      <h2>Site Location Map</h2>
+      <div id="map"></div>
+    </div>
+  </div>
+  <div class="note-box">
+    <p><strong>Intensified Historical Storms Results:</strong> This page asks a single question: if the storms that actually happened here were to occur in a warmer weather, how much bigger would they be? The WRF model re-runs the historical weather with warming added, so the baseline and future panels contain the same storms under different weather conditions.
+      .</p>
+    <strong>How to use these outputs:</strong>
+    <ul>
+      <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
+      <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
+      <li><strong>Impact Summary</strong> compares the medium and high emissions NG-IDF values with the historical baseline (difference in inches and percent change).</li>
+      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+    </ul>
+  </div>
+</div>
+
 <!-- ========================================== -->
 <!-- SECTION 1: FIGURES -->
 <!-- ========================================== -->
 
 <div class="section-title">📊 WRF: Multi-Scenario Comparison Figures</div>
-
-<!-- Site Location Map -->
-<div class="map-section">
-  <div class="section map-card">
-    <h2>Site Location Map</h2>
-    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
-  </div>
-</div>
 
 <!-- PREC-IDF Multi-Scenario Comparison -->
 <div class="multi-plot">
@@ -413,12 +543,12 @@
           </tr>
           <tr>
             <th></th>
-            <th>Value (mm)</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
+            <th>Value (in)</th>
+            <th>Value (in)</th>
+            <th>Diff (in)</th>
             <th>% Change</th>
-            <th>Value (mm)</th>
-            <th>Diff (mm)</th>
+            <th>Value (in)</th>
+            <th>Diff (in)</th>
             <th>% Change</th>
           </tr>
         </thead>
@@ -485,7 +615,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -494,9 +624,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ hist['P_' + dur][0, IDX[j]] }}</td>
-            <td>{{ hist['P_' + dur][1, IDX[j]] }}</td>
-            <td>{{ hist['P_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (hist['P_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (hist['P_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (hist['P_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -509,7 +639,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -518,9 +648,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ hist['NG_' + dur][0, IDX[j]] }}</td>
-            <td>{{ hist['NG_' + dur][1, IDX[j]] }}</td>
-            <td>{{ hist['NG_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (hist['NG_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (hist['NG_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (hist['NG_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -542,7 +672,7 @@
           <tr>
             {% for dur in hist.durations %}
             <th>Date</th>
-            <th>P (mm)</th>
+            <th>P (in)</th>
             {% endfor %}
           </tr>
           {% for i in range(hist['am_' + hist.durations[0] + '_P']|length) %}
@@ -550,7 +680,7 @@
             <td style="font-weight:bold;">{{ hist['am_' + hist.durations[0] + '_P_date'][i,0] }}</td>
             {% for dur in hist.durations %}
             <td>{{ "%02d-%02d"|format(hist['am_' + dur + '_P_date'][i,1],hist['am_' + dur + '_P_date'][i,2]) }}</td>
-            <td>{{ hist['am_' + dur + '_P'][i,3] }}</td>
+            <td>{{ (hist['am_' + dur + '_P'][i,3] / 25.4)|round(2) }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -573,7 +703,7 @@
           <tr>
             {% for dur in hist.durations %}
             <th>Date</th>
-            <th>W (mm)</th>
+            <th>W (in)</th>
             <th>Mechanism</th>
             {% endfor %}
           </tr>
@@ -582,7 +712,7 @@
             <td style="font-weight:bold;">{{ hist['am_' + hist.durations[0] + '_W_date'][i,0] }}</td>
             {% for dur in hist.durations %}
             <td>{{ "%02d-%02d"|format(hist['am_' + dur + '_W_date'][i,1],hist['am_' + dur + '_W_date'][i,2]) }}</td>
-            <td>{{ hist['am_' + dur + '_W'][i,3] }}</td>
+            <td>{{ (hist['am_' + dur + '_W'][i,3] / 25.4)|round(2) }}</td>
             <td>{{ hist['am_' + dur + '_W_mechanism'][i] }}</td>
             {% endfor %}
           </tr>
@@ -600,13 +730,13 @@
           <tr>
             <th>Year</th>
             <th>Date</th>
-            <th>SWE (mm)</th>
+            <th>SWE (in)</th>
           </tr>
           {% for i in range(hist.am_swe|length) %}
           <tr>
             <td style="font-weight:bold;">{{ hist.am_swe_date[i,0] }}</td>
             <td>{{ "%02d-%02d"|format(hist.am_swe_date[i,1], hist.am_swe_date[i,2]) }}</td>
-            <td>{{ hist.am_swe[i,3] }}</td>
+            <td>{{ (hist.am_swe[i,3] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
         </table>
@@ -625,7 +755,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -634,9 +764,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ med['P_' + dur][0, IDX[j]] }}</td>
-            <td>{{ med['P_' + dur][1, IDX[j]] }}</td>
-            <td>{{ med['P_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (med['P_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (med['P_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (med['P_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -649,7 +779,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -658,9 +788,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ med['NG_' + dur][0, IDX[j]] }}</td>
-            <td>{{ med['NG_' + dur][1, IDX[j]] }}</td>
-            <td>{{ med['NG_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (med['NG_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (med['NG_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (med['NG_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -682,7 +812,7 @@
           <tr>
             {% for dur in med.durations %}
             <th>Date</th>
-            <th>P (mm)</th>
+            <th>P (in)</th>
             {% endfor %}
           </tr>
           {% for i in range(med['am_' + med.durations[0] + '_P']|length) %}
@@ -690,7 +820,7 @@
             <td style="font-weight:bold;">{{ med['am_' + med.durations[0] + '_P_date'][i,0] }}</td>
             {% for dur in med.durations %}
             <td>{{ "%02d-%02d"|format(med['am_' + dur + '_P_date'][i,1],med['am_' + dur + '_P_date'][i,2]) }}</td>
-            <td>{{ med['am_' + dur + '_P'][i,3] }}</td>
+            <td>{{ (med['am_' + dur + '_P'][i,3] / 25.4)|round(2) }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -713,7 +843,7 @@
           <tr>
             {% for dur in med.durations %}
             <th>Date</th>
-            <th>W (mm)</th>
+            <th>W (in)</th>
             <th>Mechanism</th>
             {% endfor %}
           </tr>
@@ -722,7 +852,7 @@
             <td style="font-weight:bold;">{{ med['am_' + med.durations[0] + '_W_date'][i,0] }}</td>
             {% for dur in med.durations %}
             <td>{{ "%02d-%02d"|format(med['am_' + dur + '_W_date'][i,1],med['am_' + dur + '_W_date'][i,2]) }}</td>
-            <td>{{ med['am_' + dur + '_W'][i,3] }}</td>
+            <td>{{ (med['am_' + dur + '_W'][i,3] / 25.4)|round(2) }}</td>
             <td>{{ med['am_' + dur + '_W_mechanism'][i] }}</td>
             {% endfor %}
           </tr>
@@ -740,13 +870,13 @@
           <tr>
             <th>Year</th>
             <th>Date</th>
-            <th>AM SWE (mm)</th>
+            <th>AM SWE (in)</th>
           </tr>
           {% for i in range(med.am_swe|length) %}
           <tr>
             <td style="font-weight:bold;">{{ med.am_swe_date[i,0] }}</td>
             <td>{{ "%02d-%02d"|format(med.am_swe_date[i,1], med.am_swe_date[i,2]) }}</td>
-            <td>{{ med.am_swe[i,3] }}</td>
+            <td>{{ (med.am_swe[i,3] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
         </table>
@@ -765,7 +895,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -774,9 +904,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ high['P_' + dur][0, IDX[j]] }}</td>
-            <td>{{ high['P_' + dur][1, IDX[j]] }}</td>
-            <td>{{ high['P_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (high['P_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (high['P_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (high['P_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -789,7 +919,7 @@
         <table>
           <tr>
             <th>ARI (yrs)</th>
-            <th>Magnitude (mm)</th>
+            <th>Magnitude (in)</th>
             <th>Lower 90% CI</th>
             <th>Upper 90% CI</th>
           </tr>
@@ -798,9 +928,9 @@
           {% for j in range(7) %}
           <tr>
             <td>{{ ARI[j] }}</td>
-            <td>{{ high['NG_' + dur][0, IDX[j]] }}</td>
-            <td>{{ high['NG_' + dur][1, IDX[j]] }}</td>
-            <td>{{ high['NG_' + dur][2, IDX[j]] }}</td>
+            <td>{{ (high['NG_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (high['NG_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td>
+            <td>{{ (high['NG_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -822,7 +952,7 @@
           <tr>
             {% for dur in high.durations %}
             <th>Date</th>
-            <th>P (mm)</th>
+            <th>P (in)</th>
             {% endfor %}
           </tr>
           {% for i in range(high['am_' + high.durations[0] + '_P']|length) %}
@@ -830,7 +960,7 @@
             <td style="font-weight:bold;">{{ high['am_' + high.durations[0] + '_P_date'][i,0] }}</td>
             {% for dur in high.durations %}
             <td>{{ "%02d-%02d"|format(high['am_' + dur + '_P_date'][i,1],high['am_' + dur + '_P_date'][i,2]) }}</td>
-            <td>{{ high['am_' + dur + '_P'][i,3] }}</td>
+            <td>{{ (high['am_' + dur + '_P'][i,3] / 25.4)|round(2) }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -853,7 +983,7 @@
           <tr>
             {% for dur in high.durations %}
             <th>Date</th>
-            <th>W (mm)</th>
+            <th>W (in)</th>
             <th>Mechanism</th>
             {% endfor %}
           </tr>
@@ -862,7 +992,7 @@
             <td style="font-weight:bold;">{{ high['am_' + high.durations[0] + '_W_date'][i,0] }}</td>
             {% for dur in high.durations %}
             <td>{{ "%02d-%02d"|format(high['am_' + dur + '_W_date'][i,1],high['am_' + dur + '_W_date'][i,2]) }}</td>
-            <td>{{ high['am_' + dur + '_W'][i,3] }}</td>
+            <td>{{ (high['am_' + dur + '_W'][i,3] / 25.4)|round(2) }}</td>
             <td>{{ high['am_' + dur + '_W_mechanism'][i] }}</td>
             {% endfor %}
           </tr>
@@ -880,13 +1010,13 @@
           <tr>
             <th>Year</th>
             <th>Date</th>
-            <th>AM SWE (mm)</th>
+            <th>AM SWE (in)</th>
           </tr>
           {% for i in range(high.am_swe|length) %}
           <tr>
             <td style="font-weight:bold;">{{ high.am_swe_date[i,0] }}</td>
             <td>{{ "%02d-%02d"|format(high.am_swe_date[i,1], high.am_swe_date[i,2]) }}</td>
-            <td>{{ high.am_swe[i,3] }}</td>
+            <td>{{ (high.am_swe[i,3] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
         </table>
@@ -894,8 +1024,6 @@
     </div>
   </div>
 </div>
-
-<p class="note">Generated by NG-IDF Tool | WRF Future Scenarios (Historical, Medium, High Emissions)</p>
 
 <footer>
   <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory">

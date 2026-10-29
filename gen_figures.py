@@ -277,7 +277,7 @@ def generate_swe_timeseries_plot(am_swe, fig_file, display_inches=False):
     return "data:image/png;base64," + img
 
 
-def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations, fig_file_prec, fig_file_ng):
+def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations, fig_file_prec, fig_file_ng, display_inches=False):
     """
     Generate multi-scenario IDF comparison plots in 2x4 grid
     
@@ -301,6 +301,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     tuple : (base64_prec, base64_ng) encoded image strings
     """
     
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    unit_label = 'in' if display_inches else 'mm'
+
     # Probabilities for IDF curves
     probs = np.concatenate([np.arange(0.50, 1.00, 0.01), np.array([0.998])])
     ari_values = 1.0 / (1.0 - probs)
@@ -317,9 +320,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     axes_prec = axes_prec.flatten()
     
     for idx, dur in enumerate(durations):
-        hist_curve = hist_data[f'P_{dur}'][0, :]
-        med_curve = med_data[f'P_{dur}'][0, :]
-        high_curve = high_data[f'P_{dur}'][0, :]
+        hist_curve = hist_data[f'P_{dur}'][0, :] * unit_factor
+        med_curve = med_data[f'P_{dur}'][0, :] * unit_factor
+        high_curve = high_data[f'P_{dur}'][0, :] * unit_factor
         
         axes_prec[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
         axes_prec[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
@@ -328,7 +331,7 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         axes_prec[idx].set_xticks(ari_ticks)
         axes_prec[idx].set_xticklabels(ari_tick_labels)
         axes_prec[idx].set_xlabel('ARI (years)', fontsize=9)
-        axes_prec[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_prec[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_prec[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_prec[idx].grid(True, alpha=0.3)
         axes_prec[idx].legend(loc='best', fontsize=8)
@@ -356,9 +359,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     axes_ng = axes_ng.flatten()
     
     for idx, dur in enumerate(durations):
-        hist_curve = hist_data[f'NG_{dur}'][0, :]
-        med_curve = med_data[f'NG_{dur}'][0, :]
-        high_curve = high_data[f'NG_{dur}'][0, :]
+        hist_curve = hist_data[f'NG_{dur}'][0, :] * unit_factor
+        med_curve = med_data[f'NG_{dur}'][0, :] * unit_factor
+        high_curve = high_data[f'NG_{dur}'][0, :] * unit_factor
         
         axes_ng[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
         axes_ng[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Medium')
@@ -367,7 +370,7 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         axes_ng[idx].set_xticks(ari_ticks)
         axes_ng[idx].set_xticklabels(ari_tick_labels)
         axes_ng[idx].set_xlabel('ARI (years)', fontsize=9)
-        axes_ng[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_ng[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_ng[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_ng[idx].grid(True, alpha=0.3)
         axes_ng[idx].legend(loc='best', fontsize=8)
@@ -612,7 +615,7 @@ def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hi
         return ""
 
 
-def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w):
+def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w, display_inches=False):
     """
     Generate multi-scenario AM time series plots in 2x4 grid
     
@@ -636,6 +639,9 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
     tuple : (base64_p, base64_w) encoded image strings
     """
     
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    unit_label = 'in' if display_inches else 'mm'
+
     # Create combined P plot in 2x4 grid
     n_dur = len(durations)
     nrows = 2
@@ -648,12 +654,12 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         med_p = med_am[dur]['P']
         high_p = high_am[dur]['P']
         
-        axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3], 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
+        axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='High')
         
         axes_p[idx].set_xlabel('Water Year', fontsize=9)
-        axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=9)
+        axes_p[idx].set_ylabel(f'AM Precipitation ({unit_label})', fontsize=9)
         axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_p[idx].grid(True, alpha=0.3)
         axes_p[idx].tick_params(axis='x', rotation=45)
@@ -686,12 +692,12 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         med_w = med_am[dur]['W_veg']
         high_w = high_am[dur]['W_veg']
         
-        axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3], 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3], 's-', color='orange', lw=2, markersize=3, label='Medium')
-        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3], '^-', color='red', lw=2, markersize=3, label='High')
+        axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Medium')
+        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='High')
         
         axes_w[idx].set_xlabel('Water Year', fontsize=9)
-        axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=9)
+        axes_w[idx].set_ylabel(f'AM Water for Runoff ({unit_label})', fontsize=9)
         axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         axes_w[idx].grid(True, alpha=0.3)
         axes_w[idx].tick_params(axis='x', rotation=45)
@@ -718,7 +724,7 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
     return "data:image/png;base64," + img_p, "data:image/png;base64," + img_w
 
 
-def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
+def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file, display_inches=False):
     """
     Generate multi-scenario SWE time series plot (smaller size)
     
@@ -738,14 +744,17 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file):
     str : Base64 encoded image string
     """
     
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    unit_label = 'in' if display_inches else 'mm'
+
     plt.figure(figsize=(8, 4))
     
-    plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3], 'o-', color='blue', lw=2, markersize=4, label='Historical')
-    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3], 's-', color='orange', lw=2, markersize=4, label='Medium')
-    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3], '^-', color='red', lw=2, markersize=4, label='High')
+    plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=4, label='Historical')
+    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=4, label='Medium')
+    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=4, label='High')
     
     plt.xlabel('Water Year', fontsize=11)
-    plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11)
+    plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=11)
     #plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.xticks(rotation=45)

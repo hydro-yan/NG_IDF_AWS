@@ -185,6 +185,20 @@
   }
   .idf-table { width: 48%; max-width: 700px; }
 
+  .pos { color: #d32f2f; font-weight: bold; }
+  .neg { color: #1976d2; font-weight: bold; }
+
+  .impact-summary {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 16px auto;
+  }
+
+  .impact-summary table {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
   @media(max-width:900px){
     .plot-card{width:100%;}
     .am-table{width:100%;}
@@ -378,6 +392,7 @@
     <ul>
       <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
+      <li><strong>% Difference</strong> (Impact Summary table) compares NG-IDF with Daymet PREC-IDF. Positive values suggest potential under-design if following the standard PREC-IDF method. E.g., a +20% difference suggests the NG-IDF value is 20% higher than the PREC-IDF value.</li>
       <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
@@ -426,7 +441,58 @@
 <div class="divider"></div>
 
 <!-- ========================================== -->
-<!-- SECTION 2: TABLES -->
+<!-- SECTION 2: IMPACT SUMMARY TABLE -->
+<!-- ========================================== -->
+
+<div class="section-title">📊 Impact Summary</div>
+
+{% set ARI = [2,5,10,25,50,100,500] %}
+{% set IDX = [0,30,40,46,48,49,50] %}
+
+<div class="impact-summary">
+  <div class="section">
+    <h2>NG-IDF vs PREC-IDF (Daymet)</h2>
+    <p><strong>ARI = Average Recurrence Interval.</strong> Difference = NG-IDF &minus; PREC-IDF. % Difference = (NG-IDF &minus; PREC-IDF) / PREC-IDF &times; 100.</p>
+    <p><strong>How to read % Difference:</strong> A positive value (red) means NG-IDF is higher than PREC-IDF, which suggests potential under-design if the standard PREC-IDF method is followed. For example, +20% means the NG-IDF value is 20% higher than the PREC-IDF value. A negative value (blue) means NG-IDF is lower than PREC-IDF.</p>
+    <table>
+      <tr>
+        <th>ARI (yrs)</th>
+        <th>PREC-IDF (in)</th>
+        <th>NG-IDF (in)</th>
+        <th>Difference (in)</th>
+        <th>% Difference</th>
+      </tr>
+      {% for dur_label, P_arr, NG_arr in [('24-Hour', P_24h, NG_24h), ('48-Hour', P_48h, NG_48h), ('72-Hour', P_72h, NG_72h)] %}
+      <tr><td colspan="5" style="background:#f0f0f0; font-weight:bold;">{{ dur_label }}</td></tr>
+      {% for j in range(7) %}
+      {% set p_in = P_arr[0, IDX[j]] / 25.4 %}
+      {% set ng_in = NG_arr[0, IDX[j]] / 25.4 %}
+      {% set diff_in = ng_in - p_in %}
+      <tr>
+        <td>{{ ARI[j] }}</td>
+        <td>{{ p_in|round(2) }}</td>
+        <td>{{ ng_in|round(2) }}</td>
+        <td class="{{ 'pos' if diff_in > 0 else 'neg' if diff_in < 0 }}">{{ '+' if diff_in > 0 }}{{ diff_in|round(2) }}</td>
+        {% if p_in > 0 %}
+        {% set pct = diff_in / p_in * 100 %}
+        <td class="{{ 'pos' if pct > 0 else 'neg' if pct < 0 }}">{{ '+' if pct > 0 }}{{ pct|round(1) }}%</td>
+        {% else %}
+        <td>&mdash;</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 3: TABLES -->
 <!-- ========================================== -->
 
 <div class="section-title">📋 Detailed Data Tables</div>
