@@ -768,7 +768,7 @@
     });
   }
 
-    async function validateAndPopulateLocation(lat, lon) {
+    async function validateAndPopulateLocation(lat, lon, applyDefaults = true) {
       const requestId = ++locationLookupRequest;
       try {
         const response = await fetch(
@@ -786,7 +786,9 @@
           return false;
         }
 
-        applyGridcellDefaults(result);
+        // Only fill defaults when a location is selected; on submit keep the
+        // user's edited LAI, canopy height and land cover.
+        if (applyDefaults) applyGridcellDefaults(result);
         setLocationStatus("", false);
         return true;
       } catch (error) {
@@ -1405,7 +1407,7 @@ document.getElementById("idfForm").addEventListener("submit", async function(eve
     event.preventDefault();
     const lat = document.querySelector('input[name="Value1"]').value;
     const lon = document.querySelector('input[name="Value2"]').value;
-    if (!lat || !lon || !(await validateAndPopulateLocation(lat, lon))) {
+    if (!lat || !lon || !(await validateAndPopulateLocation(lat, lon, false))) {
       setLocationStatus("Select a location inside the supported Interior Alaska boundary before submitting.", true);
       return;
     }
