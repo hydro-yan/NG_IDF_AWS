@@ -408,6 +408,9 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
 # CESM-LE member; same values as the near-term spatial maps.
 CESM_NEAR_TERM_DMAAT = {"LE2": 1.51, "LE4": 1.81, "LE7": 1.69, "LE9": 2.45}
 
+# Mid-century (2034-2065) member warming; same values as the mid-century spatial maps.
+CESM_MID_CENTURY_DMAAT = {"LE2": 1.89, "LE4": 2.11, "LE7": 1.61, "LE9": 2.61}
+
 
 def _cesm_member_labels(member_dtair=None):
     """Legend labels for the four CESM-LE members (historical, future)."""
