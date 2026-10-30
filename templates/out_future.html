@@ -475,7 +475,7 @@
       <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>Impact Summary</strong> compares the Moderate (+1.72°C) and Severe (+2.36°C) scenarios NG-IDF values with the historical baseline (difference in inches and percent change).</li>
-      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
     <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline simulation is still a model result, so the change from the historical baseline to the warmer scenario is the transferable result. Apply that change to the observed values on the Historical Weather (Daymet) page:</p>
@@ -502,25 +502,6 @@
 <div class="multi-plot">
   <h2>NG-IDF Curves: Scenario Comparison (Historical vs Moderate (+1.72°C) vs Severe (+2.36°C))</h2>
   <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Multi-Scenario Comparison">
-</div>
-
-<!-- AM P Multi-Scenario Time Series -->
-<div class="multi-plot">
-  <h2>Annual Maximum Precipitation (AM P): Scenario Comparison</h2>
-  <p style="text-align:center; font-size:11px; color:#555; margin:0 0 8px 0;">The Moderate (+1.72°C) and Severe (+2.36°C) runs replay the baseline weather under warming, so their water years are shifted back by 44 years and plotted on the baseline axis (1990&ndash;2021). Points at the same x-position are the same storm season under different warming.</p>
-  <img class="plot-img" src="{{ fig_am_p_comp }}" alt="AM P Multi-Scenario Comparison">
-</div>
-
-<!-- AM W Multi-Scenario Time Series -->
-<div class="multi-plot">
-  <h2>Annual Maximum Water for Runoff (AM W): Scenario Comparison</h2>
-  <img class="plot-img" src="{{ fig_am_w_comp }}" alt="AM W Multi-Scenario Comparison">
-</div>
-
-<!-- AM SWE Multi-Scenario Time Series -->
-<div class="swe-plot-small">
-  <h2>Annual Maximum Snow Water Equivalent (AM SWE): Scenario Comparison</h2>
-  <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Multi-Scenario Comparison">
 </div>
 
 <!-- ========================================== -->
@@ -590,13 +571,46 @@
   </div>
 </div>
 
+{% if fig_am_p_comp or fig_am_w_comp or fig_swe_comp %}
 <!-- ========================================== -->
 <!-- DIVIDER -->
 <!-- ========================================== -->
 <div class="divider"></div>
 
 <!-- ========================================== -->
-<!-- SECTION 3: DETAILED TABLES WITH TABS -->
+<!-- SECTION 3: ANNUAL MAXIMUM TIME SERIES -->
+<!-- ========================================== -->
+
+<div class="section-title">📈 Annual Maximum Time Series</div>
+<p style="text-align:center; font-size:11px; color:#555; margin:-8px 0 16px 0;">Largest event in each water year for the baseline simulation and the two warming scenarios. Mainly for technical review.</p>
+
+<!-- AM P Multi-Scenario Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Precipitation (AM P): Scenario Comparison</h2>
+  <p style="text-align:center; font-size:11px; color:#555; margin:0 0 8px 0;">The Moderate (+1.72°C) and Severe (+2.36°C) runs replay the baseline weather under warming, so their water years are shifted back by 44 years and plotted on the baseline axis (1990&ndash;2021). Points at the same x-position are the same storm season under different warming.</p>
+  <img class="plot-img" src="{{ fig_am_p_comp }}" alt="AM P Multi-Scenario Comparison">
+</div>
+
+<!-- AM W Multi-Scenario Time Series -->
+<div class="multi-plot">
+  <h2>Annual Maximum Water for Runoff (AM W): Scenario Comparison</h2>
+  <img class="plot-img" src="{{ fig_am_w_comp }}" alt="AM W Multi-Scenario Comparison">
+</div>
+
+<!-- AM SWE Multi-Scenario Time Series -->
+<div class="swe-plot-small">
+  <h2>Annual Maximum Snow Water Equivalent (AM SWE): Scenario Comparison</h2>
+  <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Multi-Scenario Comparison">
+</div>
+{% endif %}
+
+<!-- ========================================== -->
+<!-- DIVIDER -->
+<!-- ========================================== -->
+<div class="divider"></div>
+
+<!-- ========================================== -->
+<!-- SECTION 4: DETAILED TABLES WITH TABS -->
 <!-- ========================================== -->
 
 <div class="section-title">📋 Detailed Data Tables by Scenario</div>

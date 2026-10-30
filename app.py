@@ -38,6 +38,11 @@ import time
 # artifacts in ./debug_runs and print extra Pixel.CENTER diagnostics.
 DEBUG = os.environ.get("NG_IDF_KEEP_DEBUG", "").lower() in {"1", "true", "yes"}
 
+# Annual-maximum (AM P, AM W, AM SWE) time-series plots are for technical review only,
+# so the WRF/CESM point pages do not generate or show them by default. Enable them with
+# NG_IDF_SHOW_AM_PLOTS=1 (or by turning DEBUG on). The plot functions stay in gen_figures.py.
+SHOW_AM_PLOTS = DEBUG or os.environ.get("NG_IDF_SHOW_AM_PLOTS", "").lower() in {"1", "true", "yes"}
+
 
 def preserve_dhsvm_debug_artifacts(temp_dir, config_file, dhsvm_proc):
     """Persist point-run inputs and outputs when DEBUG is enabled."""
@@ -883,33 +888,37 @@ def NG_IDF():
 
             data = structure_results(results)
             
-            # Generate time series plots for AM P, W, and SWE
-            with tempfile.TemporaryDirectory() as td:
-                fig_am_p_file = os.path.join(td, 'am_timeseries_p.png')
-                fig_am_w_file = os.path.join(td, 'am_timeseries_w.png')
-                fig_swe_file = os.path.join(td, 'am_swe_timeseries.png')
-                
-                # Generate AM P and W time series plots
-                durations = results['durations']  # ['24h', '48h', '72h'] for Daymet
-                fig_am_p, fig_am_w = generate_am_timeseries_plots(
-                    results['am_results'], 
-                    durations, 
-                    fig_am_p_file, 
-                    fig_am_w_file,
-                    display_inches=True,
-                )
-                
-                # Generate SWE time series plot
-                fig_swe = generate_swe_timeseries_plot(
-                    results['am_results']['swe'],
-                    fig_swe_file,
-                    display_inches=True,
-                )
-                
-                # Add time series figures to data
-                data['fig_am_p'] = fig_am_p
-                data['fig_am_w'] = fig_am_w
-                data['fig_swe'] = fig_swe
+            # Time series plots for AM P, W, and SWE are for technical review only,
+            # so they are only generated when SHOW_AM_PLOTS is enabled.
+            if SHOW_AM_PLOTS:
+                with tempfile.TemporaryDirectory() as td:
+                    fig_am_p_file = os.path.join(td, 'am_timeseries_p.png')
+                    fig_am_w_file = os.path.join(td, 'am_timeseries_w.png')
+                    fig_swe_file = os.path.join(td, 'am_swe_timeseries.png')
+                    
+                    # Generate AM P and W time series plots
+                    durations = results['durations']  # ['24h', '48h', '72h'] for Daymet
+                    fig_am_p, fig_am_w = generate_am_timeseries_plots(
+                        results['am_results'], 
+                        durations, 
+                        fig_am_p_file, 
+                        fig_am_w_file,
+                        display_inches=True,
+                    )
+                    
+                    # Generate SWE time series plot
+                    fig_swe = generate_swe_timeseries_plot(
+                        results['am_results']['swe'],
+                        fig_swe_file,
+                        display_inches=True,
+                    )
+                    
+                    # Add time series figures to data
+                    data['fig_am_p'] = fig_am_p
+                    data['fig_am_w'] = fig_am_w
+                    data['fig_swe'] = fig_swe
+            else:
+                data['fig_am_p'] = data['fig_am_w'] = data['fig_swe'] = ""
 
             # Render historical results using existing out.html
             return render_template("out.html",
@@ -987,19 +996,25 @@ def NG_IDF():
                 display_inches=True,
             )
             
-            fig_am_p_comp, fig_am_w_comp = generate_multi_scenario_am_plots(
-                res_hist['am_results'], res_med['am_results'], res_high['am_results'],
-                durations, None, None,
-                display_inches=True,
-            )
+            if SHOW_AM_PLOTS:
+                fig_am_p_comp, fig_am_w_comp = generate_multi_scenario_am_plots(
+                    res_hist['am_results'], res_med['am_results'], res_high['am_results'],
+                    durations, None, None,
+                    display_inches=True,
+                )
+            else:
+                fig_am_p_comp = fig_am_w_comp = ""
             
-            fig_swe_comp = generate_multi_scenario_swe_plot(
-                res_hist['am_results']['swe'],
-                res_med['am_results']['swe'],
-                res_high['am_results']['swe'],
-                None,
-                display_inches=True,
-            )
+            if SHOW_AM_PLOTS:
+                fig_swe_comp = generate_multi_scenario_swe_plot(
+                    res_hist['am_results']['swe'],
+                    res_med['am_results']['swe'],
+                    res_high['am_results']['swe'],
+                    None,
+                    display_inches=True,
+                )
+            else:
+                fig_swe_comp = ""
 
             # 5. Build Comprehensive Summary Table
             # Indices: 2yr=0, 5yr=30, 10yr=40, 25yr=46, 50yr=48, 100yr=49, 500yr=50
@@ -1147,23 +1162,29 @@ def NG_IDF():
                 member_dtair=mid_dtair, display_inches=True
             )
             
-            fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
-                res_hist_le2['am_results'], res_hist_le4['am_results'], 
-                res_hist_le7['am_results'], res_hist_le9['am_results'],
-                res_futu_le2['am_results'], res_futu_le4['am_results'],
-                res_futu_le7['am_results'], res_futu_le9['am_results'],
-                durations, None, None,
-                member_dtair=mid_dtair, display_inches=True
-            )
+            if SHOW_AM_PLOTS:
+                fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
+                    res_hist_le2['am_results'], res_hist_le4['am_results'], 
+                    res_hist_le7['am_results'], res_hist_le9['am_results'],
+                    res_futu_le2['am_results'], res_futu_le4['am_results'],
+                    res_futu_le7['am_results'], res_futu_le9['am_results'],
+                    durations, None, None,
+                    member_dtair=mid_dtair, display_inches=True
+                )
+            else:
+                fig_am_p_comp = fig_am_w_comp = ""
             
-            fig_swe_comp = generate_cesm_ensemble_swe_plot(
-                res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
-                res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
-                res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
-                res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
-                None,
-                member_dtair=mid_dtair, display_inches=True
-            )
+            if SHOW_AM_PLOTS:
+                fig_swe_comp = generate_cesm_ensemble_swe_plot(
+                    res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
+                    res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
+                    res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
+                    res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
+                    None,
+                    member_dtair=mid_dtair, display_inches=True
+                )
+            else:
+                fig_swe_comp = ""
             
             # Ensemble-mean IDF figures (mean across the 4 members with min-max band)
             hist_members = [hist_le2_data, hist_le4_data, hist_le7_data, hist_le9_data]
@@ -1380,23 +1401,29 @@ def NG_IDF():
                 member_dtair=near_dtair, display_inches=True
             )
             
-            fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
-                res_hist_le2['am_results'], res_hist_le4['am_results'], 
-                res_hist_le7['am_results'], res_hist_le9['am_results'],
-                res_futu_le2['am_results'], res_futu_le4['am_results'],
-                res_futu_le7['am_results'], res_futu_le9['am_results'],
-                durations, None, None,
-                member_dtair=near_dtair, display_inches=True
-            )
+            if SHOW_AM_PLOTS:
+                fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
+                    res_hist_le2['am_results'], res_hist_le4['am_results'], 
+                    res_hist_le7['am_results'], res_hist_le9['am_results'],
+                    res_futu_le2['am_results'], res_futu_le4['am_results'],
+                    res_futu_le7['am_results'], res_futu_le9['am_results'],
+                    durations, None, None,
+                    member_dtair=near_dtair, display_inches=True
+                )
+            else:
+                fig_am_p_comp = fig_am_w_comp = ""
             
-            fig_swe_comp = generate_cesm_ensemble_swe_plot(
-                res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
-                res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
-                res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
-                res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
-                None,
-                member_dtair=near_dtair, display_inches=True
-            )
+            if SHOW_AM_PLOTS:
+                fig_swe_comp = generate_cesm_ensemble_swe_plot(
+                    res_hist_le2['am_results']['swe'], res_hist_le4['am_results']['swe'],
+                    res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
+                    res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
+                    res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
+                    None,
+                    member_dtair=near_dtair, display_inches=True
+                )
+            else:
+                fig_swe_comp = ""
             
             # Ensemble-mean IDF figures (mean across the 4 members with min-max band)
             print("Generating CESM Near-Term ensemble-mean IDF plots...", flush=True)

@@ -208,7 +208,7 @@
       <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>Impact Summary</strong> compares the future NG-IDF with the baseline for the ensemble mean (first column) and for each member (difference in inches and percent change).</li>
-      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
     <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline is still a model simulation, so the change from baseline to 2034&ndash;2049 is the transferable result. Apply it to the observed values on the Historical Weather (Daymet) page:</p>
@@ -271,6 +271,7 @@
   </div>
 </div>
 
+{% if fig_am_p_comp or fig_am_w_comp or fig_swe_comp %}
 <!-- AM P Multi-Ensemble Time Series -->
 <div class="multi-plot">
   <h2>Annual Maximum Precipitation (AM P): CESM2-LE Ensemble Comparison</h2>
@@ -297,6 +298,7 @@
   </p>
   <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Ensemble Comparison">
 </div>
+{% endif %}
 
 <!-- ========================================== -->
 <!-- DIVIDER -->

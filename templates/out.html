@@ -393,7 +393,7 @@
       <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>% Difference</strong> (Impact Summary table) compares NG-IDF with Daymet PREC-IDF. Positive values suggest potential under-design if following the standard PREC-IDF method. E.g., a +20% difference suggests the NG-IDF value is 20% higher than the PREC-IDF value.</li>
-      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
   </div>
@@ -423,6 +423,7 @@
   </div>
 </div>
 
+{% if fig_am_p or fig_swe %}
 <!-- Time Series Plot of AM P and W (Combined) -->
 <div class="timeseries-plot">
   <h2>Annual Maximum Precipitation (AM P) and Water Available for Runoff (AM W) Time Series</h2>
@@ -434,6 +435,7 @@
   <h2>Annual Maximum Snow Water Equivalent (AM SWE) Time Series</h2>
   <img class="plot-img" src="{{ fig_swe }}" alt="AM SWE Time Series">
 </div>
+{% endif %}
 
 <!-- ========================================== -->
 <!-- DIVIDER -->
