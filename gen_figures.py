@@ -404,9 +404,33 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
     return "data:image/png;base64," + img_prec, "data:image/png;base64," + img_ng
 
 
+# Near-term (2034-2049) domain-mean annual air-temperature change (deg C) of each
+# CESM-LE member; same values as the near-term spatial maps.
+CESM_NEAR_TERM_DMAAT = {"LE2": 1.51, "LE4": 1.81, "LE7": 1.69, "LE9": 2.45}
+
+
+def _cesm_member_labels(member_dtair=None):
+    """Legend labels for the four CESM-LE members (historical, future)."""
+    members = ["LE2", "LE4", "LE7", "LE9"]
+    if member_dtair is None:
+        return (["Hist " + m for m in members], ["Futu " + m for m in members])
+    return (
+        ["Baseline " + m for m in members],
+        ["Future %s (%+.2f\u00b0C)" % (m, member_dtair[m]) for m in members],
+    )
+
+
+def _cesm_grid(ax, member_dtair=None):
+    """Visible dashed grid for the near-term style, original faint grid otherwise."""
+    if member_dtair is None:
+        ax.grid(True, alpha=0.3)
+    else:
+        style_grid(ax)
+
+
 def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_le9_am,
                                      futu_le2_am, futu_le4_am, futu_le7_am, futu_le9_am,
-                                     durations, fig_file_p, fig_file_w):
+                                     durations, fig_file_p, fig_file_w, member_dtair=None, display_inches=False):
     """
     Generate CESM multi-ensemble AM time series plots in 2x4 grid
     Shows all 4 historical and 4 future ensemble members
@@ -430,11 +454,13 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
     """
     
     try:
+        unit_factor = 1.0 / 25.4 if display_inches else 1.0
+        unit_label = 'in' if display_inches else 'mm'
+
         # Color schemes for ensemble members
         hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
         futu_colors = ['red', 'orange', 'darkred', 'coral']
-        hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
-        futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+        hist_labels, futu_labels = _cesm_member_labels(member_dtair)
         
         # Create combined P plot in 2x4 grid
         n_dur = len(durations)
@@ -451,7 +477,7 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
                 hist_labels
             )):
                 p = data[dur]['P']
-                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3], '-', color=color, lw=1.5,
+                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3] * unit_factor, '-', color=color, lw=1.5,
                                markersize=3, alpha=0.8, label=label)
             
             # Plot all 4 future ensemble members
@@ -461,13 +487,13 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
                 futu_labels
             )):
                 p = data[dur]['P']
-                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3], '--', color=color, lw=1.5,
+                axes_p[idx].plot(p[:, 0].astype(int), p[:, 3] * unit_factor, '--', color=color, lw=1.5,
                                markersize=3, alpha=0.8, label=label)
             
             axes_p[idx].set_xlabel('Water Year', fontsize=9)
-            axes_p[idx].set_ylabel('AM Precipitation (mm)', fontsize=9)
+            axes_p[idx].set_ylabel(f'AM Precipitation ({unit_label})', fontsize=9)
             axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-            axes_p[idx].grid(True, alpha=0.3)
+            _cesm_grid(axes_p[idx], member_dtair)
             axes_p[idx].tick_params(axis='x', rotation=45)
             axes_p[idx].legend(loc='best', fontsize=6, ncol=2)
         
@@ -500,7 +526,7 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
                 hist_labels
             )):
                 w = data[dur]['W_veg']
-                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3], '-', color=color, lw=1.5,
+                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3] * unit_factor, '-', color=color, lw=1.5,
                                markersize=3, alpha=0.8, label=label)
             
             # Plot all 4 future ensemble members
@@ -510,13 +536,13 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
                 futu_labels
             )):
                 w = data[dur]['W_veg']
-                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3], '--', color=color, lw=1.5,
+                axes_w[idx].plot(w[:, 0].astype(int), w[:, 3] * unit_factor, '--', color=color, lw=1.5,
                                markersize=3, alpha=0.8, label=label)
             
             axes_w[idx].set_xlabel('Water Year', fontsize=9)
-            axes_w[idx].set_ylabel('AM Water for Runoff (mm)', fontsize=9)
+            axes_w[idx].set_ylabel(f'AM Water for Runoff ({unit_label})', fontsize=9)
             axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-            axes_w[idx].grid(True, alpha=0.3)
+            _cesm_grid(axes_w[idx], member_dtair)
             axes_w[idx].tick_params(axis='x', rotation=45)
             axes_w[idx].legend(loc='best', fontsize=6, ncol=2)
         
@@ -549,7 +575,7 @@ def generate_cesm_ensemble_am_plots(hist_le2_am, hist_le4_am, hist_le7_am, hist_
 
 def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hist_le9_swe,
                                      futu_le2_swe, futu_le4_swe, futu_le7_swe, futu_le9_swe,
-                                     fig_file):
+                                     fig_file, member_dtair=None, display_inches=False):
     """
     Generate CESM multi-ensemble SWE time series plot
     Shows all 4 historical and 4 future ensemble members
@@ -569,11 +595,13 @@ def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hi
     """
     
     try:
+        unit_factor = 1.0 / 25.4 if display_inches else 1.0
+        unit_label = 'in' if display_inches else 'mm'
+
         # Color schemes for ensemble members
         hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
         futu_colors = ['red', 'orange', 'darkred', 'coral']
-        hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
-        futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+        hist_labels, futu_labels = _cesm_member_labels(member_dtair)
         
         plt.figure(figsize=(10, 5))
         
@@ -583,7 +611,7 @@ def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hi
             hist_colors,
             hist_labels
         )):
-            plt.plot(swe[:, 0].astype(int), swe[:, 3], '-', color=color, lw=2,
+            plt.plot(swe[:, 0].astype(int), swe[:, 3] * unit_factor, '-', color=color, lw=2,
                     markersize=4, alpha=0.8, label=label)
         
         # Plot all 4 future ensemble members
@@ -592,12 +620,12 @@ def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hi
             futu_colors,
             futu_labels
         )):
-            plt.plot(swe[:, 0].astype(int), swe[:, 3], '--', color=color, lw=2,
+            plt.plot(swe[:, 0].astype(int), swe[:, 3] * unit_factor, '--', color=color, lw=2,
                     markersize=4, alpha=0.8, label=label)
         
         plt.xlabel('Water Year', fontsize=11, fontweight='bold')
-        plt.ylabel('AM Snow Water Equivalent (mm)', fontsize=11, fontweight='bold')
-        plt.grid(True, alpha=0.3)
+        plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=11, fontweight='bold')
+        _cesm_grid(plt.gca(), member_dtair)
         plt.xticks(rotation=45)
         plt.legend(loc='best', fontsize=9, ncol=2)
         plt.tight_layout()
@@ -801,7 +829,7 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file, disp
 
 def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
                                       futu_le2, futu_le4, futu_le7, futu_le9,
-                                      durations, fig_file_prec, fig_file_ng):
+                                      durations, fig_file_prec, fig_file_ng, member_dtair=None, display_inches=False):
     """
     Generate CESM multi-ensemble IDF comparison plots in 2x4 grid
     Shows all 4 historical ensemble members and all 4 future ensemble members
@@ -832,11 +860,15 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
     ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
     ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
     
+    unit_factor = 1.0 / 25.4 if display_inches else 1.0
+    
+    unit_label = 'in' if display_inches else 'mm'
+
+    
     # Color schemes for ensemble members
     hist_colors = ['blue', 'cyan', 'navy', 'dodgerblue']
     futu_colors = ['red', 'orange', 'darkred', 'coral']
-    hist_labels = ['Hist LE2', 'Hist LE4', 'Hist LE7', 'Hist LE9']
-    futu_labels = ['Futu LE2', 'Futu LE4', 'Futu LE7', 'Futu LE9']
+    hist_labels, futu_labels = _cesm_member_labels(member_dtair)
     
     # Create PREC-IDF comparison plot in 2x4 grid
     n_dur = len(durations)
@@ -852,7 +884,7 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
             hist_colors,
             hist_labels
         )):
-            curve = data[f'P_{dur}'][0, :]
+            curve = data[f'P_{dur}'][0, :] * unit_factor
             axes_prec[idx].semilogx(ari_values, curve, '-', color=color, lw=1.5, 
                                    alpha=0.8, label=label)
         
@@ -862,16 +894,16 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
             futu_colors,
             futu_labels
         )):
-            curve = data[f'P_{dur}'][0, :]
+            curve = data[f'P_{dur}'][0, :] * unit_factor
             axes_prec[idx].semilogx(ari_values, curve, '--', color=color, lw=1.5,
                                    alpha=0.8, label=label)
         
         axes_prec[idx].set_xticks(ari_ticks)
         axes_prec[idx].set_xticklabels(ari_tick_labels)
         axes_prec[idx].set_xlabel('ARI (years)', fontsize=9)
-        axes_prec[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_prec[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_prec[idx].set_title(f'PREC-IDF {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_prec[idx].grid(True, alpha=0.3)
+        _cesm_grid(axes_prec[idx], member_dtair)
         axes_prec[idx].legend(loc='best', fontsize=6, ncol=2)
     
     # Hide the last subplot if we have 7 durations
@@ -902,7 +934,7 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
             hist_colors,
             hist_labels
         )):
-            curve = data[f'NG_{dur}'][0, :]
+            curve = data[f'NG_{dur}'][0, :] * unit_factor
             axes_ng[idx].semilogx(ari_values, curve, '-', color=color, lw=1.5,
                                  alpha=0.8, label=label)
         
@@ -912,16 +944,16 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
             futu_colors,
             futu_labels
         )):
-            curve = data[f'NG_{dur}'][0, :]
+            curve = data[f'NG_{dur}'][0, :] * unit_factor
             axes_ng[idx].semilogx(ari_values, curve, '--', color=color, lw=1.5,
                                  alpha=0.8, label=label)
         
         axes_ng[idx].set_xticks(ari_ticks)
         axes_ng[idx].set_xticklabels(ari_tick_labels)
         axes_ng[idx].set_xlabel('ARI (years)', fontsize=9)
-        axes_ng[idx].set_ylabel('Magnitude (mm)', fontsize=9)
+        axes_ng[idx].set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
         axes_ng[idx].set_title(f'NG-IDF {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
-        axes_ng[idx].grid(True, alpha=0.3)
+        _cesm_grid(axes_ng[idx], member_dtair)
         axes_ng[idx].legend(loc='best', fontsize=6, ncol=2)
     
     # Hide the last subplot if we have 7 durations
@@ -942,3 +974,108 @@ def generate_cesm_ensemble_idf_plots(hist_le2, hist_le4, hist_le7, hist_le9,
     plt.close()
     
     return "data:image/png;base64," + img_prec, "data:image/png;base64," + img_ng
+
+
+def generate_cesm_ensemble_mean_idf_plots(hist_list, futu_list, durations, member_dtair=None,
+                                          display_inches=False, kind='magnitude'):
+    """
+    CESM ensemble-mean IDF summary in a 2x4 grid (PREC-IDF and NG-IDF).
+
+    The ensemble mean is taken across the four members at each ARI. The shaded
+    band is the min-max range across members.
+
+    Parameters
+    ----------
+    hist_list, futu_list : list of dict
+        Baseline / future results (structure_results output), one per member.
+    durations : list
+        Duration strings such as ['1h', '3h', ..., '72h'].
+    member_dtair : dict or None
+        Member air-temperature changes (deg C); used only for the legend.
+    display_inches : bool
+        Convert magnitudes from mm to inches.
+    kind : str
+        'magnitude' -> baseline and future ensemble mean with member range.
+        'change'    -> percent change of the ensemble mean (future mean vs
+                       baseline mean) with the range of member changes.
+
+    Returns
+    -------
+    tuple : (base64_prec, base64_ng) image strings
+    """
+
+    try:
+        unit_factor = 1.0 / 25.4 if display_inches else 1.0
+        unit_label = 'in' if display_inches else 'mm'
+
+        probs = np.concatenate([np.arange(0.50, 1.00, 0.01), np.array([0.998])])
+        ari_values = 1.0 / (1.0 - probs)
+        ari_ticks = np.array([2, 5, 10, 25, 50, 100, 500])
+        ari_tick_labels = ['2', '5', '10', '25', '50', '100', '500']
+
+        if member_dtair:
+            mean_dtair = float(np.mean(list(member_dtair.values())))
+            futu_mean_label = 'Future ensemble mean (avg %+.2f\u00b0C)' % mean_dtair
+        else:
+            futu_mean_label = 'Future ensemble mean'
+
+        def build(prefix, name):
+            fig, axes = plt.subplots(2, 4, figsize=(16, 8))
+            axes = axes.flatten()
+
+            for idx, dur in enumerate(durations):
+                ax = axes[idx]
+                hist = np.array([np.asarray(d[f'{prefix}_{dur}'][0, :], dtype=float)
+                                 for d in hist_list]) * unit_factor
+                futu = np.array([np.asarray(d[f'{prefix}_{dur}'][0, :], dtype=float)
+                                 for d in futu_list]) * unit_factor
+                ax.set_xscale('log')
+
+                if kind == 'change':
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        member_chg = (futu - hist) / hist * 100.0
+                        mean_chg = (futu.mean(axis=0) - hist.mean(axis=0)) / hist.mean(axis=0) * 100.0
+                    ax.fill_between(ari_values, np.nanmin(member_chg, axis=0),
+                                    np.nanmax(member_chg, axis=0), color='red',
+                                    alpha=0.2, label='Member range (min-max)')
+                    ax.plot(ari_values, mean_chg, '-', color='red', lw=2.5,
+                            label='Ensemble-mean change')
+                    ax.axhline(0.0, color='black', lw=0.8)
+                    ax.set_ylabel('Change vs baseline (%)', fontsize=9)
+                else:
+                    ax.fill_between(ari_values, hist.min(axis=0), hist.max(axis=0),
+                                    color='blue', alpha=0.2, label='Baseline member range')
+                    ax.fill_between(ari_values, futu.min(axis=0), futu.max(axis=0),
+                                    color='red', alpha=0.2, label='Future member range')
+                    ax.plot(ari_values, hist.mean(axis=0), '-', color='blue', lw=2.5,
+                            label='Baseline ensemble mean')
+                    ax.plot(ari_values, futu.mean(axis=0), '--', color='red', lw=2.5,
+                            label=futu_mean_label)
+                    ax.set_ylabel(f'Magnitude ({unit_label})', fontsize=9)
+
+                ax.set_xticks(ari_ticks)
+                ax.set_xticklabels(ari_tick_labels)
+                ax.set_xlabel('ARI (years)', fontsize=9)
+                ax.set_title(f'{name} {dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
+                style_grid(ax)
+                ax.legend(loc='best', fontsize=6)
+
+            # Hide the last subplot if we have 7 durations
+            if len(durations) == 7:
+                axes[7].axis('off')
+
+            fig.tight_layout()
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+            buf.seek(0)
+            img = base64.b64encode(buf.read()).decode('utf-8')
+            plt.close(fig)
+            return "data:image/png;base64," + img
+
+        return build('P', 'PREC-IDF'), build('NG', 'NG-IDF')
+
+    except Exception as e:
+        print(f"ERROR in generate_cesm_ensemble_mean_idf_plots: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return "", ""

@@ -14,7 +14,8 @@ from gen_figures import (generate_fig, generate_figs_multiple, generate_am_times
                          generate_swe_timeseries_plot, generate_multi_scenario_idf_plots,
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
-                         generate_cesm_ensemble_swe_plot)
+                         generate_cesm_ensemble_swe_plot, CESM_NEAR_TERM_DMAAT,
+                         generate_cesm_ensemble_mean_idf_plots)
 from gen_spatial_figures import (generate_daymet_idf_figure, generate_daymet_alt_figure,
                                   generate_wrf_idf_figure, generate_wrf_alt_figure,
                                   generate_cesm_mid_century_idf_figure,
@@ -1228,6 +1229,22 @@ def NG_IDF():
 
         elif scenario == "future_cesm_near":
 
+            # Preserve the point-mode values submitted by the user so the
+            # results page can show them in the Query Parameters table.
+            near_land_cover_labels = {
+                "1": "Open", "2": "Evergreen Forest", "3": "Deciduous Forest",
+                "4": "Mixed Forest", "5": "Crop", "6": "Grassland",
+                "7": "Shrub", "8": "Pasture", "9": "Wetland", "10": "Moss",
+            }
+            query_parameters = {
+                "land_cover": near_land_cover_labels.get(
+                    request.form.get("Value6", "").strip(),
+                    "Unspecified",
+                ),
+                "lai": request.form.get("Value3", "").strip(),
+                "tree_height": request.form.get("Value4", "").strip(),
+            }
+
             # Run CESM Near-Term (16-year) Multi-Scenario Workflow IN PARALLEL (8 processors)
             # Historical: 2006-2021 (16 years), Future: 2034-2049 (16 years)
             # 4 historical + 4 future ensemble members
@@ -1311,10 +1328,14 @@ def NG_IDF():
             
             # Generate CESM multi-ensemble comparison plots
             print("Generating CESM Near-Term ensemble comparison plots...", flush=True)
+            # Near-term legends show each member's domain-mean air-temperature change;
+            # figures are displayed in inches (data are stored in mm).
+            near_dtair = CESM_NEAR_TERM_DMAAT
             fig_prec_comp, fig_ng_comp = generate_cesm_ensemble_idf_plots(
                 hist_le2_data, hist_le4_data, hist_le7_data, hist_le9_data,
                 futu_le2_data, futu_le4_data, futu_le7_data, futu_le9_data,
-                durations, None, None
+                durations, None, None,
+                member_dtair=near_dtair, display_inches=True
             )
             
             fig_am_p_comp, fig_am_w_comp = generate_cesm_ensemble_am_plots(
@@ -1322,7 +1343,8 @@ def NG_IDF():
                 res_hist_le7['am_results'], res_hist_le9['am_results'],
                 res_futu_le2['am_results'], res_futu_le4['am_results'],
                 res_futu_le7['am_results'], res_futu_le9['am_results'],
-                durations, None, None
+                durations, None, None,
+                member_dtair=near_dtair, display_inches=True
             )
             
             fig_swe_comp = generate_cesm_ensemble_swe_plot(
@@ -1330,7 +1352,21 @@ def NG_IDF():
                 res_hist_le7['am_results']['swe'], res_hist_le9['am_results']['swe'],
                 res_futu_le2['am_results']['swe'], res_futu_le4['am_results']['swe'],
                 res_futu_le7['am_results']['swe'], res_futu_le9['am_results']['swe'],
-                None
+                None,
+                member_dtair=near_dtair, display_inches=True
+            )
+            
+            # Ensemble-mean IDF figures (mean across the 4 members with min-max band)
+            print("Generating CESM Near-Term ensemble-mean IDF plots...", flush=True)
+            hist_members = [hist_le2_data, hist_le4_data, hist_le7_data, hist_le9_data]
+            futu_members = [futu_le2_data, futu_le4_data, futu_le7_data, futu_le9_data]
+            fig_prec_mean, fig_ng_mean = generate_cesm_ensemble_mean_idf_plots(
+                hist_members, futu_members, durations,
+                member_dtair=near_dtair, display_inches=True, kind='magnitude'
+            )
+            fig_prec_chg, fig_ng_chg = generate_cesm_ensemble_mean_idf_plots(
+                hist_members, futu_members, durations,
+                member_dtair=near_dtair, display_inches=True, kind='change'
             )
             
             # Build Comprehensive Summary Table for CESM Near-Term
@@ -1354,28 +1390,35 @@ def NG_IDF():
 
                 for ari, idx in zip(aris, indices):
                     # LE2
-                    val_hist_le2 = hist_le2_arr[0, idx]
-                    val_futu_le2 = futu_le2_arr[0, idx]
+                    val_hist_le2 = hist_le2_arr[0, idx] / 25.4
+                    val_futu_le2 = futu_le2_arr[0, idx] / 25.4
                     diff_le2 = val_futu_le2 - val_hist_le2
                     pct_le2 = (diff_le2 / val_hist_le2 * 100) if val_hist_le2 != 0 else 0.0
 
                     # LE4
-                    val_hist_le4 = hist_le4_arr[0, idx]
-                    val_futu_le4 = futu_le4_arr[0, idx]
+                    val_hist_le4 = hist_le4_arr[0, idx] / 25.4
+                    val_futu_le4 = futu_le4_arr[0, idx] / 25.4
                     diff_le4 = val_futu_le4 - val_hist_le4
                     pct_le4 = (diff_le4 / val_hist_le4 * 100) if val_hist_le4 != 0 else 0.0
 
                     # LE7
-                    val_hist_le7 = hist_le7_arr[0, idx]
-                    val_futu_le7 = futu_le7_arr[0, idx]
+                    val_hist_le7 = hist_le7_arr[0, idx] / 25.4
+                    val_futu_le7 = futu_le7_arr[0, idx] / 25.4
                     diff_le7 = val_futu_le7 - val_hist_le7
                     pct_le7 = (diff_le7 / val_hist_le7 * 100) if val_hist_le7 != 0 else 0.0
 
                     # LE9
-                    val_hist_le9 = hist_le9_arr[0, idx]
-                    val_futu_le9 = futu_le9_arr[0, idx]
+                    val_hist_le9 = hist_le9_arr[0, idx] / 25.4
+                    val_futu_le9 = futu_le9_arr[0, idx] / 25.4
                     diff_le9 = val_futu_le9 - val_hist_le9
                     pct_le9 = (diff_le9 / val_hist_le9 * 100) if val_hist_le9 != 0 else 0.0
+
+                    # Ensemble mean: change from the ensemble-mean baseline to the
+                    # ensemble-mean future (not the average of member percent changes)
+                    val_hist_mean = (val_hist_le2 + val_hist_le4 + val_hist_le7 + val_hist_le9) / 4.0
+                    val_futu_mean = (val_futu_le2 + val_futu_le4 + val_futu_le7 + val_futu_le9) / 4.0
+                    diff_mean = val_futu_mean - val_hist_mean
+                    pct_mean = (diff_mean / val_hist_mean * 100) if val_hist_mean != 0 else 0.0
 
                     summary_rows.append({
                         "duration": dur,
@@ -1395,12 +1438,22 @@ def NG_IDF():
                         "hist_le9": val_hist_le9,
                         "futu_le9": val_futu_le9,
                         "diff_le9": diff_le9,
-                        "pct_le9": pct_le9
+                        "pct_le9": pct_le9,
+                        "hist_mean": val_hist_mean,
+                        "futu_mean": val_futu_mean,
+                        "diff_mean": diff_mean,
+                        "pct_mean": pct_mean
                     })
 
             # Use the new near-term template
             return render_template("out_cesm_near.html",
                                    lat=lat, lon=lon,
+                                   query_parameters=query_parameters,
+                                   member_dtair=near_dtair,
+                                   fig_prec_mean=fig_prec_mean,
+                                   fig_ng_mean=fig_ng_mean,
+                                   fig_prec_chg=fig_prec_chg,
+                                   fig_ng_chg=fig_ng_chg,
                                    hist_le2=hist_le2_data,
                                    futu_le2=futu_le2_data,
                                    hist_le4=hist_le4_data,

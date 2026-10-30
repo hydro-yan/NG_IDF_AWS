@@ -11,22 +11,23 @@
   body { font-family: Arial, sans-serif; background: #f7f9fb; color: #333; font-size: 11px; margin: 8px; }
   html, body { margin: 0; padding: 0; }
 
-  header { background: linear-gradient(90deg, #f68b1f, #c46000); color: white; padding: 10px 20px; }
+  /* Header Banner */
+  header { background: linear-gradient(90deg, #2e7d32, #1b4d3e); color: white; padding: 10px 20px; }
   .header-container { display: flex; justify-content: center; align-items: center; max-width: 1500px; margin: 0 auto; padding: 0 20px; }
   header h1 { font-size: 1.2rem; font-weight: 600; text-align: center; margin: 0; line-height: 1.3; }
-  
+
   @media (max-width: 700px) {
     header h1 { font-size: 1rem; }
   }
-  
-  h2 { color: #b34b00; font-size: 13px; border-bottom: 2px solid #e3eaf5; padding-bottom: 2px; margin: 10px 0; }
+
+  h2 { color: #1b4d3e; font-size: 13px; border-bottom: 2px solid #e3eaf5; padding-bottom: 4px; margin: 10px 0 8px 0; font-weight: 600; }
   h3 { color: #333; font-size: 12px; margin: 5px 0; text-align: center; }
-  .section { background: #fff; border: 1px solid #e2e6ea; border-radius: 6px; padding: 10px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
-  
+  .section { background: #fff; border: 1px solid #e2e6ea; border-radius: 6px; padding: 12px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+
   /* Section Titles */
   .section-title {
     text-align: center;
-    color: #b34b00;
+    color: #1b4d3e;
     font-size: 16px;
     font-weight: 700;
     margin: 20px 0 15px 0;
@@ -35,51 +36,97 @@
   }
 
   .divider {
-    border-top: 3px solid #f68b1f;
+    border-top: 3px solid #2e7d32;
     margin: 30px 0 20px 0;
   }
-  
+
+  /* Intro: back link, query parameters, map, instructions */
+  .results-intro { max-width: 1200px; margin: 20px auto 0 auto; padding: 0 20px; }
+
+  .back-link { display: inline-block; margin-bottom: 16px; color: #1b4d3e; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .back-link:hover { text-decoration: underline; }
+
+  .summary-row { display: flex; align-items: flex-start; justify-content: center; gap: 16px; margin-bottom: 16px; }
+
+  .query-parameters {
+    flex: 0 1 430px;
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .site-location-map {
+    flex: 1 1 550px;
+    max-width: 650px;
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  #map { height: 245px; width: 100%; border: 1px solid #ccc; border-radius: 6px; }
+
+  .query-parameters h2, .site-location-map h2 { margin-top: 0; }
+
+  .meta-table { max-width: 850px; margin: 0 auto; font-size: 12px; }
+  .meta-table th, .meta-table td { text-align: left; padding: 6px 10px; }
+  .meta-table th { background: #eef6ee; color: #1b4d3e; width: 40%; }
+
+  .note-box {
+    background: #eef6ee;
+    border: 1px solid #cfe3cf;
+    border-left: 4px solid #2e7d32;
+    color: #1b4d3e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .note-box p { margin: 0 0 8px 0; }
+  .note-box ul { margin: 6px 0 0 0; padding-left: 20px; }
+
+  @media (max-width: 800px) {
+    .summary-row { flex-direction: column; }
+    .query-parameters, .site-location-map { box-sizing: border-box; width: 100%; max-width: none; }
+  }
+
   /* Summary Table */
   .summary-table-container { overflow-x: auto; }
   .summary-table { width: 100%; border-collapse: collapse; font-size: 10px; }
   .summary-table th, .summary-table td { border: 1px solid #dfe3ea; padding: 5px; text-align: center; }
-  .summary-table th { background: #f68b1f; color: white; }
+  .summary-table th { background: #2e7d32; color: white; }
   .summary-table tr:nth-child(even) { background-color: #f8fafc; }
-  
+
   .pos { color: #d32f2f; font-weight: bold; } /* Red for Increase */
   .neg { color: #1976d2; font-weight: bold; } /* Blue for Decrease */
 
-  /* Heavy separation line for summary table */
-  .duration-start {
-      border-top: 3px solid #333 !important;
-  }
-  
   /* Tabs */
   .tab-container { margin-top: 20px; }
   .tabs { display: flex; border-bottom: 2px solid #ddd; flex-wrap: wrap; }
   .tab-btn { padding: 8px 16px; cursor: pointer; background: #f1f1f1; border: none; font-weight: bold; font-size: 11px; color: #555; border-radius: 6px 6px 0 0; margin-right: 5px; margin-bottom: 5px; }
-  .tab-btn.active { background: #b34b00; color: white; }
+  .tab-btn:hover { background: #e0e0e0; }
+  .tab-btn.active { background: #1b4d3e; color: white; }
   .tab-content { display: none; padding: 15px; background: white; border: 1px solid #ddd; border-top: none; }
   .tab-content.active { display: block; }
 
-  /* Reused Table/Plot Styles */
+  /* Tables */
   table { border-collapse: collapse; width: 100%; font-size: 10.5px; margin-top: 5px; }
   th, td { border: 1px solid #dfe3ea; text-align: center; padding: 4px; }
-  th { background-color: #f68b1f; color: white; }
+  th { background-color: #2e7d32; color: white; }
   tr:nth-child(even) { background-color: #f8fafc; }
+  tr:hover { background-color: #eef6ee; }
 
   .am-tables { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
   .am-table { width: 100%; max-width: none; }
 
   .idf-tables-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
   .idf-half { width: 48%; }
-  
+
   .swe-container { display: flex; justify-content: center; }
   .swe-table { width: 100%; max-width: 600px; }
-  
-  /* Map Container Style matching out.html */
-  .map-section { display: flex; justify-content: center; margin-bottom: 12px; }
-  .map-card { width: 48%; max-width: 700px; }
 
   /* Multi-Scenario Plots */
   .multi-plot {
@@ -92,19 +139,9 @@
     padding: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   }
+  .multi-plot h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
 
-  .multi-plot h2 {
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 14px;
-  }
-
-  .plot-img {
-    display: block;
-    width: 100%;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-  }
+  .plot-img { display: block; width: 100%; border-radius: 4px; border: 1px solid #ddd; }
 
   /* Smaller SWE plot */
   .swe-plot-small {
@@ -117,21 +154,70 @@
     padding: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   }
+  .swe-plot-small h2 { text-align: center; margin-bottom: 10px; font-size: 14px; }
 
-  .swe-plot-small h2 {
-    text-align: center;
-    margin-bottom: 10px;
-    font-size: 14px;
+  .fig-tab-btn { padding: 8px 16px; cursor: pointer; background: #f1f1f1; border: none; font-weight: bold; font-size: 11px; color: #555; border-radius: 6px 6px 0 0; margin-right: 5px; margin-bottom: 5px; }
+  .fig-tab-btn:hover { background: #e0e0e0; }
+  .fig-tab-btn.active { background: #1b4d3e; color: white; }
+  .fig-tab-content { display: none; padding-top: 8px; }
+  .fig-tab-content.active { display: block; }
+
+  footer { text-align: center; font-size: 10px; color: #777; margin: 30px 0; padding: 20px 0; }
+  footer img { height: 60px; min-height: 60px; width: auto; margin-bottom: 10px; }
+
+  @media(max-width:900px) {
+    .idf-half { width: 100%; }
+    .idf-tables-container { flex-direction: column; }
+    .multi-plot, .swe-plot-small { width: 100%; box-sizing: border-box; }
   }
 </style>
 </head>
 <body>
 
+<!-- Top Banner -->
 <header>
   <div class="header-container">
-    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool Outputs - CESM2-LE</h1>
+    <h1>Next-Generation Intensity–Duration–Frequency (NG-IDF) Tool Outputs</h1>
   </div>
 </header>
+
+<div class="results-intro">
+  <a class="back-link" href="/NG_IDF{% if request.args.get('auth_token') %}?auth_token={{ request.args.get('auth_token') }}{% endif %}">&larr; Back to NG-IDF Tool</a>
+  <div class="summary-row">
+    <div class="query-parameters">
+      <h2>Query Parameters</h2>
+      <table class="meta-table">
+        <tr><th>Scenario</th><td>Near-Term Sensitivity Stress Test (2034&ndash;2049): CESM2-LE, 4 ensemble members</td></tr>
+        <tr><th>Member warming (&Delta;Tair)</th><td>LE2 {{ "%+.2f"|format(member_dtair['LE2']) }}&deg;C, LE4 {{ "%+.2f"|format(member_dtair['LE4']) }}&deg;C, LE7 {{ "%+.2f"|format(member_dtair['LE7']) }}&deg;C, LE9 {{ "%+.2f"|format(member_dtair['LE9']) }}&deg;C</td></tr>
+        <tr><th>Latitude</th><td>{{ '%.5f'|format(lat) }}&deg;</td></tr>
+        <tr><th>Longitude</th><td>{{ '%.5f'|format(lon) }}&deg;</td></tr>
+        <tr><th>Land Cover</th><td>{{ query_parameters.land_cover }}</td></tr>
+        <tr><th>Leaf Area Index (LAI)</th><td>{{ query_parameters.lai }}</td></tr>
+        <tr><th>Canopy Height</th><td>{{ query_parameters.tree_height }} ft</td></tr>
+      </table>
+    </div>
+    <div class="site-location-map">
+      <h2>Site Location Map</h2>
+      <div id="map"></div>
+    </div>
+  </div>
+  <div class="note-box">
+    <p><strong>Near-Term Sensitivity Stress Test Results:</strong> CESM (Community Earth System Model) generates new 2034&ndash;2049 weather from physics. The baseline simulation (2006&ndash;2021) is the model's version of the past, shown only as the reference that the future runs are measured against. All displayed design values are reported in inches.</p>
+    <strong>How to use these outputs:</strong>
+    <ul>
+      <li><strong>PREC-IDF</strong> reports precipitation-only design-storm depth for each duration and average recurrence interval (ARI).</li>
+      <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
+      <li><strong>Impact Summary</strong> compares the future NG-IDF with the baseline for the ensemble mean (first column) and for each member (difference in inches and percent change).</li>
+      <li><strong>Annual-maximum plots and tables</strong> show the largest event in each year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
+      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+    </ul>
+    <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline is still a model simulation, so the change from baseline to 2034&ndash;2049 is the transferable result. Apply it to the observed values on the Historical Weather (Daymet) page:</p>
+    <ul>
+      <li><strong>IDF &mdash; percent change</strong> (e.g., +20%) &rarr; Multiply: if the Historical Weather (Daymet) NG-IDF value is 2.0 in, then 2.0 in &times; (1 + 20%) = 2.4 in. For example, if a member's future NG-IDF is 20% higher than its baseline NG-IDF, multiply the Daymet NG-IDF value by 1.20.</li>
+    </ul>
+    <p style="margin-top:10px;">Use the <strong>ensemble-mean</strong> change (the first column of the Impact Summary, computed from the ensemble-mean baseline and the ensemble-mean future NG-IDF) as the central estimate, and use the spread across members (the shaded bands in the Ensemble Mean figures, or the member columns in the Impact Summary) to see how much it could vary. For risk-averse designs, consider the maximum (or minimum) member change instead, depending on your risk-cost tradeoff. Each future member is labelled with its own domain-mean air-temperature change (&Delta;Tair).</p>
+  </div>
+</div>
 
 <!-- ========================================== -->
 <!-- SECTION 1: FIGURES -->
@@ -139,37 +225,65 @@
 
 <div class="section-title">📊 CESM2-LE: Multi-Ensemble Comparison Figures</div>
 
-<!-- Site Location Map -->
-<div class="map-section">
-  <div class="section map-card">
-    <h2>Site Location Map</h2>
-    <div id="map" style="height: 330px; width: 100%; border:1px solid #ccc; border-radius:6px;"></div>
+<!-- PREC-IDF Multi-Ensemble Comparison -->
+<div class="multi-plot" id="precFigs">
+  <h2>PREC-IDF Curves: CESM2-LE Baseline vs Future</h2>
+  <div class="tabs">
+    <button class="fig-tab-btn active" onclick="openFigTab(event, 'precFigs', 'precMean')">Ensemble Mean</button>
+    <button class="fig-tab-btn" onclick="openFigTab(event, 'precFigs', 'precMembers')">Individual Members</button>
+  </div>
+
+  <div id="precMean" class="fig-tab-content active">
+    <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+      Blue solid: baseline ensemble mean (2006-2021). Red dashed: future ensemble mean (2034-2049, SSP3-70). Shaded bands: min-max range across the four members.
+    </p>
+    <img class="plot-img" src="{{ fig_prec_mean }}" alt="PREC-IDF Ensemble Mean">
+    <p style="font-size:10px; margin:10px 0 5px 0; color:#555; text-align:center;">
+      Percent change of the ensemble mean (future mean vs baseline mean). The shaded band is the range of the four members' own changes.
+    </p>
+    <img class="plot-img" src="{{ fig_prec_chg }}" alt="PREC-IDF Ensemble Mean Change">
+  </div>
+
+  <div id="precMembers" class="fig-tab-content">
+    <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+      Solid lines: Baseline simulations (2006-2021). Dashed lines: Future simulations (2034-2049, SSP3-70), labelled with each member's &Delta;Tair.
+    </p>
+    <img class="plot-img" src="{{ fig_prec_comp }}" alt="PREC-IDF Ensemble Comparison">
   </div>
 </div>
 
-<!-- PREC-IDF Multi-Ensemble Comparison -->
-<div class="multi-plot">
-  <h2>PREC-IDF Curves: CESM2-LE Ensemble Comparison (4 Historical + 4 Future Members)</h2>
-  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
-    Solid lines: Historical ensemble members (2006-2021). Dashed lines: Future ensemble members (2034-2049, SSP3-70).
-  </p>
-  <img class="plot-img" src="{{ fig_prec_comp }}" alt="PREC-IDF Ensemble Comparison">
-</div>
-
 <!-- NG-IDF Multi-Ensemble Comparison -->
-<div class="multi-plot">
-  <h2>NG-IDF Curves: CESM2-LE Ensemble Comparison (4 Historical + 4 Future Members)</h2>
-  <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
-    Solid lines: Historical ensemble members (2006-2021). Dashed lines: Future ensemble members (2034-2049, SSP3-70).
-  </p>
-  <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Ensemble Comparison">
+<div class="multi-plot" id="ngFigs">
+  <h2>NG-IDF Curves: CESM2-LE Baseline vs Future</h2>
+  <div class="tabs">
+    <button class="fig-tab-btn active" onclick="openFigTab(event, 'ngFigs', 'ngMean')">Ensemble Mean</button>
+    <button class="fig-tab-btn" onclick="openFigTab(event, 'ngFigs', 'ngMembers')">Individual Members</button>
+  </div>
+
+  <div id="ngMean" class="fig-tab-content active">
+    <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+      Blue solid: baseline ensemble mean (2006-2021). Red dashed: future ensemble mean (2034-2049, SSP3-70). Shaded bands: min-max range across the four members.
+    </p>
+    <img class="plot-img" src="{{ fig_ng_mean }}" alt="NG-IDF Ensemble Mean">
+    <p style="font-size:10px; margin:10px 0 5px 0; color:#555; text-align:center;">
+      Percent change of the ensemble mean (future mean vs baseline mean). The shaded band is the range of the four members' own changes.
+    </p>
+    <img class="plot-img" src="{{ fig_ng_chg }}" alt="NG-IDF Ensemble Mean Change">
+  </div>
+
+  <div id="ngMembers" class="fig-tab-content">
+    <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
+      Solid lines: Baseline simulations (2006-2021). Dashed lines: Future simulations (2034-2049, SSP3-70), labelled with each member's &Delta;Tair.
+    </p>
+    <img class="plot-img" src="{{ fig_ng_comp }}" alt="NG-IDF Ensemble Comparison">
+  </div>
 </div>
 
 <!-- AM P Multi-Ensemble Time Series -->
 <div class="multi-plot">
   <h2>Annual Maximum Precipitation (AM P): CESM2-LE Ensemble Comparison</h2>
   <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
-    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+    Solid lines: Baseline simulations. Dashed lines: Future simulations.
   </p>
   <img class="plot-img" src="{{ fig_am_p_comp }}" alt="AM P Ensemble Comparison">
 </div>
@@ -178,7 +292,7 @@
 <div class="multi-plot">
   <h2>Annual Maximum Water for Runoff (AM W): CESM2-LE Ensemble Comparison</h2>
   <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
-    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+    Solid lines: Baseline simulations. Dashed lines: Future simulations.
   </p>
   <img class="plot-img" src="{{ fig_am_w_comp }}" alt="AM W Ensemble Comparison">
 </div>
@@ -187,7 +301,7 @@
 <div class="swe-plot-small">
   <h2>Annual Maximum Snow Water Equivalent (AM SWE): CESM2-LE Ensemble Comparison</h2>
   <p style="font-size:10px; margin:5px 0; color:#555; text-align:center;">
-    Solid lines: Historical ensemble members. Dashed lines: Future ensemble members.
+    Solid lines: Baseline simulations. Dashed lines: Future simulations.
   </p>
   <img class="plot-img" src="{{ fig_swe_comp }}" alt="AM SWE Ensemble Comparison">
 </div>
@@ -205,75 +319,80 @@
 
 <div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
   <div class="section">
-    <h2>Impact Summary Table (NG-IDF Comparison) - CESM2-LE Ensemble Members</h2>
+    <h2>NG-IDF Changes vs Baseline Simulation &mdash; CESM2-LE Ensemble Members</h2>
+    <p><strong>ARI = Average Recurrence Interval</strong></p>
     <p style="font-size:10px; margin:5px 0; color:#555;">
-      Comparing 4 future ensemble members (LE2, LE4, LE7, LE9) against their respective historical references.
-      Historical period: 2006-2021. Future period: 2034-2049 (SSP3-70 scenario).
+      Each future member (LE2, LE4, LE7, LE9) is compared with its own baseline simulation. The <strong>Ensemble Mean</strong> column (first) compares the average of the four future members with the average of the four baselines; its percent change is the recommended central estimate. Baseline period: 2006-2021. Future period: 2034-2049 (SSP3-70 scenario). A positive % change (red) means the future NG-IDF is higher than the baseline.
     </p>
     <div class="summary-table-container">
       <table class="summary-table">
         <thead>
           <tr>
             <th>ARI (yrs)</th>
-            <th colspan="3">LE2</th>
-            <th colspan="3">LE4</th>
-            <th colspan="3">LE7</th>
-            <th colspan="3">LE9</th>
+            {% set mean_dt = (member_dtair.values()|sum) / (member_dtair|length) %}
+            <th colspan="3" style="background:#1b4d3e;">Ensemble Mean (avg {{ "%+.2f"|format(mean_dt) }}&deg;C)</th>
+            {% for le in ['LE2', 'LE4', 'LE7', 'LE9'] %}
+            <th colspan="3">{{ le }} ({{ "%+.2f"|format(member_dtair[le]) }}&deg;C)</th>
+            {% endfor %}
           </tr>
           <tr>
             <th></th>
-            <th>Hist (mm)</th>
-            <th>Futu (mm)</th>
-            <th>Diff</th>
-            <th>Hist (mm)</th>
-            <th>Futu (mm)</th>
-            <th>Diff</th>
-            <th>Hist (mm)</th>
-            <th>Futu (mm)</th>
-            <th>Diff</th>
-            <th>Hist (mm)</th>
-            <th>Futu (mm)</th>
-            <th>Diff</th>
+            <th style="background:#1b4d3e;">Baseline (in)</th>
+            <th style="background:#1b4d3e;">Future (in)</th>
+            <th style="background:#1b4d3e;">Diff (in)</th>
+            {% for le in ['LE2', 'LE4', 'LE7', 'LE9'] %}
+            <th>Baseline (in)</th>
+            <th>Future (in)</th>
+            <th>Diff (in)</th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
           {% set durations_list = ['1h', '3h', '6h', '12h', '24h', '48h', '72h'] %}
           {% for dur in durations_list %}
-          <tr style="background:#e8e8e8;">
-            <td colspan="13" style="font-weight:bold; text-align:left; padding-left:10px;">{{ dur.replace('h', '-Hour') }}</td>
+          <tr style="background:#f0f0f0;">
+            <td colspan="16" style="font-weight:bold; text-align:left; padding-left:10px;">{{ dur.replace('h', '-Hour') }}</td>
           </tr>
           {% for row in summary_rows %}
           {% if row.duration == dur %}
           <tr>
             <td>{{ row.ari }}</td>
-            
+
+            <!-- Ensemble mean (future mean vs baseline mean) -->
+            <td style="background:#eef6ee; font-weight:bold;">{{ "%.2f"|format(row.hist_mean) }}</td>
+            <td style="background:#eef6ee; font-weight:bold;">{{ "%.2f"|format(row.futu_mean) }}</td>
+            <td class="{{ 'pos' if row.diff_mean > 0 else 'neg' }}" style="background:#eef6ee;">
+              {{ "+" if row.diff_mean > 0 }}{{ "%.2f"|format(row.diff_mean) }}
+              <br/>({{ "+" if row.pct_mean > 0 }}{{ "%.1f"|format(row.pct_mean) }}%)
+            </td>
+
             <!-- LE2 -->
-            <td>{{ row.hist_le2 }}</td>
-            <td>{{ row.futu_le2 }}</td>
+            <td>{{ "%.2f"|format(row.hist_le2) }}</td>
+            <td>{{ "%.2f"|format(row.futu_le2) }}</td>
             <td class="{{ 'pos' if row.diff_le2 > 0 else 'neg' }}">
               {{ "+" if row.diff_le2 > 0 }}{{ "%.2f"|format(row.diff_le2) }}
               <br/>({{ "+" if row.pct_le2 > 0 }}{{ "%.1f"|format(row.pct_le2) }}%)
             </td>
-            
+
             <!-- LE4 -->
-            <td>{{ row.hist_le4 }}</td>
-            <td>{{ row.futu_le4 }}</td>
+            <td>{{ "%.2f"|format(row.hist_le4) }}</td>
+            <td>{{ "%.2f"|format(row.futu_le4) }}</td>
             <td class="{{ 'pos' if row.diff_le4 > 0 else 'neg' }}">
               {{ "+" if row.diff_le4 > 0 }}{{ "%.2f"|format(row.diff_le4) }}
               <br/>({{ "+" if row.pct_le4 > 0 }}{{ "%.1f"|format(row.pct_le4) }}%)
             </td>
-            
+
             <!-- LE7 -->
-            <td>{{ row.hist_le7 }}</td>
-            <td>{{ row.futu_le7 }}</td>
+            <td>{{ "%.2f"|format(row.hist_le7) }}</td>
+            <td>{{ "%.2f"|format(row.futu_le7) }}</td>
             <td class="{{ 'pos' if row.diff_le7 > 0 else 'neg' }}">
               {{ "+" if row.diff_le7 > 0 }}{{ "%.2f"|format(row.diff_le7) }}
               <br/>({{ "+" if row.pct_le7 > 0 }}{{ "%.1f"|format(row.pct_le7) }}%)
             </td>
-            
+
             <!-- LE9 -->
-            <td>{{ row.hist_le9 }}</td>
-            <td>{{ row.futu_le9 }}</td>
+            <td>{{ "%.2f"|format(row.hist_le9) }}</td>
+            <td>{{ "%.2f"|format(row.futu_le9) }}</td>
             <td class="{{ 'pos' if row.diff_le9 > 0 else 'neg' }}">
               {{ "+" if row.diff_le9 > 0 }}{{ "%.2f"|format(row.diff_le9) }}
               <br/>({{ "+" if row.pct_le9 > 0 }}{{ "%.1f"|format(row.pct_le9) }}%)
@@ -302,31 +421,31 @@
 <div style="max-width: 1400px; margin: 20px auto; padding: 0 10px;">
   <div class="tab-container">
     <div class="tabs">
-      <button class="tab-btn active" onclick="openTab(event, 'HistLE2')">Historical LE2</button>
-      <button class="tab-btn" onclick="openTab(event, 'FutuLE2')">Future LE2</button>
-      <button class="tab-btn" onclick="openTab(event, 'HistLE4')">Historical LE4</button>
-      <button class="tab-btn" onclick="openTab(event, 'FutuLE4')">Future LE4</button>
-      <button class="tab-btn" onclick="openTab(event, 'HistLE7')">Historical LE7</button>
-      <button class="tab-btn" onclick="openTab(event, 'FutuLE7')">Future LE7</button>
-      <button class="tab-btn" onclick="openTab(event, 'HistLE9')">Historical LE9</button>
-      <button class="tab-btn" onclick="openTab(event, 'FutuLE9')">Future LE9</button>
+      <button class="tab-btn active" onclick="openTab(event, 'HistLE2')">Baseline LE2</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE2')">Future LE2 ({{ "%+.2f"|format(member_dtair['LE2']) }}&deg;C)</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE4')">Baseline LE4</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE4')">Future LE4 ({{ "%+.2f"|format(member_dtair['LE4']) }}&deg;C)</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE7')">Baseline LE7</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE7')">Future LE7 ({{ "%+.2f"|format(member_dtair['LE7']) }}&deg;C)</button>
+      <button class="tab-btn" onclick="openTab(event, 'HistLE9')">Baseline LE9</button>
+      <button class="tab-btn" onclick="openTab(event, 'FutuLE9')">Future LE9 ({{ "%+.2f"|format(member_dtair['LE9']) }}&deg;C)</button>
     </div>
 
     {% macro render_tab(data, title_prefix) %}
-    
+
     <!-- IDF Tables -->
     <div class="idf-tables-container">
         <div class="section idf-half">
             <h3>PREC-IDF ({{ title_prefix }})</h3>
             <table>
-                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
+                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 90% (in)</th><th>Upper 90% (in)</th></tr>
                 {% set ARI = [2,5,10,25,50,100,500] %}
                 {% set IDX = [0,30,40,46,48,49,50] %}
-                
+
                 {% for dur in data.durations %}
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
+                <tr><td colspan="4" style="background:#f0f0f0;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
                 {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data['P_' + dur][0, IDX[j]] }}</td><td>{{ data['P_' + dur][1, IDX[j]] }}</td><td>{{ data['P_' + dur][2, IDX[j]] }}</td></tr>
+                <tr><td>{{ ARI[j] }}</td><td>{{ (data['P_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td><td>{{ (data['P_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td><td>{{ (data['P_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td></tr>
                 {% endfor %}
                 {% endfor %}
             </table>
@@ -335,12 +454,12 @@
         <div class="section idf-half">
             <h3>NG-IDF ({{ title_prefix }})</h3>
             <table>
-                <tr><th>ARI (yrs)</th><th>Mag (mm)</th><th>Lower 90%</th><th>Upper 90%</th></tr>
-                
+                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 90% (in)</th><th>Upper 90% (in)</th></tr>
+
                 {% for dur in data.durations %}
-                <tr><td colspan="4" style="background:#eee;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
+                <tr><td colspan="4" style="background:#f0f0f0;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>
                 {% for j in range(7) %}
-                <tr><td>{{ ARI[j] }}</td><td>{{ data['NG_' + dur][0, IDX[j]] }}</td><td>{{ data['NG_' + dur][1, IDX[j]] }}</td><td>{{ data['NG_' + dur][2, IDX[j]] }}</td></tr>
+                <tr><td>{{ ARI[j] }}</td><td>{{ (data['NG_' + dur][0, IDX[j]] / 25.4)|round(2) }}</td><td>{{ (data['NG_' + dur][1, IDX[j]] / 25.4)|round(2) }}</td><td>{{ (data['NG_' + dur][2, IDX[j]] / 25.4)|round(2) }}</td></tr>
                 {% endfor %}
                 {% endfor %}
             </table>
@@ -362,7 +481,7 @@
           <tr>
             {% for dur in data.durations %}
             <th>Date</th>
-            <th>P (mm)</th>
+            <th>P (in)</th>
             {% endfor %}
           </tr>
           {% for i in range(data['am_' + data.durations[0] + '_P']|length) %}
@@ -370,7 +489,7 @@
             <td style="font-weight:bold;">{{ data['am_' + data.durations[0] + '_P_date'][i,0] }}</td>
             {% for dur in data.durations %}
             <td>{{ "%02d-%02d"|format(data['am_' + dur + '_P_date'][i,1],data['am_' + dur + '_P_date'][i,2]) }}</td>
-            <td>{{ data['am_' + dur + '_P'][i,3] }}</td>
+            <td>{{ (data['am_' + dur + '_P'][i,3] / 25.4)|round(2) }}</td>
             {% endfor %}
           </tr>
           {% endfor %}
@@ -394,7 +513,7 @@
           <tr>
             {% for dur in data.durations %}
             <th>Date</th>
-            <th>W (mm)</th>
+            <th>W (in)</th>
             <th>Mechanism</th>
             {% endfor %}
           </tr>
@@ -403,7 +522,7 @@
             <td style="font-weight:bold;">{{ data['am_' + data.durations[0] + '_W_date'][i,0] }}</td>
             {% for dur in data.durations %}
             <td>{{ "%02d-%02d"|format(data['am_' + dur + '_W_date'][i,1],data['am_' + dur + '_W_date'][i,2]) }}</td>
-            <td>{{ data['am_' + dur + '_W'][i,3] }}</td>
+            <td>{{ (data['am_' + dur + '_W'][i,3] / 25.4)|round(2) }}</td>
             <td>{{ data['am_' + dur + '_W_mechanism'][i] }}</td>
             {% endfor %}
           </tr>
@@ -418,12 +537,12 @@
       <div class="section swe-table">
         <h3>Annual Maximum Snow Water Equivalent (AM SWE)</h3>
         <table>
-          <tr><th>Year</th><th>Date</th><th>AM SWE (mm)</th></tr>
+          <tr><th>Year</th><th>Date</th><th>AM SWE (in)</th></tr>
           {% for i in range(data.am_swe|length) %}
           <tr>
             <td style="font-weight:bold;">{{ data.am_swe_date[i,0] }}</td>
             <td>{{ "%02d-%02d"|format(data.am_swe_date[i,1], data.am_swe_date[i,2]) }}</td>
-            <td>{{ data.am_swe[i,3] }}</td>
+            <td>{{ (data.am_swe[i,3] / 25.4)|round(2) }}</td>
           </tr>
           {% endfor %}
         </table>
@@ -431,51 +550,43 @@
     </div>
 
     {% endmacro %}
-    
+
     <div id="HistLE2" class="tab-content active">
-        {{ render_tab(hist_le2, "Historical LE2") }}
+        {{ render_tab(hist_le2, "Baseline LE2") }}
     </div>
 
     <div id="FutuLE2" class="tab-content">
-        {{ render_tab(futu_le2, "Future LE2") }}
+        {{ render_tab(futu_le2, "Future LE2, " ~ ("%+.2f"|format(member_dtair['LE2'])) ~ "°C") }}
     </div>
 
     <div id="HistLE4" class="tab-content">
-        {{ render_tab(hist_le4, "Historical LE4") }}
+        {{ render_tab(hist_le4, "Baseline LE4") }}
     </div>
 
     <div id="FutuLE4" class="tab-content">
-        {{ render_tab(futu_le4, "Future LE4") }}
+        {{ render_tab(futu_le4, "Future LE4, " ~ ("%+.2f"|format(member_dtair['LE4'])) ~ "°C") }}
     </div>
 
     <div id="HistLE7" class="tab-content">
-        {{ render_tab(hist_le7, "Historical LE7") }}
+        {{ render_tab(hist_le7, "Baseline LE7") }}
     </div>
 
     <div id="FutuLE7" class="tab-content">
-        {{ render_tab(futu_le7, "Future LE7") }}
+        {{ render_tab(futu_le7, "Future LE7, " ~ ("%+.2f"|format(member_dtair['LE7'])) ~ "°C") }}
     </div>
 
     <div id="HistLE9" class="tab-content">
-        {{ render_tab(hist_le9, "Historical LE9") }}
+        {{ render_tab(hist_le9, "Baseline LE9") }}
     </div>
 
     <div id="FutuLE9" class="tab-content">
-        {{ render_tab(futu_le9, "Future LE9") }}
+        {{ render_tab(futu_le9, "Future LE9, " ~ ("%+.2f"|format(member_dtair['LE9'])) ~ "°C") }}
     </div>
   </div>
 </div>
 
-<p style="text-align:center; font-size:10px; color:#666; margin-top:20px; padding:10px;">
-
 <footer>
-  <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory" style="height: 60px; min-height: 60px; width: auto; margin-bottom: 10px;">
-  <div style="font-size: 10px; color: #777;">2026 NG-IDF Research | Developed by PNNL</div>
-</footer>
-  Generated by NG-IDF Tool | CESM2-LE Ensemble Analysis (Historical + SSP3-70 Future Scenarios)
-</p>
-<footer style="text-align: center; font-size: 10px; color: #777; margin: 30px 0; padding: 20px 0;">
-  <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory" style="height: 60px; min-height: 60px; width: auto; margin-bottom: 10px;">
+  <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory">
   <div>2026 NG-IDF Research | Developed by PNNL</div>
 </footer>
 
@@ -495,6 +606,21 @@
       tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
     document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+  }
+
+  // FIGURE TABS (Ensemble Mean / Individual Members) - independent of the data-table tabs
+  function openFigTab(evt, groupId, tabId) {
+    var group = document.getElementById(groupId);
+    var contents = group.getElementsByClassName("fig-tab-content");
+    var buttons = group.getElementsByClassName("fig-tab-btn");
+    for (var i = 0; i < contents.length; i++) {
+      contents[i].style.display = "none";
+    }
+    for (var j = 0; j < buttons.length; j++) {
+      buttons[j].className = buttons[j].className.replace(" active", "");
+    }
+    document.getElementById(tabId).style.display = "block";
     evt.currentTarget.className += " active";
   }
 
