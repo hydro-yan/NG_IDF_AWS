@@ -1364,10 +1364,6 @@ def NG_IDF():
                 hist_members, futu_members, durations,
                 member_dtair=near_dtair, display_inches=True, kind='magnitude'
             )
-            fig_prec_chg, fig_ng_chg = generate_cesm_ensemble_mean_idf_plots(
-                hist_members, futu_members, durations,
-                member_dtair=near_dtair, display_inches=True, kind='change'
-            )
             
             # Build Comprehensive Summary Table for CESM Near-Term
             aris = [2, 5, 10, 25, 50, 100, 500]
@@ -1452,8 +1448,6 @@ def NG_IDF():
                                    member_dtair=near_dtair,
                                    fig_prec_mean=fig_prec_mean,
                                    fig_ng_mean=fig_ng_mean,
-                                   fig_prec_chg=fig_prec_chg,
-                                   fig_ng_chg=fig_ng_chg,
                                    hist_le2=hist_le2_data,
                                    futu_le2=futu_le2_data,
                                    hist_le4=hist_le4_data,
