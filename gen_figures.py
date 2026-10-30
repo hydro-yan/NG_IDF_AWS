@@ -332,7 +332,7 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         med_curve = med_data[f'P_{dur}'][0, :] * unit_factor
         high_curve = high_data[f'P_{dur}'][0, :] * unit_factor
         
-        axes_prec[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_prec[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Baseline Sim.')
         axes_prec[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
         axes_prec[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
@@ -371,7 +371,7 @@ def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations,
         med_curve = med_data[f'NG_{dur}'][0, :] * unit_factor
         high_curve = high_data[f'NG_{dur}'][0, :] * unit_factor
         
-        axes_ng[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Historical')
+        axes_ng[idx].semilogx(ari_values, hist_curve, 'o-', color='blue', lw=2, markersize=3, label='Baseline Sim.')
         axes_ng[idx].semilogx(ari_values, med_curve, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
         axes_ng[idx].semilogx(ari_values, high_curve, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
         
@@ -623,6 +623,15 @@ def generate_cesm_ensemble_swe_plot(hist_le2_swe, hist_le4_swe, hist_le7_swe, hi
         return ""
 
 
+def _pgw_year_shift(base_arr, fut_arr):
+    """Years between a baseline AM series and its PGW counterpart (normally 44).
+
+    PGW runs replay the baseline weather, so subtracting this shift from the
+    future water years lines every event up with its baseline year.
+    """
+    return int(np.nanmin(fut_arr[:, 0])) - int(np.nanmin(base_arr[:, 0]))
+
+
 def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_file_p, fig_file_w, display_inches=False):
     """
     Generate multi-scenario AM time series plots in 2x4 grid
@@ -661,12 +670,14 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         hist_p = hist_am[dur]['P']
         med_p = med_am[dur]['P']
         high_p = high_am[dur]['P']
+        shift_m = _pgw_year_shift(hist_p, med_p)
+        shift_h = _pgw_year_shift(hist_p, high_p)
         
-        axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_p[idx].plot(med_p[:, 0].astype(int), med_p[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
-        axes_p[idx].plot(high_p[:, 0].astype(int), high_p[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
+        axes_p[idx].plot(hist_p[:, 0].astype(int), hist_p[:, 3] * unit_factor, 'o-', color='blue', lw=1.0, markersize=2.5, label='Baseline Sim.')
+        axes_p[idx].plot(med_p[:, 0].astype(int) - shift_m, med_p[:, 3] * unit_factor, 's-', color='orange', lw=1.0, markersize=2.5, label='Moderate (+1.72\u00b0C)')
+        axes_p[idx].plot(high_p[:, 0].astype(int) - shift_h, high_p[:, 3] * unit_factor, '^-', color='red', lw=1.0, markersize=2.5, label='Severe (+2.36\u00b0C)')
         
-        axes_p[idx].set_xlabel('Water Year', fontsize=9)
+        axes_p[idx].set_xlabel(f'Baseline-equivalent Water Year (PGW runs shifted -{shift_m} yr)', fontsize=8)
         axes_p[idx].set_ylabel(f'AM Precipitation ({unit_label})', fontsize=9)
         axes_p[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         style_grid(axes_p[idx])
@@ -699,12 +710,14 @@ def generate_multi_scenario_am_plots(hist_am, med_am, high_am, durations, fig_fi
         hist_w = hist_am[dur]['W_veg']
         med_w = med_am[dur]['W_veg']
         high_w = high_am[dur]['W_veg']
+        shift_m = _pgw_year_shift(hist_w, med_w)
+        shift_h = _pgw_year_shift(hist_w, high_w)
         
-        axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=3, label='Historical')
-        axes_w[idx].plot(med_w[:, 0].astype(int), med_w[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=3, label='Moderate (+1.72\u00b0C)')
-        axes_w[idx].plot(high_w[:, 0].astype(int), high_w[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=3, label='Severe (+2.36\u00b0C)')
+        axes_w[idx].plot(hist_w[:, 0].astype(int), hist_w[:, 3] * unit_factor, 'o-', color='blue', lw=1.0, markersize=2.5, label='Baseline Sim.')
+        axes_w[idx].plot(med_w[:, 0].astype(int) - shift_m, med_w[:, 3] * unit_factor, 's-', color='orange', lw=1.0, markersize=2.5, label='Moderate (+1.72\u00b0C)')
+        axes_w[idx].plot(high_w[:, 0].astype(int) - shift_h, high_w[:, 3] * unit_factor, '^-', color='red', lw=1.0, markersize=2.5, label='Severe (+2.36\u00b0C)')
         
-        axes_w[idx].set_xlabel('Water Year', fontsize=9)
+        axes_w[idx].set_xlabel(f'Baseline-equivalent Water Year (PGW runs shifted -{shift_m} yr)', fontsize=8)
         axes_w[idx].set_ylabel(f'AM Water for Runoff ({unit_label})', fontsize=9)
         axes_w[idx].set_title(f'{dur.replace("h", "-hour")}', fontsize=10, fontweight='bold')
         style_grid(axes_w[idx])
@@ -755,13 +768,16 @@ def generate_multi_scenario_swe_plot(hist_swe, med_swe, high_swe, fig_file, disp
     unit_factor = 1.0 / 25.4 if display_inches else 1.0
     unit_label = 'in' if display_inches else 'mm'
 
+    shift_m = _pgw_year_shift(hist_swe, med_swe)
+    shift_h = _pgw_year_shift(hist_swe, high_swe)
+
     plt.figure(figsize=(8, 4))
     
-    plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3] * unit_factor, 'o-', color='blue', lw=2, markersize=4, label='Historical')
-    plt.plot(med_swe[:, 0].astype(int), med_swe[:, 3] * unit_factor, 's-', color='orange', lw=2, markersize=4, label='Moderate (+1.72\u00b0C)')
-    plt.plot(high_swe[:, 0].astype(int), high_swe[:, 3] * unit_factor, '^-', color='red', lw=2, markersize=4, label='Severe (+2.36\u00b0C)')
+    plt.plot(hist_swe[:, 0].astype(int), hist_swe[:, 3] * unit_factor, 'o-', color='blue', lw=1.0, markersize=3, label='Baseline Sim.')
+    plt.plot(med_swe[:, 0].astype(int) - shift_m, med_swe[:, 3] * unit_factor, 's-', color='orange', lw=1.0, markersize=3, label='Moderate (+1.72\u00b0C)')
+    plt.plot(high_swe[:, 0].astype(int) - shift_h, high_swe[:, 3] * unit_factor, '^-', color='red', lw=1.0, markersize=3, label='Severe (+2.36\u00b0C)')
     
-    plt.xlabel('Water Year', fontsize=11)
+    plt.xlabel(f'Baseline-equivalent Water Year (PGW runs shifted -{shift_m} yr)', fontsize=10)
     plt.ylabel(f'AM Snow Water Equivalent ({unit_label})', fontsize=11)
     #plt.title('Annual Maximum SWE: Climate Scenario Comparison', fontsize=12, fontweight='bold')
     style_grid(plt.gca())
