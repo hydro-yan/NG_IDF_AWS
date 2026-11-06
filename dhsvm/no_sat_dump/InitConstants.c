@@ -100,6 +100,7 @@ void InitConstants(LISTPTR Input, OPTIONSTRUCT *Options, MAPSIZE *Map,
     {"OPTIONS", "PRECIPITATION SEPARATION", "", "FALSE" },
     {"OPTIONS", "SNOW STATISTICS", "", "FALSE" },
     {"OPTIONS", "ROUTING NEIGHBORS", "", "4"},
+    {"OPTIONS", "SOIL TEMPERATURE MODEL", "", "FALSE"},
     {"AREA", "COORDINATE SYSTEM", "", ""},
     {"AREA", "EXTREME NORTH", "", ""},
     {"AREA", "EXTREME WEST", "", ""},
@@ -352,6 +353,14 @@ void InitConstants(LISTPTR Input, OPTIONSTRUCT *Options, MAPSIZE *Map,
     Options->SnowStats = FALSE;
   else
     ReportError(StrEnv[snowstats].KeyName, 51);
+
+  /* Determine if soil temperature model is used */
+  if (strncmp(StrEnv[soil_temp_model].VarStr, "TRUE", 4) == 0)
+    Options->SoilTempModel = TRUE;
+  else if (strncmp(StrEnv[soil_temp_model].VarStr, "FALSE", 5) == 0)
+    Options->SoilTempModel = FALSE;
+  else
+    ReportError(StrEnv[soil_temp_model].KeyName, 51);
   
   /* Determine if use separate input of rain and snow */
   if (strncmp(StrEnv[sepr].VarStr, "TRUE", 4) == 0)

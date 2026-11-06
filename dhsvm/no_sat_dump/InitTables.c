@@ -86,6 +86,7 @@ int InitSoilTable(OPTIONSTRUCT *Options, SOILTABLE ** SType,
     "MAXIMUM INFILTRATION",
     "CAPILLARY DRIVE",
     "SURFACE ALBEDO",
+    "SURFACE EMISSIVITY",
     "NUMBER OF SOIL LAYERS",
     "POROSITY",
     "PORE SIZE DISTRIBUTION",
@@ -156,6 +157,15 @@ int InitSoilTable(OPTIONSTRUCT *Options, SOILTABLE ** SType,
 
     if (!CopyFloat(&((*SType)[i].Albedo), VarStr[soil_albedo], 1))
       ReportError(KeyName[soil_albedo], 51);
+    
+    if (Options->SoilTempModel) {
+       if (!CopyFloat(&((*SType)[i].Emissivity), VarStr[surf_emissivity], 1))
+         ReportError(KeyName[surf_emissivity], 51);
+    }
+    else (*SType)[i].Emissivity = NOT_APPLICABLE;
+
+    if (!CopyFloat(&((*SType)[i].Emissivity), VarStr[surf_emissivity], 1))
+      ReportError(KeyName[surf_emissivity], 51);
 
     if (!CopyInt(&(*SType)[i].NLayers, VarStr[number_of_layers], 1))
       ReportError(KeyName[number_of_layers], 51);
@@ -225,6 +235,7 @@ int InitSoilTable(OPTIONSTRUCT *Options, SOILTABLE ** SType,
 
     if (!CopyFloat((*SType)[i].Ch, VarStr[thermal_capacity], (*SType)[i].NLayers))
       ReportError(KeyName[thermal_capacity], 51);
+
   }
 
   for (i = 0; i < NSoils; i++)

@@ -339,7 +339,7 @@ void RouteSubSurface(int Dt, MAPSIZE *Map, TOPOPIX **TopoMap,
  
   sat = 100.*((float)count/(float)totalcount);
   
- /* sprintf(satoutfile, "%ssaturation_extent.txt", DumpPath);
+  sprintf(satoutfile, "%ssaturation_extent.txt", DumpPath);
   
   if((fs = fopen(satoutfile,"a")) == NULL){
     printf("Cannot open saturation extent output file.\n");
@@ -348,6 +348,6 @@ void RouteSubSurface(int Dt, MAPSIZE *Map, TOPOPIX **TopoMap,
   
   SPrintDate(&(Time->Current), buffer);
   fprintf(fs, "%-20s %.4f \n", buffer, sat); 
-  fclose(fs);    */
+  fclose(fs);    
 }
 

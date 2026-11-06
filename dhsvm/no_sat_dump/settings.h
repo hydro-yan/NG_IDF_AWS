@@ -120,7 +120,7 @@ enum KEYS {
   temp_lapse, precip_lapse, cressman_radius, cressman_stations, prism_data_path, 
   prism_data_ext, shading_data_path, shading_data_ext, skyview_data_path, 
   stream_temp, canopy_shading, improv_radiation, gapping, snowslide, sepr, 
-  snowstats, routing_neighbors, 
+  snowstats, routing_neighbors, soil_temp_model,
   /* Area */
   coordinate_system, extreme_north, extreme_west, center_latitude,
   center_longitude, time_zone_meridian, number_of_rows,
@@ -160,9 +160,9 @@ enum KEYS {
   grid_ext_north=0, grid_ext_south, grid_ext_east, grid_ext_west, tot_grid, decim,
   grid_met_file, file_prefix, utm_zone,
   /* Soil information */
-  soil_description = 0, lateral_ks, exponent, depth_thresh, max_infiltration, capillary_drive,
-  soil_albedo, number_of_layers, porosity, pore_size, bubbling_pressure, field_capacity,
-  wilting_point, bulk_density, vertical_ks, solids_thermal, thermal_capacity,
+  soil_description = 0, lateral_ks, exponent, depth_thresh, max_infiltration, capillary_drive, 
+  soil_albedo, surf_emissivity, number_of_layers, porosity, pore_size, bubbling_pressure, field_capacity,
+  wilting_point, bulk_density, vertical_ks, solids_thermal, thermal_capacity, 
   /* Vegetation information */
   veg_description = 0, overstory, understory, fraction, hemifraction, trunk_space,
   aerodynamic_att, beam_attn, diff_attn, clumping_factor, leaf_angle_a, leaf_angle_b,

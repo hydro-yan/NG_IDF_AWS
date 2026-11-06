@@ -29,6 +29,8 @@ void Aggregate(MAPSIZE *Map, OPTIONSTRUCT *Options, TOPOPIX **TopoMap,
 void Avalanche(MAPSIZE *Map, TOPOPIX **TopoMap, TIMESTRUCT *Time, OPTIONSTRUCT *Options,
   SNOWPIX **SnowMap);
 
+void BuildCol(TEMPTABLE* Stemp, float Zb[]);
+
 void CalcAerodynamic(int NVegLayers, unsigned char OverStory,
 		     float n, float *Height, float Trunk, float *U,
 		     float *U2mSnow, float *Ra, float *RaSnow);
@@ -51,6 +53,16 @@ float CalcTransmissivity(float SoilDepth, float WaterTable, float LateralKs,
 void CalcWeights(METLOCATION *Station, int NStats, int NX, int NY,
 		 uchar **BasinMask, uchar ****WeightArray,
 		 OPTIONSTRUCT *Options);
+
+void CalcSoilTemp(TEMPTABLE* S, int Dt, float UpperCond, float UpperTemp, float Solar);
+
+float CalcCh(float ChMin, float SoilPorosity, float SoilIce, float SoilMoist);
+
+float CalKhSol(float SoilMoist, float SoilIce, float SoilPorosity, float KhDry, float KhMin,
+	           float SoilTemp);
+
+void CalcPhaseChange(TEMPTABLE* S, int Dt);
+
 
 double ChannelCulvertSedFlow(int y, int x, CHANNEL * ChannelData, int i);
 
@@ -76,7 +88,7 @@ void DumpMap(MAPSIZE *Map, DATE *Current, MAPDUMP *DMap, TOPOPIX **TopoMap,
 
 void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
         PRECIPPIX *Precip, PIXRAD *Rad, SNOWPIX *Snow, SOILPIX *Soil,
-        VEGPIX *Veg, int NSoil, int NVeg, OPTIONSTRUCT *Options, int flag);
+        VEGPIX *Veg, int NSoil, int NVeg, OPTIONSTRUCT *Options, int flag, TEMPPIX *STemp);
 
 #ifdef TOPO_DUMP
 void DumpTopo(MAPSIZE *Map, TOPOPIX **TopoMap);
@@ -87,7 +99,7 @@ void ExecDump(MAPSIZE *Map, DATE *Current, DATE *Start, OPTIONSTRUCT *Options,
 	      PRECIPPIX ** PrecipMap, SNOWPIX **SnowMap, MET_MAP_PIX **MetMap, 
           VEGPIX **VegMap, LAYER *Veg, SOILPIX **SoilMap, ROADSTRUCT **Network, 
           CHANNEL *ChannelData, LAYER *Soil, AGGREGATED *Total, 
-	      UNITHYDRINFO *HydrographInfo, float *Hydrograph);
+	      UNITHYDRINFO *HydrographInfo, float *Hydrograph, TEMPPIX **TempMap);
 
 unsigned char fequal(float a, float b);
 
@@ -232,6 +244,15 @@ void InitSoilMap(LISTPTR Input, OPTIONSTRUCT *Options, MAPSIZE *Map,
 int InitSoilTable(OPTIONSTRUCT *Options, SOILTABLE **SType, 
 			LISTPTR Input, LAYER *Soil, int InfiltOption);
 
+// int InitSoilTempDHSVM(MAPSIZE *Map, SOILTABLE *SType, SOILPIX **SoilMap,
+//                       VEGPIX **VegMap, VEGTABLE *VType, TEMPPIX **TempMap, 
+//                       TEMPTABLE *Stemp, float *Zb, int NumLayers);
+					  
+void UpdateSoilTempPerCell(int x, int y, PIXMET *LocalMet, int Dt,
+                        VEGTABLE *VType, VEGPIX *LocalVeg, SOILTABLE *SType,
+                        SOILPIX *LocalSoil, TEMPPIX *LocalSoilTemp, TEMPTABLE *Stemp,
+                        SNOWPIX *LocalSnow, OPTIONSTRUCT *Options);
+
 void InitStateDump(LISTPTR Input, int NStates, DATE **DState);
 
 void InitGraphicsDump(LISTPTR Input, int NGraphics, int ***which_graphics);
@@ -242,7 +263,10 @@ void InitStations(LISTPTR Input, MAPSIZE *Map, int NDaySteps,
 void InitTables(int StepsPerDay, LISTPTR Input, OPTIONSTRUCT *Options,
     MAPSIZE *Map, SOILTABLE **SType, LAYER *Soil, VEGTABLE **VType,
     LAYER *Veg);
-    
+
+void InitTempMap(TEMPPIX ***TempMap, MAPSIZE *Map, TOPOPIX ***TopoMap, int NumLayers, float SoilIce,
+	             VEGPIX*** VegMap, VEGTABLE** VType, SOILPIX*** SoilMap, SOILTABLE** SType, float Zb[]);
+				 
 void InitTerrainMaps(LISTPTR Input, OPTIONSTRUCT *Options, MAPSIZE *Map,
   LAYER *Soil, LAYER *Veg, TOPOPIX ***TopoMap, SOILTABLE *SType,
   SOILPIX ***SoilMap, VEGTABLE *VType, VEGPIX ***VegMap);
@@ -297,6 +321,10 @@ void MassEnergyBalance(OPTIONSTRUCT *Options, int y, int x, float SineSolarAltit
             CHANNEL *ChannelData, float **skyview);
 
 float MaxRoadInfiltration(ChannelMapPtr **map, int col, int row);
+
+void MapPixToCol(TEMPPIX* TempMap, VEGTABLE* VType, SOILTABLE* SType, float DepthToBedrock, TEMPTABLE* Stemp);
+
+void MapColToPix(TEMPPIX* TempMap, TEMPTABLE* Stemp);
 
 double pow (double a, double b);
 

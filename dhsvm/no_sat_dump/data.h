@@ -251,6 +251,7 @@ typedef struct {
   int SnowSlide;                /* if snow sliding option is true */
   int PrecipSepr;               /* if TRUE use separate input of rain and snow */
   int SnowStats;               /* if TRUE dumps snow statistics for each water year */
+  int SoilTempModel;            /* if TRUE then soil temperature model is used */
   char PrismDataPath[BUFSIZE + 1];
   char PrismDataExt[BUFSIZE + 1];
   char ShadingDataPath[BUFSIZE + 1];
@@ -265,8 +266,8 @@ typedef struct {
   float SumPrecip;          /* Accumulated precipitation at pixel (m) */
   float RainFall;		        /* Amount of rainfall (m) */
   float SnowFall;		        /* Amount of snowfall determined by air temperature (m) */
-  float RainAfterInt;		    /* Amount of rainfall (m) after Interception etc*/
-  float SnowAfterInt;		    /* Amount of snowfall (m) after Interception etc*/
+  float RainAfterInt;       /* Amount of rainfall (m) after interception */
+  float SnowAfterInt;       /* Amount of snowfall (m) after interception */
   float MomentSq;           /* Momentum squared for rain (kg* m/s)^2 /m^2*s) */
   float *IntRain;		        /* Rain interception by each vegetation layer (m) */
   float *IntSnow;		        /* Snow interception by each vegetation layer (m) */
@@ -439,6 +440,7 @@ typedef struct {
   float MaxInfiltrationRate;/* Maximum infiltration rate for upper layer (m/s) */
   float G_Infilt;                /* Mean capillary drive for dynamic maximum infiltration rate (m)   */
   float DepthThresh;    /* Threshold water table depth, beyond which transmissivity decays linearly with water table depth */
+  float Emissivity;      /* Emissivity of the soil surface */
 } SOILTABLE;
 
 typedef struct {
@@ -593,6 +595,54 @@ typedef struct {
 } VEGTABLE;
 
 typedef struct {
+	int NumLayers;              /* number of layers for soil temp calcs */
+	float Alpha;                /* weighting factor in soil temp numerical solution */
+	float Emissivity;           /* surface emissivity  */
+	float* KhDry;				/* Dry soil thermal conductivity (W/(m*K)) based on bulk density*/
+	float* KhMin;                /* thermal conductivity of mineral soil solids (W/(m*K)) */
+	float* KhSol;                /*  CALCULATED thermal conductivity of soil/water/ice mix (W/(m*K)) */
+	float* ChMin;				 /* Heat capacity for mineral component of soil (J/m3 K)*/
+	float* Ch;				   /* Heat capacity for soil medium (J/m3 K)*/
+	float* Zn;                 /* depth of node in numerical solution (m) */
+	float* Zb;                 /* bottom depth of node in numerical solution (m) */
+	float* Dz;                 /* soil layer thickness (m) */
+	float* Ts;                 /* soil temperature   (C) */
+	float* SoilPorosity;       /* soil porosity (m^3/m^3)  */
+	float* SoilMoist;          /* soil moisture content (m^3/m^3) */
+	float* SoilIce;            /* soil ice content (m^3/m^3)  */
+
+} TEMPTABLE;
+//  typedef struct {
+// 	int NumLayers;              /* number of layers for soil temp calcs */
+// 	float Alpha;                /* weighting factor in soil temp numerical solution */
+// 	float Emissivity;           /* surface emissivity  */
+// 	float KhDry;				/* Dry soil thermal conductivity (W/(m*K)) based on bulk density*/
+// 	float KhMin;                /* thermal conductivity of mineral soil solids (W/(m*K)) */
+// 	float KhSol;                /*  CALCULATED thermal conductivity of soil/water/ice mix (W/(m*K)) */
+// 	float ChMin;				 /* Heat capacity for mineral component of soil (J/m3 K)*/
+// 	float Ch;				   /* Heat capacity for soil medium (J/m3 K)*/
+// 	float Zn;                 /* depth of node in numerical solution (m) */
+// 	float Zb;                 /* bottom depth of node in numerical solution (m) */
+// 	float Dz;                 /* soil layer thickness (m) */
+// 	float Ts;                 /* soil temperature   (C) */
+// 	float SoilPorosity;       /* soil porosity (m^3/m^3)  */
+// 	float SoilMoist;          /* soil moisture content (m^3/m^3) */
+// 	float SoilIce;            /* soil ice content (m^3/m^3)  */
+
+// } TEMPTABLE;
+
+typedef struct {
+	int NumLayers;            /* number of active soil layers */
+	float* SoilMoist;          /* soil moisture content (m^3/m^3) */
+	float* SoilIce;            /* soil ice content (m^3/m^3)  */
+	float* Zn;                 /* depth of node in numerical solution (m) */
+	float* Ts;                 /* layer temperature (C) */
+	float* Frac;                 /* if layer split by root zone - fraction in the assigned root zone */
+	unsigned char* Rz;           /* root zone of the soil layer */
+
+} TEMPPIX;
+
+typedef struct {
   float StartWaterStorage;
   float OldWaterStorage;
   float CumPrecipIn;
@@ -627,6 +677,7 @@ typedef struct {
   SNOWPIX Snow;
   SOILPIX Soil;
   VEGPIX Veg;
+  TEMPPIX STemp;
   float NetRad;
   float SoilWater;
   float CanopyWater;
@@ -637,5 +688,7 @@ typedef struct {
   float CulvertReturnFlow;
   float CulvertToChannel;
 } AGGREGATED;
+
+
 
 #endif

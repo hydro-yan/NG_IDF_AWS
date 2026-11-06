@@ -18,6 +18,7 @@
 
 #define CELLFACTOR 3            /* For discretization of forest roads for kinematic wave routing */
 #define CELL_PARTITION 2        /* Number of veg type in a grid cell */
+#define CH_BED     (2000.0e3)	/* Volumetric heat capacity (J/(m3*C) of bedrock (C) */
 #define CH_ICE     (2100.0e3)	/* Volumetric heat capacity (J/(m3*C) of ice (0C) */
 #define CH_WATER   (4186.8e3)	/* Volumetric heat capacity (J/(m3*C) of water */
 #define CP         1013.0		/* Specific heat of moist air at constant pressure (J/(kg*C)) */
@@ -30,10 +31,14 @@
                                    Pixels with factor of safety's less than this number, are considered failed */
 #define G           9.81		/* gravitational accelleration (m/(s^2)) */
 #define GRAMSPKG    1000.	    /* grams per kilogram */
+#define ICE_DENSITY 917.		/* Density of ice in kg/m3 */
 #define JOULESPCAL  4.1868	    /* Joules per calorie */
+#define KhBed       3.00		/* Thermal conductivity of bedrock (W/(mk)) */
+#define KhIce       2.29		/* Thermal conductivity of ice (W/(mk)) */
 #define KhH2O       0.58		/* Thermal conductivity of water (W/(mk)) */
 #define LEAF_DRIP_DIA  0.0055   /* Leaf drip diameter (m) */
 #define LF            (333.7e3) /* latent heat of fusion (J/kg) */
+#define MAX_LAYERS    27        /* maximum number of layers used in soil temperature calculations */
 #define MINPDEG        4.		/* minutes per degree longitude */
 #define MMTOM          0.001	/* convert from mm to meter */
 #define MTHRESH        0.85     /* The 'critical' value of M for triggering the mass wasting algorithm. */
@@ -55,6 +60,12 @@
 #define WATER_DENSITY 1000.		/* Density of water in kg/m3 */
 #define Z0_MULTIPLIER 0.13		/* Multiplier for vegetation height to get roughness length (m) */
 #define MinDiff   (1.e-8)
+#define MM2M      0.001         /* convert from mm to meter */
+#define NO_FLUX_BC 1            /* 1: no flux lowwer boundary condition for soil temp calcs; 0 use comstant temp BC */
+#define TIMEWEIGHT 0.65         /* For kinematic wave surface routing */  
+#define SETTLECRIT 0.004        /* JSL critical streampower threshold for sediment transport 
+                                   in m/s from KINEROS2 Documentation */
+#define VISCOSITY 1.0           /* kinematic viscosity of water in mm2/s */
 
 /**************** extern constants - see globals.c ****************/
 

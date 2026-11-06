@@ -142,10 +142,6 @@ void SnowInterception(OPTIONSTRUCT *Options, int y, int x, int Dt, float F,
   else
     MaxSnowInt = 0.25;
 
-  /* Determine value of MaxSnowIntCap, added 12/13/2021 */ 
-  /* Choose between the different */
-  MaxSnowIntCap = (MaxSnowIntCap > LAI * F * LAI_SNOW_MULTIPLIER) ? (LAI * F * LAI_SNOW_MULTIPLIER) : MaxSnowIntCap;
-
   /* Adjust snow interception capacity (unit: m) to the user-provided input
   parameter, maximum snow interception capacity (%), which varies with
   vegetation type */

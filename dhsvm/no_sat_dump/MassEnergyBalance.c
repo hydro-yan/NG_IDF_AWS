@@ -222,7 +222,7 @@ void MassEnergyBalance(OPTIONSTRUCT *Options, int y, int x,
       &(LocalPrecip->RainFall));
   }
 
-  /*Calculate Snow and Rainfall after Interception*/
+  /* Calculate Snow and Rainfall after Interception */
   LocalPrecip->RainAfterInt = LocalPrecip->RainFall;
   LocalPrecip->SnowAfterInt = LocalPrecip->SnowFall;
 

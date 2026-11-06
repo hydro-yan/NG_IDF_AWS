@@ -80,6 +80,7 @@ int main(int argc, char **argv)
     {0, 0.0, NULL, NULL, NULL, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, NULL, NULL},			                /* SOILPIX */
     {0, 0, 0.0, 0.0, 0.0, NULL, NULL, NULL, NULL, 0.0},                             /* VEGPIX */
+    {0, NULL, NULL, NULL, NULL, NULL, NULL},                                        /*TEMPPIX*/
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0l, 0.0, 0.0
   };
   CHANNEL ChannelData = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
@@ -114,6 +115,10 @@ int main(int argc, char **argv)
   VEGTABLE *VType = NULL;
   WATERBALANCE Mass =			/* parameter for mass balance calculations */
     { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+  /* Soil Temperature  */
+  TEMPTABLE Stemp;
+	TEMPPIX **TempMap = NULL;
 
 
 /*****************************************************************************
@@ -165,7 +170,7 @@ int main(int argc, char **argv)
 #ifdef TOPO_DUMP
   DumpTopo(&Map, TopoMap);
 #endif
-  
+ 
   if (Options.HasNetwork)
     InitChannel(Input, &Map, Time.Dt, &ChannelData, SoilMap, &MaxStreamID, &MaxRoadID, &Options);
   else if (Options.Extent != POINT)
@@ -224,17 +229,62 @@ int main(int argc, char **argv)
   }
 #endif
 
+  printf("Initializing soil temperature model...Line 232\n");
+
   InitAggregated(&Options, Veg.MaxLayers, Soil.MaxLayers, &Total);
 
   InitModelState(&(Time.Start), Time.NDaySteps, &Map, &Options, PrecipMap, SnowMap, SoilMap,
 		 Soil, SType, VegMap, Veg, VType, Dump.InitStatePath,
 		 TopoMap, Network, &HydrographInfo, Hydrograph);
 
+  /* Initialize soil temperature model if enabled, needs to be done after soil state initialization */
+  if (Options.SoilTempModel) {
+    printf("Initializing soil temperature model...\n");
+    // if (Stemp == NULL) {
+    //   if (!(Stemp = (TEMPTABLE *)calloc(1, sizeof(TEMPTABLE))))
+    //     ReportError("MainDHSVM", 1);
+    // }
+
+//     int soiltemp_init_result = InitSoilTempDHSVM(&Map, SType, &SoilMap, &VegMap, VType, &TempMap, Stemp,
+//                                                    NULL, 25);  /*25 should be replaced with MAX_LAYERS + 1, but it was defined seperately */
+//     if (soiltemp_init_result != 0) {
+//       fprintf(stderr, "Warning: Soil temperature model initialization failed (code %d)\n", 
+//               soiltemp_init_result);
+//  //     Options.SoilTempModel = 0; /* Disable on failure */
+//     }
+    float ZbDefault[MAX_LAYERS + 1] = {  // FIXME: NEED to define MAX_LAYERS in data.h/constance.h or config file
+        0.000, 0.020, 0.060, 0.120, 0.200, 0.320, 0.480, 0.680, 0.920, 1.200, 
+        1.520, 1.880, 2.280, 2.720, 3.260, 3.900, 4.640, 5.480, 6.420, 7.460, 
+        8.600, 10.990, 15.666, 23.301, 34.441, 49.556, 70.00 }; //27 total
+        
+    //float *ZbToUse = (Zb != NULL) ? Zb : ZbDefault;
+
+    /* Initialize soil temperature structures via soil temp module functions */
+    printf("Building soil temperature column structure...\n");
+   // assert(Stemp != NULL);
+
+
+	  BuildCol(&Stemp, ZbDefault);
+    
+    // printf("Stemp ptr=%p NumLayers=%d MAX_LAYERS=%d\n", (void*)Stemp, Stemp->NumLayers, MAX_LAYERS);
+    // printf("Zb[25]=%f Zb[26]=%f Zb[27]=%f\n", Stemp->Zb[25], Stemp->Zb[26], Stemp->Zb[27]);
+
+    printf("Initializing temperature map (rooting zone mapping)...\n");
+
+    //int NumTempLayers = (NumLayers != NULL) ? NumLayers : MAX_LAYERS - 2;
+
+    float SoilIce = 0.0;
+	
+    InitTempMap(&TempMap, &Map, &TopoMap, Stemp.NumLayers, SoilIce, &VegMap, &VType, &SoilMap, &SType, ZbDefault);
+
+
+  }
+
   InitNewMonth(&Time, &Options, &Map, TopoMap, PrismMap, ShadowMap,
 	       &InFiles, Veg.NTypes, VType, NStats, Stat, Dump.InitStatePath, &VegMap);
 
   InitNewDay(Time.Current.JDay, &SolarGeo);
-
+ 
   if (NGraphics > 0) {
     printf("Initialzing X11 display and graphics \n");
     InitXGraphics(argc, argv, Map.NY, Map.NX, NGraphics, &MetMap);
@@ -296,7 +346,6 @@ int main(int argc, char **argv)
       channel_step_initialize_network(ChannelData.roads);
     }
 
-
     for (y = 0; y < Map.NY; y++) {
       for (x = 0; x < Map.NX; x++) {
 	    if (INBASIN(TopoMap[y][x].Mask)) {
@@ -332,6 +381,7 @@ int main(int argc, char **argv)
 
               /* read tempeature of each soil layer from met station input */
 			  else
+
 		        SoilMap[y][x].Temp[i] = Stat[0].Data.Tsoil[i];
 			}
             /* if heat flux option is turned off, soil temperature of all 3 layers 
@@ -339,6 +389,19 @@ int main(int argc, char **argv)
 	        else
 	          SoilMap[y][x].Temp[i] = LocalMet.Tair;
 		  }
+
+            /* Soil Temperature Profile Updated before entering Mass Energy Balance */
+      if (Options.SoilTempModel) {              
+        UpdateSoilTempPerCell(x, y, &LocalMet, Time.Dt,
+            &(VType[VegMap[y][x].Veg - 1]),
+            &(VegMap[y][x]),
+            &(SType[SoilMap[y][x].Soil - 1]),
+            &(SoilMap[y][x]),
+            &(TempMap[y][x]),
+            &Stemp,
+            &(SnowMap[y][x]),
+            &Options);
+      }
 		  
           MassEnergyBalance(&Options, y, x, SolarGeo.SineSolarAltitude, Map.DX, Map.DY,
             Time.Dt, Options.HeatFlux, Options.CanopyRadAtt, Options.Infiltration, Soil.MaxLayers,
@@ -351,6 +414,7 @@ int main(int argc, char **argv)
 		}
 	  }
     }
+    //printf("DEBUG: finished grid loops\n");
 
 	/* Average all RBM inputs over each segment */
 	if (Options.StreamTemp) {
@@ -394,7 +458,7 @@ int main(int argc, char **argv)
 
     ExecDump(&Map, &(Time.Current), &(Time.Start), &Options, &Dump, TopoMap,
 	     EvapMap, RadiationMap, PrecipMap, SnowMap, MetMap, VegMap, &Veg, 
-		 SoilMap, Network, &ChannelData, &Soil, &Total, &HydrographInfo,Hydrograph);
+		 SoilMap, Network, &ChannelData, &Soil, &Total, &HydrographInfo,Hydrograph, TempMap);
 	
     IncreaseTime(&Time);
 	t += 1;
@@ -402,7 +466,7 @@ int main(int argc, char **argv)
 
   ExecDump(&Map, &(Time.Current), &(Time.Start), &Options, &Dump, TopoMap,
 	   EvapMap, RadiationMap, PrecipMap, SnowMap, MetMap, VegMap, &Veg, SoilMap,
-	   Network, &ChannelData, &Soil, &Total, &HydrographInfo, Hydrograph);
+	   Network, &ChannelData, &Soil, &Total, &HydrographInfo, Hydrograph, TempMap);
 
 #ifndef SNOW_ONLY
   FinalMassBalance(&(Dump.FinalBalance), &Total, &Mass);

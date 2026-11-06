@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "settings.h"
 #include "data.h"
 #include "fileio.h"
@@ -27,7 +26,6 @@
 #include "functions.h"
 #include "constants.h"
 #include "varid.h"
-
 
 /*****************************************************************************
 ExecDump()
@@ -38,7 +36,7 @@ void ExecDump(MAPSIZE *Map, DATE *Current, DATE *Start, OPTIONSTRUCT *Options,
   MET_MAP_PIX **MetMap, VEGPIX **VegMap, LAYER *Veg, SOILPIX **SoilMap,
   ROADSTRUCT **Network, CHANNEL *ChannelData, LAYER *Soil,
   AGGREGATED *Total, UNITHYDRINFO *HydrographInfo,
-  float *Hydrograph)
+  float *Hydrograph, TEMPPIX **TempMap)
 {
   int i;			/* counter */
   int j;			/* counter */
@@ -49,10 +47,11 @@ void ExecDump(MAPSIZE *Map, DATE *Current, DATE *Start, OPTIONSTRUCT *Options,
   /* dump the aggregated basin values for this timestep */
 
   flag = 1;
+
   DumpPix(Current, IsEqualTime(Current, Start), &(Dump->Aggregate),
     &(Total->Evap), &(Total->Precip), &(Total->Rad), &(Total->Snow),
     &(Total->Soil), &(Total->Veg), Soil->MaxLayers, Veg->MaxLayers,
-    Options, flag);
+    Options, flag, &(Total->STemp));
 
   fprintf(Dump->Aggregate.FilePtr, "\n");
 
@@ -94,7 +93,7 @@ void ExecDump(MAPSIZE *Map, DATE *Current, DATE *Start, OPTIONSTRUCT *Options,
       DumpPix(Current, IsEqualTime(Current, Start), &(Dump->Pix[i].OutFile),
         &(EvapMap[y][x]), &(PrecipMap[y][x]), &(RadMap[y][x]), &(SnowMap[y][x]),
         &(SoilMap[y][x]), &(VegMap[y][x]), Soil->NLayers[(SoilMap[y][x].Soil - 1)],
-        Veg->NLayers[(VegMap[y][x].Veg - 1)], Options, flag);
+        Veg->NLayers[(VegMap[y][x].Veg - 1)], Options, flag, &(TempMap[y][x]));
       fprintf(Dump->Pix[i].OutFile.FilePtr, "\n");
     }
 
@@ -1172,15 +1171,14 @@ DumpPix()
 *****************************************************************************/
 void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
   PRECIPPIX *Precip, PIXRAD *Rad, SNOWPIX *Snow, SOILPIX *Soil,
-  VEGPIX *Veg, int NSoil, int NCanopyStory, OPTIONSTRUCT *Options, int flag)
+  VEGPIX *Veg, int NSoil, int NCanopyStory, OPTIONSTRUCT *Options, int flag, 
+  TEMPPIX *STemp)
 {
   int i, j;			/* counter */
   float W;      /* available water for runoff - used in NG-IDF */
   float deltaSWE; /* delta SWE over delta t */
-  float W_veg;      /* precipitation after interception */
-  float P_int;      /* precipitation after interception */
-  float tmp;
-  float tmp2;
+  float W_veg;  /* available water for runoff using precipitation after interception */
+  float P_int;  /* precipitation after interception */
 
   /* calculate available water for runoff for NG-IDF */
   if (first == 1)
@@ -1188,15 +1186,12 @@ void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
   else
     deltaSWE = Snow->OldSwq - Snow->Swq;
   W = Precip->Precip + deltaSWE + Snow->VaporMassFlux;
-  P_int = Precip->RainAfterInt + Precip->SnowAfterInt;  /* Precipitation after interception*/
+  P_int = Precip->RainAfterInt + Precip->SnowAfterInt;  /* precipitation after interception */
   W_veg = P_int + deltaSWE + Snow->VaporMassFlux;
 
-  tmp = fabs(W);
-  if (tmp <= 1.e-9)
+  if (fabs(W) <= 1.e-9)
     W = 0.;
-
-  tmp2 = fabs(W_veg);
-  if (tmp2 <= 1.e-9)
+  if (fabs(W_veg) <= 1.e-9)
     W_veg = 0.;
 
   if (first == 1) {
@@ -1213,7 +1208,7 @@ void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
     fprintf(OutFile->FilePtr, "Outflow(m) ");
     fprintf(OutFile->FilePtr, "IExcess(m) ");
     fprintf(OutFile->FilePtr, "HasSnow SnowCover LastSnow Swq Melt   ");
-    fprintf(OutFile->FilePtr, "PackWater TPack ");
+    fprintf(OutFile->FilePtr, "PackWater TPack STSurf");
 
     fprintf(OutFile->FilePtr, " TotalET ");   /*total evapotranspiration*/
     for (i = 0; i < NCanopyStory + 1; i++)
@@ -1261,9 +1256,22 @@ void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
       if (Veg->Gapping > 0.0 )
         fprintf(OutFile->FilePtr, "Gap_SW GAP_LW");
 
-    fprintf(OutFile->FilePtr, "\n");
+    if (Options-> SoilTempModel){
+      for (i = 1; i <= MAX_LAYERS - 2; i++)
+        fprintf(OutFile->FilePtr, " SoilTTemp.Layer%d ", i);
+      
+      // for (i = 1; i <= MAX_LAYERS - 2 ; i++)
+      //   fprintf(OutFile->FilePtr, " SoilTMoist.Layer%d ", i);
+
+      // for (i = 1; i <= MAX_LAYERS - 2; i++)
+      //   fprintf(OutFile->FilePtr, " SoilTIce.Layer%d ", i);
+    }
+
+    
+   fprintf(OutFile->FilePtr, "\n");
 
   }
+
 
   /* All variables are dumped in the case of a pixel dump */
   // Main Aggregate Values File
@@ -1281,9 +1289,9 @@ void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
   fprintf(OutFile->FilePtr, " %g ", Soil->IExcess);
 
   /* Snow */
-  fprintf(OutFile->FilePtr, " %1d %1d %4d %g %g %g %g ",
+  fprintf(OutFile->FilePtr, " %1d %1d %4d %g %g %g %g %g ",
     Snow->HasSnow, Snow->SnowCoverOver, Snow->LastSnow, Snow->Swq,
-    Snow->Melt, Snow->PackWater, Snow->TPack);
+    Snow->Melt, Snow->PackWater, Snow->TPack, Snow->TSurf);
 
   fprintf(OutFile->FilePtr, " %g", Evap->ETot);
 
@@ -1344,13 +1352,26 @@ void DumpPix(DATE *Current, int first, FILES *OutFile, EVAPPIX *Evap,
     fprintf(OutFile->FilePtr, " %g", Soil->InfiltAcc);
 
   /* Only report the gap radiations values when dumping pixels instead of basin average */
-  if (flag == 2)
+  if (flag == 2){
     if (Veg->Gapping > 0.0)
       fprintf(OutFile->FilePtr, " %g %g",
         Veg->Type[Opening].NetShort[1], Veg->Type[Opening].LongIn[1]);
-  
+
+    if (Options-> SoilTempModel){
+      for (i = 1; i <= MAX_LAYERS - 2; i++)
+        fprintf(OutFile->FilePtr, " %g ", STemp->Ts[i]);
+
+      // for (i = 1; i <= MAX_LAYERS - 2 ; i++)
+      //   fprintf(OutFile->FilePtr, " %g ", STemp->SoilMoist[i]);
+      
+      // for (i = 1; i <= MAX_LAYERS - 2; i++)
+      //   fprintf(OutFile->FilePtr, " %g ", STemp->SoilIce[i]);
+    }
+  }
   /* store SWE */
   Snow->OldSwq = Snow->Swq;
+
+  
 
 }
 

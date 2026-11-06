@@ -64,6 +64,7 @@ Sediment Input File  =
 Improved Radiation Scheme = TRUE         # TRUE OR FALSE
 Precipitation Separation = FALSE          # TRUE rain and snow are separate columns in input met
 DeltaSWE = FALSE                          # TRUE if use DELTASWE in place of SNOW
+SOIL TEMPERATURE MODEL = TRUE             # Soil Temperature Model
 
 ##########################################################################################################
 # MODEL AREA SECTION
@@ -169,7 +170,7 @@ Station Name 1 = WRF
 North Coordinate 1 = 15.0
 East Coordinate 1 =  15.0
 Elevation 1 = 500
-Station File 1 =  ./met/data_41.65625_-123.15625 
+Station File 1 =  ./met/Daymet/data_64.76020_-147.17807 
 
 ############################################### MM5 ######################################################
 
@@ -240,6 +241,7 @@ Depth Threshold        1 = 1.5
 Maximum Infiltration   1 = 1e-5              # Maximum infiltration rate (m/s)
 Capillary Drive        1 = 0.05
 Surface Albedo         1 = 0.1               # Soil surface albedo
+Surface Emissivity     1 = 0.7               # Soil surface emissivity
 Number of Soil Layers  1 = 3                 # Number of soil layers
 Porosity               1 = 0.45 0.45 0.4     # Soil porosity 
 Pore Size Distribution 1 = 0.38 0.38 0.38    # Pore size distribution

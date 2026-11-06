@@ -15,9 +15,6 @@
 # Set up for this subdirectory
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.8.12)
-project (DHSVM)
-
 # Look in both source and binary trees for headers
 include_directories(BEFORE 
   ${CMAKE_CURRENT_SOURCE_DIR}
