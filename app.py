@@ -7,11 +7,12 @@ import os.path
 import re
 from datetime import datetime
 from dhsvm_idf import generate_ng_idf
-from extract_AM import extract_AM_data
+from extract_AM import extract_AM_data, extract_ALD
 import tempfile
 import shutil
 from gen_figures import (generate_fig, generate_figs_multiple, generate_am_timeseries_plots, 
                          generate_swe_timeseries_plot, generate_multi_scenario_idf_plots,
+                         generate_ald_annual_plot, generate_ald_seasonal_plot, compute_ald_trend,
                          generate_multi_scenario_am_plots, generate_multi_scenario_swe_plot,
                          generate_cesm_ensemble_idf_plots, generate_cesm_ensemble_am_plots,
                          generate_cesm_ensemble_swe_plot, CESM_NEAR_TERM_DMAAT,
@@ -920,6 +921,61 @@ def NG_IDF():
             else:
                 data['fig_am_p'] = data['fig_am_w'] = data['fig_swe'] = ""
 
+            # Active Layer Depth (ALD): two figures + summary/annual tables
+            data['ald'] = None
+            ald_results = results.get('ald_results')
+            if ald_results is not None:
+                M_TO_FT = 3.28084
+                annual = ald_results['annual']
+                with tempfile.TemporaryDirectory() as td:
+                    fig_ald_annual = generate_ald_annual_plot(
+                        annual, os.path.join(td, 'ald_annual.png'))
+                    fig_ald_seasonal = generate_ald_seasonal_plot(
+                        ald_results['daily'], os.path.join(td, 'ald_seasonal.png'))
+
+                ald_ft = annual['ald_m'] * M_TO_FT
+                slope, p_value = compute_ald_trend(annual['water_year'], ald_ft)
+
+                def _mean_date(dowy):
+                    # day of water year -> "Mon-DD" label (non-leap reference year)
+                    if np.isnan(dowy):
+                        return "-"
+                    return (pd.Timestamp(2001, 10, 1)
+                            + pd.Timedelta(days=int(round(dowy)) - 1)).strftime("%b %d")
+
+                def _fmt_date(ts):
+                    return "-" if pd.isna(ts) else ts.strftime("%m-%d")
+
+                rows = []
+                for _, r in annual.iterrows():
+                    rows.append({
+                        'year': int(r['water_year']),
+                        'ald_ft': round(float(r['ald_m']) * M_TO_FT, 2),
+                        'date_max': _fmt_date(r['date_max_ald']),
+                        'thaw_start': _fmt_date(r['thaw_start']),
+                        'thaw_end': _fmt_date(r['thaw_end']),
+                        'thaw_length': ("-" if np.isnan(r['thaw_length_days'])
+                                        else int(r['thaw_length_days'])),
+                    })
+
+                data['ald'] = {
+                    'fig_annual': fig_ald_annual,
+                    'fig_seasonal': fig_ald_seasonal,
+                    'rows': rows,
+                    'n_years': int(len(annual)),
+                    'mean_ft': round(float(ald_ft.mean()), 2),
+                    'std_ft': round(float(ald_ft.std(ddof=1)), 2) if len(annual) > 1 else None,
+                    'min_ft': round(float(ald_ft.min()), 2),
+                    'max_ft': round(float(ald_ft.max()), 2),
+                    'date_max_mean': _mean_date(annual['date_max_ald_dowy'].mean()),
+                    'thaw_start_mean': _mean_date(annual['thaw_start_dowy'].mean()),
+                    'thaw_end_mean': _mean_date(annual['thaw_end_dowy'].mean()),
+                    'thaw_length_mean': (None if annual['thaw_length_days'].isna().all()
+                                         else int(round(annual['thaw_length_days'].mean()))),
+                    'trend_ft_per_decade': None if slope is None else round(slope * 10, 2),
+                    'trend_p': None if p_value is None else round(p_value, 3),
+                }
+
             # Render historical results using existing out.html
             return render_template("out.html",
                                    lat=lat,
@@ -1814,12 +1870,22 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
             display_inches=atlas14_idf is not None,
         )
         
+        # Active Layer Depth (ALD) from the soil temperature profile. Point mode shows it for
+        # Daymet only; Pixel.CENTER lives in the temp directory, so it must be read here.
+        ald_results = None
+        if forcing_type == "Daymet":
+            try:
+                ald_results = extract_ALD(pixel_file, forcing_type)
+            except Exception as exc:
+                print(f"WARNING: ALD extraction failed: {exc}", flush=True)
+
         # Return dictionary with all data
         return {
             'durations': durations,
             'idf_data': idf_data,
             'fig_codes': fig_codes,
             'am_results': am_results,
+            'ald_results': ald_results,
             'debug_dir': debug_dir,
         }
 

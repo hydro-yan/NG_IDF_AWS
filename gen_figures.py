@@ -285,6 +285,124 @@ def generate_swe_timeseries_plot(am_swe, fig_file, display_inches=False):
     return "data:image/png;base64," + img
 
 
+# ----------------------------------------------------------------------------------------------------------
+# Active Layer Depth (ALD) figures (point mode)
+# ----------------------------------------------------------------------------------------------------------
+M_TO_FT = 3.28084
+ALD_TREND_MIN_YEARS = 15   # a trend is only drawn/reported when the record has at least this many years
+
+
+def compute_ald_trend(years, values):
+    """
+    Theil-Sen slope (per year) and Mann-Kendall (Kendall tau) p-value.
+    Returns (slope, p_value), or (None, None) when the record is too short.
+    """
+    years = np.asarray(years, dtype=float)
+    values = np.asarray(values, dtype=float)
+    ok = ~np.isnan(values)
+    if ok.sum() < ALD_TREND_MIN_YEARS:
+        return None, None
+    from scipy import stats
+    slope, intercept, _, _ = stats.theilslopes(values[ok], years[ok])
+    p_value = stats.kendalltau(years[ok], values[ok]).pvalue
+    return float(slope), float(p_value)
+
+
+def generate_ald_annual_plot(annual, fig_file):
+    """
+    Annual maximum Active Layer Depth (ALD) vs. water year.
+
+    Parameters:
+    -----------
+    annual : pd.DataFrame
+        Output of extract_ALD()['annual'] (needs water_year, ald_m)
+    fig_file : str
+        Output file path
+
+    Returns:
+    --------
+    str : Base64 encoded image string (data URI)
+    """
+    years = annual['water_year'].values.astype(int)
+    ald = annual['ald_m'].values * M_TO_FT
+    mean_ald = np.nanmean(ald)
+
+    plt.figure(figsize=(6, 4.5))
+    plt.plot(years, ald, 'o-', color='saddlebrown', linewidth=1.2, markersize=5, label='Annual max ALD')
+    plt.axhline(mean_ald, color='gray', linestyle='--', linewidth=1.2,
+                label=f'Mean = {mean_ald:.2f} ft')
+
+    slope, p_value = compute_ald_trend(years, ald)
+    if slope is not None:
+        from scipy import stats
+        _, intercept, _, _ = stats.theilslopes(ald, years)
+        plt.plot(years, intercept + slope * years, color='red', linewidth=1.8,
+                 label=f'Trend = {slope * 10:+.2f} ft/decade (p = {p_value:.2f})')
+
+    ax = plt.gca()
+    ax.invert_yaxis()   # depth increases downward
+    plt.xlabel('Water Year', fontsize=10, fontweight='bold')
+    plt.ylabel('Annual Max Active Layer Depth (ft)', fontsize=10, fontweight='bold')
+    style_grid(ax)
+    plt.xticks(rotation=45)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+
+    plt.savefig(fig_file, dpi=150, bbox_inches='tight')
+    plt.close()
+
+    img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
+    return "data:image/png;base64," + img
+
+
+def generate_ald_seasonal_plot(daily, fig_file):
+    """
+    Seasonal thaw-depth progression over the water year: mean daily thaw depth across years
+    with the min-max range as a shaded band.
+
+    Parameters:
+    -----------
+    daily : pd.DataFrame
+        Output of extract_ALD()['daily'], indexed by day of water year (Oct 1 = 1)
+        with columns mean_m, min_m, max_m
+    fig_file : str
+        Output file path
+
+    Returns:
+    --------
+    str : Base64 encoded image string (data URI)
+    """
+    x = daily.index.values
+    mean_ft = daily['mean_m'].values * M_TO_FT
+    min_ft = daily['min_m'].values * M_TO_FT
+    max_ft = daily['max_m'].values * M_TO_FT
+
+    plt.figure(figsize=(6, 4.5))
+    plt.fill_between(x, min_ft, max_ft, color='saddlebrown', alpha=0.2, label='Min-max across years')
+    plt.plot(x, mean_ft, color='saddlebrown', linewidth=2, label='Mean')
+
+    # month tick labels at the first day of each month (non-leap reference year)
+    month_starts = pd.date_range('2001-10-01', periods=12, freq='MS')
+    ticks = (month_starts - pd.Timestamp('2001-10-01')).days + 1
+    plt.xticks(ticks, [d.strftime('%b') for d in month_starts])
+
+    ax = plt.gca()
+    ax.invert_yaxis()   # depth increases downward
+    plt.xlim(1, 365)
+    plt.xlabel('Month of Water Year', fontsize=10, fontweight='bold')
+    plt.ylabel('Thaw Depth (ft)', fontsize=10, fontweight='bold')
+    style_grid(ax)
+    plt.legend(loc='best', fontsize=8)
+    plt.tight_layout()
+
+    plt.savefig(fig_file, dpi=150, bbox_inches='tight')
+    plt.close()
+
+    img = base64.b64encode(open(fig_file, "rb").read()).decode('utf-8')
+    return "data:image/png;base64," + img
+
+
+
 def generate_multi_scenario_idf_plots(hist_data, med_data, high_data, durations, fig_file_prec, fig_file_ng, display_inches=False):
     """
     Generate multi-scenario IDF comparison plots in 2x4 grid

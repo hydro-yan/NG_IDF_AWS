@@ -514,3 +514,187 @@ def extract_AM_data(pixel_file, am_files_dict, r_file, td, forcing_type="Daymet"
 
     # Return results as a dictionary
     return am_results
+
+
+#--------------------------------------------------------------------------------------------------------------
+# Active Layer Depth (ALD) from the DHSVM soil temperature profile
+#--------------------------------------------------------------------------------------------------------------
+# Soil layers 1-23 of Pixel.CENTER are used (layers 24-25 are excluded). Depths are layer midpoints (m).
+ALD_LAYER_DEPTHS_M = np.array([
+    0.000, 0.020, 0.060, 0.120, 0.200, 0.320, 0.480, 0.680, 0.920, 1.200,
+    1.520, 1.880, 2.280, 2.720, 3.260, 3.900, 4.640, 5.480, 6.420, 7.460,
+    8.600, 10.990, 15.666,
+])
+ALD_N_LAYERS = len(ALD_LAYER_DEPTHS_M)
+ALD_THAW_MONTHS = (6, 7, 8, 9)            # window used for the annual maximum ALD (Jun-Sep)
+ALD_SURFACE_LAYER = 1                     # index of the 0.02 m layer, used to define thaw start/end
+ALD_SEASON_SEARCH_MONTHS = tuple(range(3, 12))   # Mar-Nov window for thaw start/end
+
+
+def _thaw_depth_from_temps(temps):
+    """
+    Thaw depth (m) for each row of a (n, 23) temperature array (deg C).
+
+    Thaw depth = depth of the deepest layer with T > 0, linearly interpolated to T = 0
+    between that layer and the next (frozen) layer. Rows with no T > 0 return 0.0.
+    """
+    temps = np.atleast_2d(np.asarray(temps, dtype=float))
+    rows = np.arange(temps.shape[0])
+
+    positive = temps > 0.0
+    any_pos = positive.any(axis=1)
+    last = ALD_N_LAYERS - 1 - np.argmax(positive[:, ::-1], axis=1)   # deepest thawed layer
+    nxt = np.minimum(last + 1, ALD_N_LAYERS - 1)
+
+    t0 = temps[rows, last]
+    t1 = temps[rows, nxt]
+    d0 = ALD_LAYER_DEPTHS_M[last]
+    d1 = ALD_LAYER_DEPTHS_M[nxt]
+
+    denom = t0 - t1
+    safe = np.where(denom > 0, denom, 1.0)
+    frac = np.where(denom > 0, t0 / safe, 0.0)      # (0 - t0)/(t1 - t0)
+    depth = d0 + frac * (d1 - d0)
+    depth = np.where(last == ALD_N_LAYERS - 1, d0, depth)   # deepest layer thawed: ALD = that depth
+    return np.where(any_pos, depth, 0.0)
+
+
+def _water_year_day(index):
+    """Day of water year (Oct 1 = 1, 365 max) for a DatetimeIndex; Feb 29 is mapped to Feb 28."""
+    ref_year = np.where(index.month >= 10, 2001, 2002)
+    ref_day = np.where((index.month == 2) & (index.day == 29), 28, index.day)
+    ref = pd.to_datetime(pd.DataFrame({'year': ref_year, 'month': index.month, 'day': ref_day}))
+    return ((ref - pd.Timestamp(2001, 10, 1)).dt.days + 1).values
+
+
+
+def extract_ALD(pixel_file, forcing_type="Daymet"):
+    """
+    Extract the annual maximum Active Layer Depth (ALD) from Pixel.CENTER.
+
+    Method
+    ------
+    1. Soil layers 1-23 (SoilTTemp.Layer1..23) are averaged to daily means.
+    2. Only complete water years (Oct 1 - Sep 30) are used.
+    3. Annual max ALD = depth of the deepest layer whose daily mean T exceeds 0 deg C at any
+       point during Jun-Sep, linearly interpolated to T = 0 between that layer and the next.
+    4. Date of max ALD = day (Jun-Sep) with the deepest daily thaw depth.
+    5. Thaw start / end = first / last day (Mar-Nov of the water year's calendar year) with the
+       0.02 m layer above 0 deg C. The end is NaN when the record stops before Nov 30.
+
+    Returns
+    -------
+    dict with
+      'annual' : DataFrame, one row per water year, columns
+                 water_year, ald_m, date_max_ald, date_max_ald_dowy, thaw_start, thaw_start_dowy,
+                 thaw_end, thaw_end_dowy, thaw_length_days
+      'daily'  : DataFrame indexed by day of water year (1-365) with mean_m, min_m, max_m
+                 thaw depth across the water years
+    """
+    if forcing_type == "Daymet":
+        s_date = datetime.datetime(1989, 6, 1, 0, 0, 0)
+        e_date = datetime.datetime(2021, 9, 30, 21, 0, 0)
+    elif "futu" in forcing_type or "medium" in forcing_type or "high" in forcing_type:
+        s_date = datetime.datetime(2033, 5, 31, 16, 0, 0)
+        e_date = datetime.datetime(2065, 9, 30, 15, 0, 0)
+    else:
+        s_date = datetime.datetime(1989, 5, 31, 16, 0, 0)
+        e_date = datetime.datetime(2021, 9, 30, 15, 0, 0)
+
+    # --- read only the columns needed, located by header name ------------------------------------------
+    with open(pixel_file) as f:
+        header = f.readline().split()
+    layer_cols = [f'SoilTTemp.Layer{i}' for i in range(1, ALD_N_LAYERS + 1)]
+    missing = [c for c in layer_cols if c not in header]
+    if header[:1] != ['Date'] or missing:
+        raise ValueError(f'Pixel.CENTER has no soil temperature columns ({missing[:1]}...): {pixel_file}')
+
+    usecols = [0] + [header.index(c) for c in layer_cols]
+    raw = pd.read_csv(pixel_file, sep=r'\s+', header=None, skiprows=1, usecols=usecols)
+    raw = raw[usecols]
+    raw.columns = ['Date'] + layer_cols
+
+    raw['Date'] = pd.to_datetime(raw['Date'], format='%m/%d/%Y-%H:%M:%S', errors='coerce')
+    raw = raw.dropna(subset=['Date'])
+    raw = raw[(raw['Date'] >= s_date) & (raw['Date'] <= e_date)].set_index('Date')
+    raw = raw.apply(pd.to_numeric, errors='coerce')
+    if raw.empty:
+        raise ValueError(f'No Pixel.CENTER records in expected range {s_date} to {e_date}: {pixel_file}')
+
+    daily = raw.resample('D').mean().dropna(how='all')
+    water_year = np.where(daily.index.month >= 10, daily.index.year + 1, daily.index.year)
+
+    def _dowy(ts):
+        return float(_water_year_day(pd.DatetimeIndex([ts]))[0]) if not pd.isna(ts) else np.nan
+
+    annual_rows = []
+    curves = {}
+    for wy, grp in daily.groupby(water_year):
+        wy = int(wy)
+        # keep complete water years only (drops the Jun-Sep stub at the start of the record)
+        if grp.index[0] > pd.Timestamp(wy - 1, 10, 1) or grp.index[-1] < pd.Timestamp(wy, 9, 29):
+            continue
+
+        temps = grp.values
+        depth_daily = _thaw_depth_from_temps(temps)
+
+        # annual maximum ALD (Jun-Sep window)
+        in_window = grp.index.month.isin(ALD_THAW_MONTHS)
+        if not in_window.any():
+            continue
+        max_temp = temps[in_window].max(axis=0)
+        ald_m = float(_thaw_depth_from_temps(max_temp[np.newaxis, :])[0])
+
+        window_depth = depth_daily[in_window]
+        if np.nanmax(window_depth) > 0:
+            date_max = grp.index[in_window][int(np.nanargmax(window_depth))]
+        else:
+            date_max = pd.NaT
+
+        # thaw start / end from the 0.02 m layer, taken over the calendar year of the water year
+        # (Mar-Nov), so the Oct-Nov tail of the previous thaw season is not picked up. The end
+        # needs Oct-Nov of this calendar year, which belongs to the next water year; when that
+        # part of the record is missing (last year) the end and length are left as NaN.
+        in_season = ((daily.index.year == wy)
+                     & np.isin(daily.index.month, ALD_SEASON_SEARCH_MONTHS)
+                     & (daily[f'SoilTTemp.Layer{ALD_SURFACE_LAYER + 1}'].values > 0.0))
+        if in_season.any():
+            thaw_start = daily.index[in_season][0]
+            if daily.index[-1] >= pd.Timestamp(wy, 11, 30):
+                thaw_end = daily.index[in_season][-1]
+                thaw_length = (thaw_end - thaw_start).days + 1
+            else:
+                thaw_end = pd.NaT
+                thaw_length = np.nan
+        else:
+            thaw_start = thaw_end = pd.NaT
+            thaw_length = np.nan
+
+        annual_rows.append({
+            'water_year': wy,
+            'ald_m': ald_m,
+            'date_max_ald': date_max,
+            'date_max_ald_dowy': _dowy(date_max),
+            'thaw_start': thaw_start,
+            'thaw_start_dowy': _dowy(thaw_start),
+            'thaw_end': thaw_end,
+            'thaw_end_dowy': (_dowy(thaw_start) + thaw_length - 1) if not pd.isna(thaw_end) else np.nan,
+            'thaw_length_days': thaw_length,
+        })
+
+        # daily thaw-depth curve for this water year (Feb 29 dropped to align leap years)
+        keep = ~((grp.index.month == 2) & (grp.index.day == 29))
+        curves[wy] = pd.Series(depth_daily[keep], index=_water_year_day(grp.index[keep]))
+
+    if not annual_rows:
+        raise ValueError('No complete water years available to compute ALD.')
+
+    annual = pd.DataFrame(annual_rows)
+    curve_df = pd.DataFrame(curves)
+    daily_curve = pd.DataFrame({
+        'mean_m': curve_df.mean(axis=1),
+        'min_m': curve_df.min(axis=1),
+        'max_m': curve_df.max(axis=1),
+    })
+    return {'annual': annual, 'daily': daily_curve}
+

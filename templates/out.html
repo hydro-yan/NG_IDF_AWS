@@ -422,6 +422,22 @@
     <img class="plot-img" src="{{ fig72 }}" alt="72-Hour IDF Curves">
   </div>
 </div>
+{% if ald %}
+<!-- Active Layer Depth (ALD) figures -->
+<div class="plots" style="max-width: 900px;">
+  <div class="plot-card" style="width: 48%; max-width: 440px;">
+    <h2>Annual Maximum Active Layer Depth (ALD)</h2>
+    <img class="plot-img" src="{{ ald.fig_annual }}" alt="Annual Maximum Active Layer Depth">
+  </div>
+
+  <div class="plot-card" style="width: 48%; max-width: 440px;">
+    <h2>Seasonal Thaw-Depth Progression</h2>
+    <img class="plot-img" src="{{ ald.fig_seasonal }}" alt="Seasonal Thaw Depth Progression">
+  </div>
+</div>
+{% endif %}
+
+
 
 {% if fig_am_p or fig_swe %}
 <!-- Time Series Plot of AM P and W (Combined) -->
@@ -487,6 +503,26 @@
     </table>
   </div>
 </div>
+
+{% if ald %}
+<div class="impact-summary">
+  <div class="section">
+    <h2>Active Layer Depth (ALD) Summary</h2>
+    <p><strong>ALD</strong> is the maximum depth of thaw (soil temperature &gt; 0&nbsp;&deg;C, Jun&ndash;Sep) in each water year, interpolated between simulated soil layers. Statistics are over {{ ald.n_years }} complete water years.</p>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>Mean annual max ALD (ft)</td><td>{{ ald.mean_ft }}</td></tr>
+      {% if ald.std_ft is not none %}<tr><td>Std. dev. of annual max ALD (ft)</td><td>{{ ald.std_ft }}</td></tr>{% endif %}
+      <tr><td>Range of annual max ALD (ft)</td><td>{{ ald.min_ft }} &ndash; {{ ald.max_ft }}</td></tr>
+      <tr><td>Typical date of max ALD</td><td>{{ ald.date_max_mean }}</td></tr>
+      <tr><td>Typical thaw start (0.02 m layer &gt; 0&nbsp;&deg;C)</td><td>{{ ald.thaw_start_mean }}</td></tr>
+      <tr><td>Typical thaw end (0.02 m layer &gt; 0&nbsp;&deg;C)</td><td>{{ ald.thaw_end_mean }}</td></tr>
+      {% if ald.thaw_length_mean is not none %}<tr><td>Typical thaw season length (days)</td><td>{{ ald.thaw_length_mean }}</td></tr>{% endif %}
+      {% if ald.trend_ft_per_decade is not none %}<tr><td>Trend in annual max ALD (Theil&ndash;Sen, ft/decade)</td><td>{{ '+' if ald.trend_ft_per_decade > 0 }}{{ ald.trend_ft_per_decade }} (p = {{ ald.trend_p }})</td></tr>{% endif %}
+    </table>
+  </div>
+</div>
+{% endif %}
 
 <!-- ========================================== -->
 <!-- DIVIDER -->
@@ -701,6 +737,35 @@
     </table>
   </div>
 </div>
+{% if ald %}
+<!-- ALD Table -->
+<div class="am-tables" style="justify-content: center;">
+  <div class="section am-table" style="width: 70%; max-width: 900px; margin: 0 auto;">
+    <h2>Annual Maximum Active Layer Depth (ALD) Time Series Table</h2>
+    <p>Dates are month-day. Thaw start/end = first/last day (Mar&ndash;Nov) the 0.02 m soil layer is above 0&nbsp;&deg;C.</p>
+    <table class="swe-table">
+      <tr>
+        <th>Water Year</th>
+        <th>Max ALD (ft)</th>
+        <th>Date of Max ALD</th>
+        <th>Thaw Start</th>
+        <th>Thaw End</th>
+        <th>Thaw Season (days)</th>
+      </tr>
+      {% for r in ald.rows %}
+      <tr>
+        <td style="font-weight:bold;">{{ r.year }}</td>
+        <td>{{ r.ald_ft }}</td>
+        <td>{{ r.date_max }}</td>
+        <td>{{ r.thaw_start }}</td>
+        <td>{{ r.thaw_end }}</td>
+        <td>{{ r.thaw_length }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
 
 <footer>
   <img src="./static/PNNL_Logo.png" alt="Pacific Northwest National Laboratory">
