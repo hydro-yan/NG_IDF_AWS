@@ -120,7 +120,7 @@ R script that fits Gumbel distribution to annual maximum data and computes IDF c
 
 **Key Functions:**
 - `esti_idf(data)`: Fits Gumbel distribution and computes quantiles for 51 probability levels (0.50 to 0.998)
-- `esti_idf90(data)`: Computes 90% confidence intervals using Monte Carlo resampling (1000 iterations)
+- `esti_idf90(data)`: Computes 95% confidence intervals using Monte Carlo resampling (1000 iterations)
 - Main loop: Processes all combinations of durations (24h, 48h, 72h) and variables (P, W_veg)
 
 **Called by:** `extract_AM.py` (via subprocess)
@@ -236,7 +236,7 @@ p = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
 5. **Statistical Analysis** → get_IDF.R:
    - Fits Gumbel distribution using L-moments
    - Computes quantiles for 51 probability levels
-   - Generates 90% confidence intervals via Monte Carlo
+   - Generates 95% confidence intervals via Monte Carlo
    - Writes IDF curve files
 
 6. **Visualization** → gen_figures.py:

@@ -394,7 +394,7 @@
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>% Difference</strong> (Impact Summary table) compares NG-IDF with Daymet PREC-IDF. Positive values suggest potential under-design if following the standard PREC-IDF method. E.g., a +20% difference suggests the NG-IDF value is 20% higher than the PREC-IDF value.</li>
       <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
-      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+      <li>The reported <strong>95% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
       {% if ald %}<li><strong>Active Layer Depth (ALD)</strong> is the deepest daily thaw depth (Jun&ndash;Sep) measured down from the ground surface.</li>{% endif %}
     </ul>
   </div>
@@ -533,10 +533,10 @@
 
 <div class="section-title">📋 Detailed Data Tables</div>
 
-<!-- PREC-IDF and NG-IDF Tables with 90% CI -->
+<!-- PREC-IDF and NG-IDF Tables with 95% CI -->
 <div class="idf-tables">
   <div class="section idf-table">
-    <h2>PREC-IDF Curves Table with 90% Confidence Intervals</h2>
+    <h2>PREC-IDF Curves Table with 95% Confidence Intervals</h2>
     <p><strong>ARI = Average Recurrence Interval</strong></p>
 
     {% set ARI        = [2,5,10,25,50,100,500] %}
@@ -547,8 +547,8 @@
       <tr>
         <th>ARI (yrs)</th>
         <th>Magnitude (in)</th>
-        <th>Lower 90% CI (in)</th>
-        <th>Upper 90% CI (in)</th>
+        <th>Lower 95% CI (in)</th>
+        <th>Upper 95% CI (in)</th>
         <th>NOAA Atlas 14 (in; reference only)</th>
       </tr>
 
@@ -591,7 +591,7 @@
   </div>
 
   <div class="section idf-table">
-    <h2>NG-IDF Curves Table with 90% Confidence Intervals</h2>
+    <h2>NG-IDF Curves Table with 95% Confidence Intervals</h2>
     <p><strong>ARI = Average Recurrence Interval</strong></p>
 
     {% set ARI        = [2,5,10,25,50,100,500] %}
@@ -601,8 +601,8 @@
       <tr>
         <th>ARI (yrs)</th>
         <th>Magnitude (in)</th>
-        <th>Lower 90% CI (in)</th>
-        <th>Upper 90% CI (in)</th>
+        <th>Lower 95% CI (in)</th>
+        <th>Upper 95% CI (in)</th>
       </tr>
 
       <!-- 24-HOUR -->

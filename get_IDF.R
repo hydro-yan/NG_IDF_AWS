@@ -9,14 +9,14 @@ library(lmom, lib.loc='/hongxiang/app/Rlibrary')
 
 
 # -----------------------------------------------------------------------------
-# 90 percent CI for IDF using Gumbel distribution
+# 95 percent CI for IDF using Gumbel distribution
 esti_idf90 <- function(data) {
 
     # probabilities: 0.50 to 0.99 plus 0.998
     probs <- c(seq(0.50, 0.99, by = 0.01), 0.998)
     nprob <- length(probs)
 
-    # output: each row = probability; col1 = 5%; col2 = 95%
+    # output: each row = probability; col1 = 2.5% (lower); col2 = 97.5% (upper)
     output <- matrix(NaN, nrow = nprob, ncol = 2)
 
     # compute L-moments
@@ -48,10 +48,10 @@ esti_idf90 <- function(data) {
         }
     }
 
-    # final 5%-95% CIs
+    # final 95% CIs (2.5% and 97.5% quantiles)
     for (k in 1:nprob) {
-        output[k, 1] <- quantile(flow[, k], 0.05, na.rm = TRUE)
-        output[k, 2] <- quantile(flow[, k], 0.95, na.rm = TRUE)
+        output[k, 1] <- quantile(flow[, k], 0.025, na.rm = TRUE)
+        output[k, 2] <- quantile(flow[, k], 0.975, na.rm = TRUE)
     }
 
     return(output)
@@ -155,8 +155,8 @@ for (v in 1:length(variable)) {
 
     # IDF:
     # Row 1: point estimates
-    # Row 2: 5 percent CI
-    # Row 3: 95 percent CI
+    # Row 2: lower bound of 95 percent CI (2.5% quantile)
+    # Row 3: upper bound of 95 percent CI (97.5% quantile)
     # All columns: 51 probabilities (0.50 to 0.99 plus 0.998)
     IDF = matrix(data = NaN, nrow = 3, ncol = 51)
 
@@ -179,10 +179,10 @@ for (v in 1:length(variable)) {
     temp <- esti_idf(data_am)     # 51×1
     IDF[1,] <- t(temp)
 
-    # 90 percent CI
+    # 95 percent CI
     temp2 <- esti_idf90(data_am)  # 51×2
-    IDF[2,] <- t(temp2[,1])       # 5 percent
-    IDF[3,] <- t(temp2[,2])       # 95 percent
+    IDF[2,] <- t(temp2[,1])       # lower bound (2.5 percent)
+    IDF[3,] <- t(temp2[,2])       # upper bound (97.5 percent)
 
     # save output
     file_name2 <- sprintf('IDF_%s_%s', duration[d], variable[v])

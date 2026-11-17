@@ -209,7 +209,7 @@
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>Impact Summary</strong> compares the future NG-IDF with the baseline for the ensemble mean (first column) and for each member (difference in inches and percent change).</li>
       <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
-      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+      <li>The reported <strong>95% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
     <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline is still a model simulation, so the change from baseline to 2034&ndash;2049 is the transferable result. Apply it to the observed values on the Historical Weather (Daymet) page:</p>
     <ul>
@@ -432,7 +432,7 @@
         <div class="section idf-half">
             <h3>PREC-IDF ({{ title_prefix }})</h3>
             <table>
-                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 90% (in)</th><th>Upper 90% (in)</th></tr>
+                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 95% (in)</th><th>Upper 95% (in)</th></tr>
                 {% set ARI = [2,5,10,25,50,100,500] %}
                 {% set IDX = [0,30,40,46,48,49,50] %}
 
@@ -448,7 +448,7 @@
         <div class="section idf-half">
             <h3>NG-IDF ({{ title_prefix }})</h3>
             <table>
-                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 90% (in)</th><th>Upper 90% (in)</th></tr>
+                <tr><th>ARI (yrs)</th><th>Mag (in)</th><th>Lower 95% (in)</th><th>Upper 95% (in)</th></tr>
 
                 {% for dur in data.durations %}
                 <tr><td colspan="4" style="background:#f0f0f0;font-weight:bold;">{{ dur.replace('h', '-Hour') }}</td></tr>

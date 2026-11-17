@@ -252,8 +252,8 @@ def structure_results(results):
     for dur in durations:
         # IDF curve data (3 rows x 51 columns)
         # Row 0: Point estimates for 51 probabilities (0.50 to 0.99 plus 0.998)
-        # Row 1: 5% confidence interval
-        # Row 2: 95% confidence interval
+        # Row 1: lower bound of 95% confidence interval (2.5% quantile)
+        # Row 2: upper bound of 95% confidence interval (97.5% quantile)
         structured[f'P_{dur}'] = idf_data[f'P_{dur}']      # Precipitation IDF
         structured[f'NG_{dur}'] = idf_data[f'NG_{dur}']    # Net Groundwater IDF
         
@@ -1709,8 +1709,8 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
         # Format: IDF_<duration>_<variable>
         # Example content: 3 rows x 51 columns
         #   Row 0: Point estimates for 51 probabilities (0.50 to 0.998)
-        #   Row 1: 5% confidence interval
-        #   Row 2: 95% confidence interval
+        #   Row 1: lower bound of 95% confidence interval (2.5% quantile)
+        #   Row 2: upper bound of 95% confidence interval (97.5% quantile)
         idf_files = {}
         for dur in durations_to_process:
             idf_files[f'IDF_{dur}_P'] = os.path.join(td, f'IDF_{dur}_P')              # Precip IDF
@@ -1828,7 +1828,7 @@ def get_NG_IDF(input_data, forcing_type="Daymet", year_range=None, atlas14_idf=N
 
 
         # load the P-IDF and NG-IDF data from R output
-        # 1st row: estimated value; 2nd row: 5% quantile; 3rd row: 95% quantile
+        # 1st row: estimated value; 2nd row: 2.5% quantile; 3rd row: 97.5% quantile
         # column: 51 probabilities (0.50 to 0.99 plus 0.998)
         num_pro = 51
         

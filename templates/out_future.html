@@ -476,7 +476,7 @@
       <li><strong>NG-IDF</strong> reports water available for runoff, incorporating cold-region processes such as snowmelt and rain-on-snow in addition to rainfall.</li>
       <li><strong>Impact Summary</strong> compares the Moderate (+1.72°C) and Severe (+2.36°C) scenarios NG-IDF values with the historical baseline (difference in inches and percent change).</li>
       <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
-      <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+      <li>The reported <strong>95% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
     </ul>
     <p style="margin-top:10px;"><strong>Use the change, not the absolute values.</strong> The baseline simulation is still a model result, so the change from the historical baseline to the warmer scenario is the transferable result. Apply that change to the observed values on the Historical Weather (Daymet) page:</p>
     <ul>
@@ -628,7 +628,7 @@
     <!-- IDF Tables -->
     <div class="idf-tables">
       <div class="section idf-table">
-        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>PREC-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         {% set ARI = [2,5,10,25,50,100,500] %}
         {% set IDX = [0,30,40,46,48,49,50] %}
@@ -636,8 +636,8 @@
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in hist.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
@@ -654,14 +654,14 @@
       </div>
 
       <div class="section idf-table">
-        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>NG-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         <table>
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in hist.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
@@ -770,14 +770,14 @@
     <!-- IDF Tables -->
     <div class="idf-tables">
       <div class="section idf-table">
-        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>PREC-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         <table>
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in med.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
@@ -794,14 +794,14 @@
       </div>
 
       <div class="section idf-table">
-        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>NG-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         <table>
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in med.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
@@ -910,14 +910,14 @@
     <!-- IDF Tables -->
     <div class="idf-tables">
       <div class="section idf-table">
-        <h2>PREC-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>PREC-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         <table>
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in high.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
@@ -934,14 +934,14 @@
       </div>
 
       <div class="section idf-table">
-        <h2>NG-IDF Curves with 90% Confidence Intervals</h2>
+        <h2>NG-IDF Curves with 95% Confidence Intervals</h2>
         <p><strong>ARI = Average Recurrence Interval</strong></p>
         <table>
           <tr>
             <th>ARI (yrs)</th>
             <th>Magnitude (in)</th>
-            <th>Lower 90% CI</th>
-            <th>Upper 90% CI</th>
+            <th>Lower 95% CI</th>
+            <th>Upper 95% CI</th>
           </tr>
           {% for dur in high.durations %}
           <tr><td colspan="4" style="background:#f0f0f0; font-weight:bold;">{{ dur.replace('h', '-hour') }}</td></tr>
