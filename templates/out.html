@@ -395,6 +395,7 @@
       <li><strong>% Difference</strong> (Impact Summary table) compares NG-IDF with Daymet PREC-IDF. Positive values suggest potential under-design if following the standard PREC-IDF method. E.g., a +20% difference suggests the NG-IDF value is 20% higher than the PREC-IDF value.</li>
       <li><strong>Annual-maximum tables</strong> (in the Detailed Data Tables) list the largest event in each water year. The event mechanism identifies whether the annual runoff maximum was driven by rainfall (R), snowmelt (M), or rain-on-snow (ROS).</li>
       <li>The reported <strong>90% confidence intervals</strong> describe uncertainty in the fitted IDF estimates and can support risk-informed design decisions.</li>
+      {% if ald %}<li><strong>Active Layer Depth (ALD)</strong> is the deepest daily thaw depth (Jun&ndash;Sep) measured down from the ground surface.</li>{% endif %}
     </ul>
   </div>
 </div>
@@ -424,13 +425,13 @@
 </div>
 {% if ald %}
 <!-- Active Layer Depth (ALD) figures -->
-<div class="plots" style="max-width: 900px;">
-  <div class="plot-card" style="width: 48%; max-width: 440px;">
+<div class="plots" style="max-width: 900px; flex-wrap: nowrap;">
+  <div class="plot-card" style="box-sizing: border-box; flex: 1 1 0; min-width: 0; width: 50%; max-width: none;">
     <h2>Annual Maximum Active Layer Depth (ALD)</h2>
     <img class="plot-img" src="{{ ald.fig_annual }}" alt="Annual Maximum Active Layer Depth">
   </div>
 
-  <div class="plot-card" style="width: 48%; max-width: 440px;">
+  <div class="plot-card" style="box-sizing: border-box; flex: 1 1 0; min-width: 0; width: 50%; max-width: none;">
     <h2>Seasonal Thaw-Depth Progression</h2>
     <img class="plot-img" src="{{ ald.fig_seasonal }}" alt="Seasonal Thaw Depth Progression">
   </div>
@@ -515,9 +516,6 @@
       {% if ald.std_ft is not none %}<tr><td>Std. dev. of annual max ALD (ft)</td><td>{{ ald.std_ft }}</td></tr>{% endif %}
       <tr><td>Range of annual max ALD (ft)</td><td>{{ ald.min_ft }} &ndash; {{ ald.max_ft }}</td></tr>
       <tr><td>Typical date of max ALD</td><td>{{ ald.date_max_mean }}</td></tr>
-      <tr><td>Typical thaw start (0.02 m layer &gt; 0&nbsp;&deg;C)</td><td>{{ ald.thaw_start_mean }}</td></tr>
-      <tr><td>Typical thaw end (0.02 m layer &gt; 0&nbsp;&deg;C)</td><td>{{ ald.thaw_end_mean }}</td></tr>
-      {% if ald.thaw_length_mean is not none %}<tr><td>Typical thaw season length (days)</td><td>{{ ald.thaw_length_mean }}</td></tr>{% endif %}
       {% if ald.trend_ft_per_decade is not none %}<tr><td>Trend in annual max ALD (Theil&ndash;Sen, ft/decade)</td><td>{{ '+' if ald.trend_ft_per_decade > 0 }}{{ ald.trend_ft_per_decade }} (p = {{ ald.trend_p }})</td></tr>{% endif %}
     </table>
   </div>
@@ -739,27 +737,20 @@
 </div>
 {% if ald %}
 <!-- ALD Table -->
-<div class="am-tables" style="justify-content: center;">
-  <div class="section am-table" style="width: 70%; max-width: 900px; margin: 0 auto;">
+<div class="am-tables" style="justify-content: center; margin-top: 20px;">
+  <div class="section am-table" style="width: 50%; max-width: 700px; margin: 0 auto;">
     <h2>Annual Maximum Active Layer Depth (ALD) Time Series Table</h2>
-    <p>Dates are month-day. Thaw start/end = first/last day (Mar&ndash;Nov) the 0.02 m soil layer is above 0&nbsp;&deg;C.</p>
     <table class="swe-table">
       <tr>
         <th>Water Year</th>
-        <th>Max ALD (ft)</th>
         <th>Date of Max ALD</th>
-        <th>Thaw Start</th>
-        <th>Thaw End</th>
-        <th>Thaw Season (days)</th>
+        <th>Max ALD (ft)</th>
       </tr>
       {% for r in ald.rows %}
       <tr>
         <td style="font-weight:bold;">{{ r.year }}</td>
-        <td>{{ r.ald_ft }}</td>
         <td>{{ r.date_max }}</td>
-        <td>{{ r.thaw_start }}</td>
-        <td>{{ r.thaw_end }}</td>
-        <td>{{ r.thaw_length }}</td>
+        <td>{{ r.ald_ft }}</td>
       </tr>
       {% endfor %}
     </table>

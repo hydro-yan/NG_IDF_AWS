@@ -337,7 +337,8 @@ def generate_ald_annual_plot(annual, fig_file):
         from scipy import stats
         _, intercept, _, _ = stats.theilslopes(ald, years)
         plt.plot(years, intercept + slope * years, color='red', linewidth=1.8,
-                 label=f'Trend = {slope * 10:+.2f} ft/decade (p = {p_value:.2f})')
+                 label=(f'Trend = {slope * 10:+.2f} ft/decade (p '
+                        + ('< 0.01' if p_value < 0.01 else f'= {p_value:.2f}') + ')'))
 
     ax = plt.gca()
     ax.invert_yaxis()   # depth increases downward

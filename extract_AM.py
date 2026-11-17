@@ -527,36 +527,44 @@ ALD_LAYER_DEPTHS_M = np.array([
 ])
 ALD_N_LAYERS = len(ALD_LAYER_DEPTHS_M)
 ALD_THAW_MONTHS = (6, 7, 8, 9)            # window used for the annual maximum ALD (Jun-Sep)
-ALD_SURFACE_LAYER = 1                     # index of the 0.02 m layer, used to define thaw start/end
-ALD_SEASON_SEARCH_MONTHS = tuple(range(3, 12))   # Mar-Nov window for thaw start/end
+# Thaw must persist this many consecutive days to count towards the annual max ALD. 1 = the deepest
+# daily thaw depth (no persistence filter); raise it (e.g. 3) to ignore short warm spells.
+ALD_MIN_CONSECUTIVE_DAYS = 1
+# Complete water years (starting Oct 1) skipped as model spin-up. DHSVM starts the whole soil column
+# at 0 deg C (InitTempMap); 0 keeps every complete water year (only the Jun-Sep stub before the first
+# Oct 1 is dropped).
+ALD_SPINUP_YEARS = 0
 
 
 def _thaw_depth_from_temps(temps):
     """
     Thaw depth (m) for each row of a (n, 23) temperature array (deg C).
 
-    Thaw depth = depth of the deepest layer with T > 0, linearly interpolated to T = 0
-    between that layer and the next (frozen) layer. Rows with no T > 0 return 0.0.
+    Only the thawed zone connected to the ground surface counts: going down from the top layer,
+    the thaw depth is where T first drops to 0 deg C or below, linearly interpolated to T = 0
+    between the last thawed layer and the first frozen layer. A warm layer below a frozen layer
+    (e.g. a deep layer sitting at ~0 deg C from the model's initial condition) is NOT counted.
+    Rows whose top layer is frozen return 0.0.
     """
     temps = np.atleast_2d(np.asarray(temps, dtype=float))
     rows = np.arange(temps.shape[0])
 
-    positive = temps > 0.0
-    any_pos = positive.any(axis=1)
-    last = ALD_N_LAYERS - 1 - np.argmax(positive[:, ::-1], axis=1)   # deepest thawed layer
-    nxt = np.minimum(last + 1, ALD_N_LAYERS - 1)
+    frozen = ~(temps > 0.0)                      # T <= 0 (or NaN) counts as frozen
+    any_frozen = frozen.any(axis=1)
+    first = np.argmax(frozen, axis=1)            # first frozen layer counted from the surface
+    prev = np.maximum(first - 1, 0)              # last thawed layer above it
 
-    t0 = temps[rows, last]
-    t1 = temps[rows, nxt]
-    d0 = ALD_LAYER_DEPTHS_M[last]
-    d1 = ALD_LAYER_DEPTHS_M[nxt]
+    t0 = temps[rows, prev]                       # > 0
+    t1 = temps[rows, first]                      # <= 0
+    d0 = ALD_LAYER_DEPTHS_M[prev]
+    d1 = ALD_LAYER_DEPTHS_M[first]
 
     denom = t0 - t1
     safe = np.where(denom > 0, denom, 1.0)
-    frac = np.where(denom > 0, t0 / safe, 0.0)      # (0 - t0)/(t1 - t0)
+    frac = np.where(denom > 0, t0 / safe, 0.0)   # (0 - t0)/(t1 - t0)
     depth = d0 + frac * (d1 - d0)
-    depth = np.where(last == ALD_N_LAYERS - 1, d0, depth)   # deepest layer thawed: ALD = that depth
-    return np.where(any_pos, depth, 0.0)
+    depth = np.where(first == 0, 0.0, depth)     # surface layer frozen: no thawed zone
+    return np.where(any_frozen, depth, ALD_LAYER_DEPTHS_M[-1])   # no frozen layer: thawed to the bottom
 
 
 def _water_year_day(index):
@@ -575,19 +583,19 @@ def extract_ALD(pixel_file, forcing_type="Daymet"):
     Method
     ------
     1. Soil layers 1-23 (SoilTTemp.Layer1..23) are averaged to daily means.
-    2. Only complete water years (Oct 1 - Sep 30) are used.
-    3. Annual max ALD = depth of the deepest layer whose daily mean T exceeds 0 deg C at any
-       point during Jun-Sep, linearly interpolated to T = 0 between that layer and the next.
-    4. Date of max ALD = day (Jun-Sep) with the deepest daily thaw depth.
-    5. Thaw start / end = first / last day (Mar-Nov of the water year's calendar year) with the
-       0.02 m layer above 0 deg C. The end is NaN when the record stops before Nov 30.
+    2. Only complete water years (Oct 1 - Sep 30) are used, after skipping the first
+       ALD_SPINUP_YEARS (default 0: every complete water year is kept).
+    3. Daily thaw depth = depth at which T first drops to <= 0 deg C going down from the surface,
+       linearly interpolated between layers (see _thaw_depth_from_temps). The depth must be held
+       for ALD_MIN_CONSECUTIVE_DAYS consecutive days; annual max ALD = the largest such sustained
+       depth during Jun-Sep.
+    4. Date of max ALD = the first day of the consecutive-day run that reaches that depth.
 
     Returns
     -------
     dict with
       'annual' : DataFrame, one row per water year, columns
-                 water_year, ald_m, date_max_ald, date_max_ald_dowy, thaw_start, thaw_start_dowy,
-                 thaw_end, thaw_end_dowy, thaw_length_days
+                 water_year, ald_m, date_max_ald, date_max_ald_dowy
       'daily'  : DataFrame indexed by day of water year (1-365) with mean_m, min_m, max_m
                  thaw depth across the water years
     """
@@ -623,63 +631,47 @@ def extract_ALD(pixel_file, forcing_type="Daymet"):
 
     daily = raw.resample('D').mean().dropna(how='all')
     water_year = np.where(daily.index.month >= 10, daily.index.year + 1, daily.index.year)
+    depth_all = pd.Series(_thaw_depth_from_temps(daily.values), index=daily.index)
+    # Sustained thaw depth: the depth that has been reached on every one of the last
+    # ALD_MIN_CONSECUTIVE_DAYS days (rolling minimum), so a single warm day cannot set the ALD.
+    sustained_all = depth_all.rolling(ALD_MIN_CONSECUTIVE_DAYS, min_periods=ALD_MIN_CONSECUTIVE_DAYS).min()
 
     def _dowy(ts):
         return float(_water_year_day(pd.DatetimeIndex([ts]))[0]) if not pd.isna(ts) else np.nan
 
     annual_rows = []
     curves = {}
+    n_complete = 0
     for wy, grp in daily.groupby(water_year):
         wy = int(wy)
         # keep complete water years only (drops the Jun-Sep stub at the start of the record)
         if grp.index[0] > pd.Timestamp(wy - 1, 10, 1) or grp.index[-1] < pd.Timestamp(wy, 9, 29):
             continue
+        n_complete += 1
+        if n_complete <= ALD_SPINUP_YEARS:      # model spin-up: soil column starts at 0 deg C
+            continue
 
         temps = grp.values
-        depth_daily = _thaw_depth_from_temps(temps)
+        depth_daily = depth_all.loc[grp.index].values
 
-        # annual maximum ALD (Jun-Sep window)
+        # annual maximum ALD (Jun-Sep window): deepest daily thaw depth connected to the surface
         in_window = grp.index.month.isin(ALD_THAW_MONTHS)
         if not in_window.any():
             continue
-        max_temp = temps[in_window].max(axis=0)
-        ald_m = float(_thaw_depth_from_temps(max_temp[np.newaxis, :])[0])
-
-        window_depth = depth_daily[in_window]
-        if np.nanmax(window_depth) > 0:
-            date_max = grp.index[in_window][int(np.nanargmax(window_depth))]
-        else:
-            date_max = pd.NaT
-
-        # thaw start / end from the 0.02 m layer, taken over the calendar year of the water year
-        # (Mar-Nov), so the Oct-Nov tail of the previous thaw season is not picked up. The end
-        # needs Oct-Nov of this calendar year, which belongs to the next water year; when that
-        # part of the record is missing (last year) the end and length are left as NaN.
-        in_season = ((daily.index.year == wy)
-                     & np.isin(daily.index.month, ALD_SEASON_SEARCH_MONTHS)
-                     & (daily[f'SoilTTemp.Layer{ALD_SURFACE_LAYER + 1}'].values > 0.0))
-        if in_season.any():
-            thaw_start = daily.index[in_season][0]
-            if daily.index[-1] >= pd.Timestamp(wy, 11, 30):
-                thaw_end = daily.index[in_season][-1]
-                thaw_length = (thaw_end - thaw_start).days + 1
-            else:
-                thaw_end = pd.NaT
-                thaw_length = np.nan
-        else:
-            thaw_start = thaw_end = pd.NaT
-            thaw_length = np.nan
+        window_depth = sustained_all.loc[grp.index].values[in_window]
+        if np.all(np.isnan(window_depth)):
+            continue
+        ald_m = float(np.nanmax(window_depth))
+        # date = first day of the consecutive-day run that reaches the max depth
+        end_pos = int(np.nanargmax(window_depth))
+        date_max = (grp.index[in_window][end_pos] - pd.Timedelta(days=ALD_MIN_CONSECUTIVE_DAYS - 1)
+                    if ald_m > 0 else pd.NaT)
 
         annual_rows.append({
             'water_year': wy,
             'ald_m': ald_m,
             'date_max_ald': date_max,
             'date_max_ald_dowy': _dowy(date_max),
-            'thaw_start': thaw_start,
-            'thaw_start_dowy': _dowy(thaw_start),
-            'thaw_end': thaw_end,
-            'thaw_end_dowy': (_dowy(thaw_start) + thaw_length - 1) if not pd.isna(thaw_end) else np.nan,
-            'thaw_length_days': thaw_length,
         })
 
         # daily thaw-depth curve for this water year (Feb 29 dropped to align leap years)

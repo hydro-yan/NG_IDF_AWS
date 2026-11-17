@@ -952,10 +952,6 @@ def NG_IDF():
                         'year': int(r['water_year']),
                         'ald_ft': round(float(r['ald_m']) * M_TO_FT, 2),
                         'date_max': _fmt_date(r['date_max_ald']),
-                        'thaw_start': _fmt_date(r['thaw_start']),
-                        'thaw_end': _fmt_date(r['thaw_end']),
-                        'thaw_length': ("-" if np.isnan(r['thaw_length_days'])
-                                        else int(r['thaw_length_days'])),
                     })
 
                 data['ald'] = {
@@ -968,10 +964,6 @@ def NG_IDF():
                     'min_ft': round(float(ald_ft.min()), 2),
                     'max_ft': round(float(ald_ft.max()), 2),
                     'date_max_mean': _mean_date(annual['date_max_ald_dowy'].mean()),
-                    'thaw_start_mean': _mean_date(annual['thaw_start_dowy'].mean()),
-                    'thaw_end_mean': _mean_date(annual['thaw_end_dowy'].mean()),
-                    'thaw_length_mean': (None if annual['thaw_length_days'].isna().all()
-                                         else int(round(annual['thaw_length_days'].mean()))),
                     'trend_ft_per_decade': None if slope is None else round(slope * 10, 2),
                     'trend_p': None if p_value is None else round(p_value, 3),
                 }
