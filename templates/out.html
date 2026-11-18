@@ -331,6 +331,25 @@
     margin: 30px 0 20px 0;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .plot-note {
+    max-width: 1200px;
+    margin: 0 auto 15px auto;
+    padding: 0 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.4;
+  }
+
+  .plot-note a {
+    color: #1b4d3e;
+    font-weight: 600;
+  }
+
   .section-title {
     text-align: center;
     color: #1b4d3e;
@@ -405,6 +424,7 @@
 <!-- ========================================== -->
 
 <div class="section-title">📊 Visualization Results</div>
+<p class="plot-note">Exact values for the curves shown below (including the 95% confidence bounds and NOAA Atlas 14 reference values) are listed in the <a href="#detailed-tables">Detailed Data Tables</a>. The <a href="#impact-summary">Impact Summary</a> compares NG-IDF with PREC-IDF.</p>
 
 <!-- NG-IDF Curve Plots (3 durations) -->
 <div class="plots">
@@ -463,7 +483,7 @@
 <!-- SECTION 2: IMPACT SUMMARY TABLE -->
 <!-- ========================================== -->
 
-<div class="section-title">📊 Impact Summary</div>
+<div class="section-title" id="impact-summary">📊 Impact Summary</div>
 
 {% set ARI = [2,5,10,25,50,100,500] %}
 {% set IDX = [0,30,40,46,48,49,50] %}
@@ -531,7 +551,7 @@
 <!-- SECTION 3: TABLES -->
 <!-- ========================================== -->
 
-<div class="section-title">📋 Detailed Data Tables</div>
+<div class="section-title" id="detailed-tables">📋 Detailed Data Tables</div>
 
 <!-- PREC-IDF and NG-IDF Tables with 95% CI -->
 <div class="idf-tables">

@@ -67,6 +67,25 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .plot-note {
+    max-width: 1200px;
+    margin: 0 auto 15px auto;
+    padding: 0 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.4;
+  }
+
+  .plot-note a {
+    color: #1b4d3e;
+    font-weight: 600;
+  }
+
   /* Section Titles */
   .section-title {
     text-align: center;
@@ -491,6 +510,7 @@
 <!-- ========================================== -->
 
 <div class="section-title">📊 WRF: Multi-Scenario Comparison Figures</div>
+<p class="plot-note">Exact values for the curves shown below (including the 95% confidence bounds) are listed in the <a href="#detailed-tables">Detailed Data Tables by Scenario</a>. The <a href="#impact-summary">Impact Summary</a> shows the NG-IDF changes relative to the historical baseline.</p>
 
 <!-- PREC-IDF Multi-Scenario Comparison -->
 <div class="multi-plot">
@@ -513,7 +533,7 @@
 <!-- SECTION 2: IMPACT SUMMARY TABLE -->
 <!-- ========================================== -->
 
-<div class="section-title">📊 Impact Summary</div>
+<div class="section-title" id="impact-summary">📊 Impact Summary</div>
 
 <div class="summary-section">
   <div class="section">
@@ -613,7 +633,7 @@
 <!-- SECTION 4: DETAILED TABLES WITH TABS -->
 <!-- ========================================== -->
 
-<div class="section-title">📋 Detailed Data Tables by Scenario</div>
+<div class="section-title" id="detailed-tables">📋 Detailed Data Tables by Scenario</div>
 
 <div class="tab-container">
   <div class="tabs">
